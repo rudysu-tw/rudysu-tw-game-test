@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>妳到底有多拜金？——靈魂價格探測器 v4.1</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&display=swap');
+        
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background: linear-gradient(135deg, #fdfbfb 0%, #ebedee 100%);
+            overflow-x: hidden;
+        }
+
+        .card-shadow {
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+
+        /* Coin Animation */
+        .coin {
+            position: fixed;
+            top: -50px;
+            font-size: 24px;
+            animation: fall linear forwards;
+            z-index: 50;
+            pointer-events: none;
+        }
+
+        @keyframes fall {
+            to { transform: translateY(110vh) rotate(360deg); }
+        }
+
+        /* Danmu (Bullet Comment) Animation - SLOWED DOWN */
+        .danmu-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            overflow: hidden;
+            z-index: 40;
+        }
+
+        .danmu-item {
+            position: absolute;
+            white-space: nowrap;
+            font-weight: bold;
+            opacity: 0.8;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+            animation: drift linear forwards;
+        }
+
+        @keyframes drift {
+            from { transform: translateX(100vw); }
+            to { transform: translateX(-150%); } 
+        }
+
+        .option-btn:active {
+            transform: scale(0.98);
+        }
+
+        .shake-element {
+            animation: shake 0.5s;
+        }
+
+        @keyframes shake {
+            0% { transform: translate(1px, 1px) rotate(0deg); }
+            10% { transform: translate(-1px, -2px) rotate(-1deg); }
+            20% { transform: translate(-3px, 0px) rotate(1deg); }
+            30% { transform: translate(3px, 2px) rotate(0deg); }
+            40% { transform: translate(1px, -1px) rotate(1deg); }
+            50% { transform: translate(-1px, 2px) rotate(-1deg); }
+            60% { transform: translate(-3px, 1px) rotate(0deg); }
+            70% { transform: translate(3px, 1px) rotate(-1deg); }
+            80% { transform: translate(-1px, -1px) rotate(1deg); }
+            90% { transform: translate(1px, 2px) rotate(0deg); }
+            100% { transform: translate(1px, -2px) rotate(-1deg); }
+        }
+        
+        /* Devil Mode Styles */
+        .devil-mode {
+            background: linear-gradient(135deg, #2b0a0a 0%, #000000 100%) !important;
+        }
+        
+        .devil-text {
+            color: #ff3333;
+            text-shadow: 0 0 10px rgba(255, 0, 0, 0.7);
+        }
+
+        /* Angel Mode Styles */
+        .angel-mode {
+            background: linear-gradient(135deg, #e0f7fa 0%, #ffffff 100%) !important;
+        }
+
+        .angel-text {
+            color: #0ea5e9;
+            text-shadow: 0 0 10px rgba(56, 189, 248, 0.5);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center bg-slate-200 relative transition-colors duration-1000" id="main-body">
+
+    <!-- Start Screen -->
+    <div id="start-screen" class="w-full max-w-md p-6 bg-white rounded-3xl card-shadow text-center relative z-10 animate__animated animate__fadeIn">
+        <h1 class="text-4xl font-black text-pink-600 mb-2 tracking-tighter">妳到底有多<span class="text-yellow-500">拜金</span>？</h1>
+        <p class="text-gray-500 mb-2 text-sm">靈魂價格探測器 v4.1 (天使與惡魔版)</p>
+        
+        <div class="flex justify-center gap-2 mb-6">
+            <span class="px-2 py-1 bg-purple-100 text-purple-600 text-xs font-bold rounded">100題庫</span>
+            <span class="px-2 py-1 bg-red-100 text-red-600 text-xs font-bold rounded">惡魔交易</span>
+            <span class="px-2 py-1 bg-blue-100 text-blue-600 text-xs font-bold rounded">天使贖罪</span>
+        </div>
+        
+        <div class="mb-8 relative group cursor-pointer">
+            <div class="absolute top-0 left-0 w-full h-full bg-yellow-200 opacity-20 rounded-full animate-ping"></div>
+            <img src="https://api.iconify.design/noto:money-bag.svg" class="w-32 h-32 mx-auto animate-bounce group-hover:scale-110 transition-transform" alt="Money Bag">
+        </div>
+
+        <div class="text-left bg-pink-50 p-4 rounded-xl mb-6 border-l-4 border-pink-400">
+            <p class="text-gray-700 font-bold mb-2">📢 v4.1 更新：</p>
+            <p class="text-gray-600 text-sm">
+                小心！遊戲中途可能會遇到 <span class="font-bold text-red-600">「惡魔的低語」</span> 誘惑妳，但也可能遇見 <span class="font-bold text-blue-500">「天使的贖罪」</span> 給妳洗白的機會。
+            </p>
+        </div>
+
+        <button onclick="startGame()" class="w-full py-4 bg-gradient-to-r from-pink-500 to-purple-600 text-white rounded-xl font-bold text-xl shadow-lg hover:shadow-xl transform transition hover:-translate-y-1 active:scale-95">
+            開始靈魂拷問 🚀
+        </button>
+    </div>
+
+    <!-- Game Screen -->
+    <div id="game-screen" class="hidden w-full max-w-md h-[90vh] md:h-auto md:min-h-[650px] flex flex-col bg-white md:rounded-3xl card-shadow overflow-hidden relative z-10 border border-gray-100 transition-colors duration-500">
+        
+        <!-- Danmu Layer -->
+        <div id="danmu-layer" class="danmu-container"></div>
+
+        <!-- Header / Stats -->
+        <div class="bg-gray-900 text-white p-4 sticky top-0 z-30 shadow-md transition-colors duration-500" id="header-bg">
+            <!-- Top Row: Progress & Reaction -->
+            <div class="flex justify-between items-center mb-3">
+                <span class="text-xs text-gray-400 bg-gray-800 px-2 py-1 rounded-full">Q.<span id="current-q">1</span>/7</span>
+                <div class="text-right flex items-center gap-2">
+                    <span class="text-xs text-gray-400">當前狀態</span>
+                    <span class="text-2xl" id="emoji-reaction">😇</span>
+                </div>
+            </div>
+
+            <!-- Maintenance Cost Counter -->
+            <div class="mb-3 flex justify-between items-center border-b border-gray-700 pb-2">
+                <span class="text-xs text-gray-400">粗估月養護費</span>
+                <span id="maintenance-cost" class="text-xl font-mono text-green-400 font-bold">$0</span>
+            </div>
+            
+            <!-- Dynamic Bar -->
+            <div class="relative w-full h-4 bg-gray-700 rounded-full overflow-hidden border border-gray-600">
+                <div id="gold-bar" class="h-full bg-gradient-to-r from-green-400 via-yellow-400 to-red-500 transition-all duration-500 ease-out" style="width: 0%"></div>
+            </div>
+            <div class="text-center mt-1">
+                <span id="bar-text" class="text-[10px] text-gray-400 tracking-widest uppercase">清心寡慾</span>
+            </div>
+        </div>
+
+        <!-- Question Area -->
+        <div class="flex-1 p-6 flex flex-col justify-start overflow-y-auto relative z-20 bg-white transition-colors duration-500" id="question-area">
+            <!-- Question Text -->
+            <div class="mb-6">
+                <span class="inline-block px-3 py-1 bg-purple-100 text-purple-600 text-xs font-bold rounded-full mb-3" id="q-tag">情境題</span>
+                <h2 id="question-text" class="text-xl font-bold text-gray-800 leading-snug">
+                    題目載入中...
+                </h2>
+            </div>
+
+            <!-- Options Grid -->
+            <div id="options-container" class="space-y-3 pb-4">
+                <!-- Options will be injected here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Devil's Deal Overlay -->
+    <div id="devil-overlay" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-95 animate__animated animate__fadeIn">
+        <div class="w-full max-w-md p-6 text-center">
+            <div class="text-6xl mb-4 animate-bounce">👿</div>
+            <h2 class="text-4xl font-black text-red-600 mb-4 tracking-widest devil-text">惡魔的低語</h2>
+            <p class="text-gray-300 mb-8 text-lg leading-relaxed" id="devil-text">...</p>
+            <div class="space-y-4">
+                <button onclick="handleDevilChoice(true)" class="w-full py-4 bg-red-800 text-white rounded-xl font-bold text-xl hover:bg-red-700 border border-red-500 shadow-[0_0_15px_rgba(255,0,0,0.5)]">
+                    接受交易 (獲得財富)
+                </button>
+                <button onclick="handleDevilChoice(false)" class="w-full py-4 bg-transparent border-2 border-gray-500 text-gray-400 rounded-xl font-bold text-lg hover:border-white hover:text-white">
+                    滾開！靈魂是非賣品
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Angel's Redemption Overlay (New Feature) -->
+    <div id="angel-overlay" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-white bg-opacity-95 animate__animated animate__fadeIn">
+        <div class="w-full max-w-md p-6 text-center">
+            <div class="text-6xl mb-4 animate-bounce">👼</div>
+            <h2 class="text-4xl font-black text-blue-400 mb-4 tracking-widest angel-text">天使的贖罪</h2>
+            <p class="text-gray-600 mb-8 text-lg leading-relaxed" id="angel-text">...</p>
+            <div class="space-y-4">
+                <button onclick="handleAngelChoice(true)" class="w-full py-4 bg-gradient-to-r from-blue-400 to-cyan-300 text-white rounded-xl font-bold text-xl hover:shadow-lg transform transition hover:-translate-y-1">
+                    我願意 (洗滌心靈)
+                </button>
+                <button onclick="handleAngelChoice(false)" class="w-full py-4 bg-transparent border-2 border-gray-300 text-gray-400 rounded-xl font-bold text-lg hover:border-gray-500 hover:text-gray-600">
+                    不了，我喜歡現在的自己
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Event Result Overlay (Replaces Alert) -->
+    <div id="event-result-overlay" class="hidden fixed inset-0 z-[60] flex items-center justify-center bg-black bg-opacity-90 animate__animated animate__zoomIn">
+        <div class="w-full max-w-sm p-8 bg-white rounded-3xl text-center shadow-2xl m-4 relative overflow-hidden">
+            <div id="event-result-bg" class="absolute inset-0 opacity-10"></div>
+            <div id="event-result-emoji" class="text-6xl mb-4 relative z-10">✨</div>
+            <h2 id="event-result-title" class="text-2xl font-black mb-3 relative z-10">標題</h2>
+            <p id="event-result-msg" class="text-gray-600 mb-6 relative z-10">內容...</p>
+            <button onclick="closeEventResult()" class="w-full py-3 bg-gray-900 text-white rounded-xl font-bold relative z-10 hover:bg-gray-800 transition">
+                繼續命運的旅程 →
+            </button>
+        </div>
+    </div>
+
+    <!-- Reaction Overlay (Toast) -->
+    <div id="reaction-overlay" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-90 transition-opacity duration-300 pointer-events-none">
+        <div class="text-center p-8 animate__animated animate__zoomIn">
+            <div id="reaction-emoji" class="text-8xl mb-4">🤑</div>
+            <h2 id="reaction-title" class="text-3xl font-black text-yellow-400 mb-2">死愛錢！</h2>
+            <p id="reaction-desc" class="text-white text-lg">妳的眼裡只有$$$嗎？</p>
+        </div>
+    </div>
+
+    <!-- Result Screen -->
+    <div id="result-screen" class="hidden w-full max-w-md p-6 bg-white rounded-3xl card-shadow text-center relative z-10 animate__animated animate__fadeInUp my-4">
+        <div class="absolute -top-10 left-1/2 transform -translate-x-1/2 bg-yellow-400 p-4 rounded-full border-4 border-white shadow-xl">
+            <span id="result-emoji" class="text-4xl">👑</span>
+        </div>
+        
+        <div class="mt-8">
+            <h2 class="text-gray-500 text-xs uppercase tracking-widest mb-1">FINAL REPORT</h2>
+            <h1 id="result-title" class="text-3xl font-black text-gray-800 mb-2">稱號計算中...</h1>
+            
+            <div class="p-4 bg-slate-50 rounded-2xl border-2 border-dashed border-gray-300 mb-4">
+                <p id="result-desc" class="text-gray-600 text-sm leading-relaxed text-left mb-3">
+                    描述...
+                </p>
+                <div class="border-t border-gray-200 pt-2 text-left">
+                     <p class="text-xs text-gray-400 font-bold mb-1">💘 適合男友類型：</p>
+                     <p id="result-bf" class="text-sm text-purple-600 font-bold">...</p>
+                </div>
+            </div>
+
+            <!-- Result Stats Grid -->
+            <div class="grid grid-cols-2 gap-3 mb-4">
+                <div class="bg-gray-100 rounded-lg p-2">
+                    <p class="text-xs text-gray-500">拜金指數</p>
+                    <p id="final-score" class="text-xl font-bold text-pink-600">0%</p>
+                </div>
+                <div class="bg-gray-100 rounded-lg p-2">
+                    <p class="text-xs text-gray-500">鹹酥雞單位</p>
+                    <p id="chicken-count" class="text-xl font-bold text-yellow-600">0份</p>
+                </div>
+                <div class="col-span-2 bg-gray-900 rounded-lg p-3 relative overflow-hidden">
+                    <div class="absolute top-0 left-0 w-full h-full bg-green-900 opacity-20"></div>
+                    <p class="text-xs text-gray-400 relative z-10">最終月養護費 (身價)</p>
+                    <p id="final-cost" class="text-3xl font-mono font-bold text-green-400 relative z-10">$0</p>
+                </div>
+            </div>
+
+            <button onclick="shareResult()" class="w-full mb-3 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold transition flex items-center justify-center gap-2 shadow-md">
+                <span>📋</span> 複製詳細報告嗆朋友
+            </button>
+            <button onclick="resetGame()" class="w-full py-3 border-2 border-gray-200 text-gray-600 hover:bg-gray-50 rounded-xl font-bold transition">
+                不準啦！再一次 🔄
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // --- 100題 海量題庫 (Data) ---
+        const coreQuestions = [
+            { text: "男友剛領薪水，買了全家人的晚餐，結果只有『365元鹹酥雞』...", tag: "經典時事", options: [{t:"丟他臉上分手", s:10, cost:5000, r:"暴怒", d:"太寒酸了吧！"}, {t:"上網公審", s:7, cost:2000, r:"公審王", d:"讓網友教訓他"}, {t:"好吃耶！", s:0, cost:0, r:"天使", d:"知足常樂"}, {t:"下次補請大餐", s:3, cost:500, r:"精算", d:"有來有往"}] },
+            { text: "第一次約會，對方騎 10 年舊機車來接妳...", tag: "交通", options: [{t:"直接走人", s:10, cost:8000, r:"勢利", d:"非名車不坐？"}, {t:"勉強坐但臭臉", s:6, cost:3000, r:"委屈", d:"辛苦妳的屁股了"}, {t:"沒差有車就好", s:0, cost:0, r:"隨和", d:"真愛無敵"}, {t:"我開車載你", s:2, cost:1000, r:"霸氣", d:"姐就是豪門"}] },
+            { text: "情人節男友送手作卡片和路邊野花...", tag: "禮物", options: [{t:"感動落淚", s:0, cost:0, r:"純情", d:"妳是稀有動物"}, {t:"丟垃圾桶", s:8, cost:4000, r:"雙面", d:"心意不值錢？"}, {t:"我的Gucci呢？", s:10, cost:30000, r:"搶劫", d:"直接要錢比較快"}, {t:"發限動嘲諷", s:9, cost:10000, r:"冷血", d:"殺人誅心"}] },
+            { text: "發現男友存款只有 10 萬，但對妳很好...", tag: "現實", options: [{t:"分手", s:9, cost:20000, r:"現實", d:"貧賤夫妻百事哀"}, {t:"一起存錢", s:0, cost:0, r:"聖母", d:"偉大！"}, {t:"叫他借錢帶我玩", s:10, cost:50000, r:"吸血", d:"這是詐騙吧"}, {t:"我養他", s:1, cost:50000, r:"富婆", d:"阿姨我不想努力了"}] },
+            { text: "結帳時服務生把帳單拿過來...", tag: "結帳", options: [{t:"AA制", s:0, cost:0, r:"獨立", d:"帥氣！"}, {t:"尿遁", s:8, cost:3000, r:"心機", d:"膀胱很會選時間"}, {t:"眼神施壓", s:6, cost:2000, r:"霸氣", d:"敵不動我不動"}, {t:"罵他不是男人", s:10, cost:6000, r:"情勒", d:"性別自助餐好吃嗎"}] },
+            { text: "男友想吃路邊攤，環境有點髒...", tag: "飲食", options: [{t:"好吃就行", s:0, cost:0, r:"吃貨", d:"為了吃可以忍"}, {t:"要他餵我", s:4, cost:2000, r:"傲嬌", d:"公主癌初期"}, {t:"不去！髒死了", s:9, cost:8000, r:"潔癖", d:"路邊攤錯了嗎"}, {t:"打包回車上", s:5, cost:1000, r:"折衷", d:"車子會有味道耶"}] },
+            { text: "朋友都在秀名牌包，妳只有帆布袋...", tag: "虛榮", options: [{t:"我是文青", s:0, cost:0, r:"自信", d:"氣質勝過名牌"}, {t:"逼男友買", s:8, cost:50000, r:"勒索", d:"男友的腎在顫抖"}, {t:"買高仿A貨", s:6, cost:5000, r:"虛榮", d:"小心被識破"}, {t:"跟朋友借來拍照", s:7, cost:0, r:"裝逼", d:"這招太絕了"}] },
+            { text: "男友想買 PS5 (約1.7萬)...", tag: "雙標", options: [{t:"不行！錢給我花", s:9, cost:5000, r:"自私", d:"那是他的錢耶"}, {t:"我也要買包", s:5, cost:17000, r:"恐怖平衡", d:"互相傷害"}, {t:"買！一起玩", s:0, cost:0, r:"完美", d:"請受小弟一拜"}, {t:"干我屁事", s:1, cost:0, r:"理性", d:"正常人"}] },
+            { text: "禿頭肥肚富豪月給30萬，條件隨叫隨到...", tag: "道德", options: [{t:"噁心不要", s:0, cost:0, r:"骨氣", d:"顏值協會會長"}, {t:"忍一下成交", s:10, cost:300000, r:"職業", d:"關燈都一樣"}, {t:"拿錢然後封鎖", s:7, cost:300000, r:"詐騙", d:"高風險操作"}, {t:"純聊天可以嗎", s:3, cost:0, r:"天真", d:"想得美"}] },
+            { text: "看到 iPhone 16 Pro Max 上市...", tag: "手機", options: [{t:"舊的還能用", s:0, cost:0, r:"勤儉", d:"手機廠商恨妳"}, {t:"顏色好醜", s:2, cost:0, r:"美感", d:"重點誤"}, {t:"不買就不愛我", s:10, cost:45000, r:"情勒", d:"愛情的度量衡"}, {t:"暗示手機壞了", s:6, cost:45000, r:"心機", d:"套路很深"}] }
+        ];
+
+        const extendedQuestions = [
+            { text: "男友說：「我們今年不去日本，改去墾丁省錢」...", tag: "旅遊", options: [{t:"墾丁更貴吧傻瓜", s:2, cost:0, r:"精明", d:"突破盲點"}, {t:"分手！我要出國", s:10, cost:50000, r:"崇洋", d:"台灣怎麼了QQ"}, {t:"好啊支持國旅", s:0, cost:5000, r:"愛國", d:"好遊客"}, {t:"全程臭臉滑手機", s:7, cost:10000, r:"掃興", d:"花錢找罪受"}] },
+            { text: "生理期來，男友只說「多喝熱水」...", tag: "直男", options: [{t:"謝謝關心", s:0, cost:0, r:"佛系", d:"至少他還活著"}, {t:"翻白眼", s:3, cost:0, r:"無奈", d:"直男癌末期"}, {t:"叫他匯款治痛", s:9, cost:5000, r:"庸醫", d:"錢是止痛藥？"}, {t:"叫他去罰跪", s:6, cost:0, r:"女王", d:"膝蓋痛換肚子痛"}] },
+            { text: "去男友家過夜，發現沒有冷氣...", tag: "居住", options: [{t:"心靜自然涼", s:0, cost:0, r:"苦行僧", d:"佩服佩服"}, {t:"立刻去住飯店", s:6, cost:3000, r:"嬌貴", d:"會融化是不是"}, {t:"叫他馬上裝一台", s:9, cost:30000, r:"強勢", d:"也是為了之後啦"}, {t:"整晚抱怨不睡", s:7, cost:0, r:"磨人", d:"大家都別睡"}] },
+            { text: "路上看到愛馬仕，妳心想...", tag: "心態", options: [{t:"那是假的吧", s:6, cost:0, r:"酸民", d:"嫉妒使人醜陋"}, {t:"我也要努力賺！", s:0, cost:0, r:"勵志", d:"加油好嗎"}, {t:"傳給男友施壓", s:9, cost:400000, r:"轉嫁", d:"男友：勿擾"}, {t:"沒感覺", s:0, cost:0, r:"無慾", d:"色即是空"}] },
+            { text: "男友穿拖鞋去逛百貨公司...", tag: "禮儀", options: [{t:"沒差舒服就好", s:0, cost:0, r:"隨性", d:"做自己最自在"}, {t:"假裝不認識", s:5, cost:0, r:"包袱", d:"偶像包袱重"}, {t:"大罵他丟臉", s:9, cost:0, r:"嚴格", d:"教官好！"}, {t:"幫他買雙鞋", s:2, cost:3000, r:"貼心", d:"順便改造"}] },
+            { text: "朋友結婚要包紅包（合包）...", tag: "人情", options: [{t:"包6000不失禮", s:3, cost:3000, r:"懂事", d:"得體"}, {t:"包1200反正難吃", s:7, cost:600, r:"小氣", d:"會被記恨一輩子"}, {t:"男友全出寫我名", s:9, cost:6000, r:"貪婪", d:"太陰險了"}, {t:"看交情決定", s:0, cost:2000, r:"理性", d:"正常發揮"}] },
+            { text: "男友車上發現別的女生的髮夾...", tag: "信任", options: [{t:"理性溝通", s:0, cost:0, r:"成熟", d:"可能是媽媽的"}, {t:"大吵大鬧砸車", s:10, cost:50000, r:"瘋婆", d:"冷靜點啊大姐"}, {t:"要求轉帳安撫費", s:8, cost:10000, r:"收費", d:"綠光也能變現"}, {t:"開始查勤定位", s:6, cost:0, r:"偵探", d:"柯南是妳"}] },
+            { text: "男友說要AA制房租...", tag: "同居", options: [{t:"公平合理", s:0, cost:5000, r:"理性", d:"沒毛病"}, {t:"男生該多付點", s:5, cost:3000, r:"計較", d:"看薪水比例吧"}, {t:"我住這房子會增值", s:10, cost:0, r:"詭辯", d:"什麼邏輯？"}, {t:"那我回家住", s:4, cost:0, r:"賭氣", d:"不住最大"}] },
+            { text: "想吃高級燒肉，男友嫌貴...", tag: "消費", options: [{t:"那我請你！", s:0, cost:3000, r:"霸氣", d:"有錢就是任性"}, {t:"AA制總行吧", s:2, cost:1500, r:"公平", d:"想吃自己付"}, {t:"罵他窮酸", s:10, cost:0, r:"嘴賤", d:"人身攻擊母湯"}, {t:"找別的男生吃", s:9, cost:3000, r:"危險", d:"帽子戴好"}] },
+            { text: "看電影想吃爆米花...", tag: "娛樂", options: [{t:"自己買", s:0, cost:300, r:"獨立", d:"想吃就買"}, {t:"撒嬌叫他買", s:4, cost:0, r:"情趣", d:"甜甜的"}, {t:"不主動買是不貼心", s:8, cost:0, r:"考官", d:"活著好累"}, {t:"吃別人的", s:6, cost:0, r:"貪吃", d:"偷吃最香"}] },
+            { text: "男友送妳「全部色號」的口紅...", tag: "驚喜", options: [{t:"太浪費錢了！", s:0, cost:0, r:"務實", d:"嘴巴只有一張"}, {t:"開心發文炫耀", s:5, cost:0, r:"虛榮", d:"流量密碼"}, {t:"嫌顏色不對", s:9, cost:0, r:"奧客", d:"送禮還要被嫌"}, {t:"轉賣換現金", s:8, cost:0, r:"生意", d:"商業奇才"}] },
+            { text: "去男友家，馬桶沒有免治功能...", tag: "享受", options: [{t:"沒差", s:0, cost:0, r:"隨和", d:"屁股沒那麼嬌"}, {t:"叫他裝一個", s:6, cost:10000, r:"要求", d:"由奢入儉難"}, {t:"憋回家再上", s:8, cost:0, r:"潔癖", d:"膀胱發炎警告"}, {t:"用紙巾鋪滿", s:4, cost:0, r:"龜毛", d:"好浪費紙"}] },
+            { text: "約會男友用折價券...", tag: "省錢", options: [{t:"好聰明！", s:0, cost:0, r:"讚賞", d:"持家有道"}, {t:"有點尷尬", s:4, cost:0, r:"介意", d:"怕被店員看"}, {t:"直接撕掉", s:10, cost:0, r:"瘋子", d:"有必要嗎？"}, {t:"假裝不認識", s:6, cost:0, r:"冷漠", d:"傷人心"}] },
+            { text: "男友說想辭職去追夢（賣雞排）...", tag: "未來", options: [{t:"全力支持", s:0, cost:50000, r:"真愛", d:"雞排娘子"}, {t:"分手，沒前途", s:9, cost:0, r:"現實", d:"麵包大於夢想"}, {t:"要他保證收入", s:6, cost:0, r:"風險", d:"會怕就好"}, {t:"叫他先買房再說", s:8, cost:0, r:"施壓", d:"夢想粉碎機"}] },
+            { text: "週年紀念日，男友帶妳去吃百元熱炒...", tag: "儀式", options: [{t:"熱鬧好吃啊！", s:0, cost:500, r:"接地氣", d:"酒促小姐是妳"}, {t:"直接翻桌", s:10, cost:0, r:"暴怒", d:"警察來了"}, {t:"勉強吃但記仇", s:7, cost:0, r:"陰沈", d:"明年他就慘了"}, {t:"叫他加點龍蝦", s:5, cost:2000, r:"補救", d:"升級套餐"}] },
+            { text: "看到網美朋友嫁給富二代...", tag: "比較", options: [{t:"祝福她", s:0, cost:0, r:"善良", d:"好人有好報"}, {t:"一定過很慘", s:6, cost:0, r:"酸民", d:"見不得人好"}, {t:"我也要去找富二代", s:10, cost:100000, r:"拜金", d:"目標明確"}, {t:"問男友為什麼不努力", s:8, cost:0, r:"情勒", d:"投胎是技術活"}] },
+            { text: "男友手機桌布是 NewJeans...", tag: "嫉妒", options: [{t:"很可愛啊", s:0, cost:0, r:"大度", d:"自信爆棚"}, {t:"逼他換成我", s:7, cost:0, r:"控制", d:"宣示主權"}, {t:"我也換成車銀優", s:5, cost:0, r:"報復", d:"互相傷害"}, {t:"摔爛他手機", s:10, cost:40000, r:"恐怖", d:"Hanni無辜"}] },
+            { text: "懷孕坐月子要求...", tag: "月子", options: [{t:"在家就好", s:0, cost:0, r:"傳統", d:"省錢但累死媽"}, {t:"住10天", s:4, cost:100000, r:"折衷", d:"合理"}, {t:"頂級30天(30萬)", s:8, cost:300000, r:"貴婦", d:"這錢不能省"}, {t:"不住就不生", s:10, cost:300000, r:"威脅", d:"子宮籌碼"}] },
+            { text: "搭飛機出國...", tag: "旅遊", options: [{t:"廉航省錢", s:0, cost:0, r:"精算", d:"錢花在刀口"}, {t:"一般經濟艙", s:4, cost:5000, r:"普通", d:"標準"}, {t:"商務艙不然腳腫", s:9, cost:50000, r:"嬌貴", d:"豆腐腿"}, {t:"要男友出錢升等", s:8, cost:30000, r:"雙標", d:"別人的錢真香"}] },
+            { text: "男友買二手國產車...", tag: "車子", options: [{t:"很棒啊", s:0, cost:0, r:"知足", d:"不用曬太陽就好"}, {t:"不要太破就好", s:3, cost:0, r:"尚可", d:"及格"}, {t:"覺得丟臉", s:8, cost:0, r:"虛榮", d:"車是拿來坐的"}, {t:"非雙B不上車", s:10, cost:0, r:"勢利", d:"走路吧妳"}] },
+            { text: "男友送妳一本書《巴菲特投資學》...", tag: "禮物", options: [{t:"好無聊喔", s:3, cost:0, r:"直白", d:"我想看Vogue"}, {t:"一起學習理財", s:0, cost:0, r:"上進", d:"優質伴侶"}, {t:"不如直接給我股票", s:8, cost:50000, r:"實際", d:"也是很有道理"}, {t:"拿去墊泡麵", s:6, cost:0, r:"浪費", d:"巴菲特哭哭"}] },
+            { text: "洗髮精用完了，妳會買...", tag: "日常", options: [{t:"開架特價款", s:0, cost:200, r:"平民", d:"洗乾淨就好"}, {t:"沙龍級專櫃", s:5, cost:1500, r:"講究", d:"頭髮是第二張臉"}, {t:"要男友買最好的", s:8, cost:3000, r:"公主", d:"這也要人買？"}, {t:"加水繼續用", s:0, cost:0, r:"客家", d:"極致省錢"}] },
+            { text: "男友想養貓，但妳不喜歡...", tag: "寵物", options: [{t:"試著相處", s:0, cost:0, r:"包容", d:"愛屋及烏"}, {t:"有貓就沒有我", s:9, cost:0, r:"極端", d:"跟貓吃醋？"}, {t:"叫他出錢讓我住外面", s:8, cost:15000, r:"藉口", d:"分居前奏"}, {t:"趁他不在送走", s:10, cost:0, r:"冷血", d:"會被告喔"}] },
+            { text: "過年去男友家大掃除...", tag: "家務", options: [{t:"幫忙掃", s:0, cost:0, r:"勤勞", d:"好媳婦"}, {t:"裝病", s:5, cost:0, r:"偷懶", d:"演技派"}, {t:"我是客人耶", s:8, cost:0, r:"高傲", d:"那妳去坐好"}, {t:"叫清潔公司(他出錢)", s:6, cost:3000, r:"聰明", d:"花錢消災"}] },
+            { text: "男友IG追蹤很多泳裝網美...", tag: "安全感", options: [{t:"沒差我也看帥哥", s:0, cost:0, r:"自信", d:"公平"}, {t:"逼他退追蹤", s:7, cost:0, r:"控制", d:"管很多"}, {t:"要他買比基尼給我", s:5, cost:2000, r:"情趣", d:"這招不錯"}, {t:"發瘋吵架", s:9, cost:0, r:"焦慮", d:"對自己好點"}] }
+        ];
+
+        // 惡魔題庫 (The Devil's Deals)
+        const devilQuestions = [
+            { text: "惡魔給妳一張空白支票，代價是刪除妳所有的 IG/Threads 帳號並永遠消失在社群。", effectText: "帳號消失 vs 財富自由" },
+            { text: "如果讓男友折壽 10 年，可以換取妳一輩子花不完的錢，妳換嗎？", effectText: "男友壽命 vs 終身財富" },
+            { text: "有一個神秘富豪要包養妳，月入百萬但要住在深山豪宅不能出門。", effectText: "失去自由 vs 頂級奢華" },
+            { text: "妳可以擁有絕世美貌，但代價是這輩子都要養一個軟飯男。", effectText: "絕世美顏 vs 軟飯地獄" }
+        ];
+
+        // 天使題庫 (Angel's Redemption) - New Feature
+        const angelQuestions = [
+            { text: "天使降臨！妳願意將妳最愛的一個名牌包捐出來義賣，幫助偏鄉兒童嗎？" },
+            { text: "為了證明真愛，妳願意接下來一個月都「素顏」跟男友約會嗎？" },
+            { text: "如果放棄這週的米其林大餐，改吃路邊攤，並把省下的錢捐給流浪動物之家，妳願意嗎？" },
+            { text: "妳願意刪除手機裡所有修圖軟體，用最真實的樣貌面對世界嗎？" }
+        ];
+
+        let fullQuestionPool = [...coreQuestions, ...extendedQuestions];
+        
+        // --- 鄉民彈幕庫 (Danmu Data) ---
+        const danmuComments = {
+            low: ["天使下凡！", "這種女生絕種了", "求包養", "太佛了吧", "台灣好媳婦", "這才是真愛", "娶到賺到", "根本聖母", "respect!", "好人一生平安", "哪里領號碼牌？", "婆爆！"],
+            mid: ["很正常啊", "是我也這樣選", "有點小要求不過分", "這很現實", "不然要喝西北風嗎", "男友要加油了", "笑死", "AA制很難嗎", "我覺得不行", "有點公主喔", "還算合理", "一般般啦"],
+            high: ["塊陶啊！", "這女的太狠了", "$$$$$$", "男友腎還在嗎？", "這養不起吧", "施主請放過他", "拜金女無誤", "刷新三觀", "這是在找乾爹吧", "恐怖情人", "ATM成精了？", "幫男友QQ", "只有郭董養得起", "吃相難看"]
+        };
+
+        // --- 遊戲狀態 (State) ---
+        let currentQuestions = [];
+        let currentQuestionIndex = 0;
+        let totalScore = 0;
+        let totalCost = 0;
+        let isDevilTriggered = false; 
+        let isAngelTriggered = false; // Flag for Angel
+        const maxScoreBase = 70; 
+
+        // --- 核心邏輯 (Logic) ---
+
+        function initQuestions() {
+            const shuffled = [...fullQuestionPool].sort(() => Math.random() - 0.5);
+            currentQuestions = shuffled.slice(0, 7);
+        }
+
+        function startGame() {
+            initQuestions();
+            currentQuestionIndex = 0;
+            totalScore = 0;
+            totalCost = 0;
+            isDevilTriggered = false;
+            isAngelTriggered = false;
+            
+            document.getElementById('start-screen').classList.add('hidden');
+            document.getElementById('result-screen').classList.add('hidden');
+            document.getElementById('game-screen').classList.remove('hidden');
+            
+            // Reset styles
+            document.body.className = "min-h-screen flex items-center justify-center bg-slate-200 relative transition-colors duration-1000";
+            document.getElementById('header-bg').classList.remove('bg-red-900');
+            document.getElementById('header-bg').classList.add('bg-gray-900');
+            
+            updateStats();
+            renderQuestion();
+        }
+
+        function renderQuestion() {
+            // Check for Special Events (Between Q3 and Q5)
+            // Priority: Devil > Angel
+            // Devil Chance: 30%, Angel Chance: 15%
+            const rand = Math.random();
+
+            if (!isDevilTriggered && currentQuestionIndex >= 2 && currentQuestionIndex <= 4 && rand < 0.3) {
+                triggerDevilDeal();
+                return;
+            }
+
+            if (!isAngelTriggered && !isDevilTriggered && currentQuestionIndex >= 2 && currentQuestionIndex <= 5 && rand > 0.3 && rand < 0.45) {
+                triggerAngelRedemption();
+                return;
+            }
+
+            const q = currentQuestions[currentQuestionIndex];
+            const qEl = document.getElementById('question-text');
+            const optionsContainer = document.getElementById('options-container');
+            const qTag = document.getElementById('q-tag');
+            const qNum = document.getElementById('current-q');
+
+            // Animation Reset
+            qEl.classList.remove('animate__fadeIn');
+            void qEl.offsetWidth; 
+            qEl.classList.add('animate__animated', 'animate__fadeIn');
+
+            qNum.innerText = currentQuestionIndex + 1;
+            qTag.innerText = q.tag;
+            qEl.innerText = q.text;
+            
+            const shuffledOptions = [...q.options].sort(() => Math.random() - 0.5);
+
+            optionsContainer.innerHTML = '';
+            shuffledOptions.forEach(opt => {
+                const btn = document.createElement('button');
+                btn.className = 'option-btn w-full text-left p-4 rounded-xl border-2 border-gray-100 hover:border-pink-300 hover:bg-pink-50 transition duration-200 group flex items-center justify-between shadow-sm';
+                btn.innerHTML = `
+                    <span class="text-gray-700 font-medium group-hover:text-pink-600 text-sm md:text-base">${opt.t}</span>
+                    <span class="opacity-0 group-hover:opacity-100 text-xl transition-opacity">👉</span>
+                `;
+                btn.onclick = () => handleAnswer(opt);
+                optionsContainer.appendChild(btn);
+            });
+        }
+
+        // --- Feature: Devil's Deal ---
+        function triggerDevilDeal() {
+            isDevilTriggered = true;
+            const devilQ = devilQuestions[Math.floor(Math.random() * devilQuestions.length)];
+            
+            document.getElementById('devil-text').innerText = devilQ.text;
+            document.getElementById('devil-overlay').classList.remove('hidden');
+            
+            document.body.classList.add('shake-element');
+            setTimeout(() => document.body.classList.remove('shake-element'), 500);
+        }
+
+        function handleDevilChoice(accepted) {
+            const overlay = document.getElementById('devil-overlay');
+            overlay.classList.add('hidden');
+
+            if (accepted) {
+                // Punishment
+                totalScore += 30; 
+                totalCost += 500000;
+                fireDanmu(10); 
+                // Visual Change
+                document.body.classList.add('devil-mode');
+                document.getElementById('header-bg').classList.remove('bg-gray-900');
+                document.getElementById('header-bg').classList.add('bg-red-900');
+                
+                showEventResult(
+                    "交易成立", 
+                    "妳的靈魂已染上金錢的味道...拜金指數暴增，身價雖然上漲，但妳快樂嗎？", 
+                    "devil"
+                );
+            } else {
+                // Reward (Purification)
+                totalScore = Math.max(0, totalScore - 10); 
+                fireDanmu(0); 
+                showEventResult(
+                    "聖光護體", 
+                    "妳拒絕了誘惑！拜金指數大幅下降。惡魔對妳的純潔感到噁心並離開了。", 
+                    "good"
+                );
+            }
+        }
+
+        // --- Feature: Angel's Redemption (New) ---
+        function triggerAngelRedemption() {
+            isAngelTriggered = true;
+            const angelQ = angelQuestions[Math.floor(Math.random() * angelQuestions.length)];
+            
+            document.getElementById('angel-text').innerText = angelQ.text;
+            document.getElementById('angel-overlay').classList.remove('hidden');
+        }
+
+        function handleAngelChoice(accepted) {
+            const overlay = document.getElementById('angel-overlay');
+            overlay.classList.add('hidden');
+
+            if (accepted) {
+                // Redemption (Good)
+                totalScore = Math.max(0, totalScore - 20); // Significant drop
+                fireDanmu(0); // Praise
+                // Visual Change
+                document.body.classList.add('angel-mode');
+                
+                showEventResult(
+                    "靈魂昇華", 
+                    "天啊！妳的犧牲感動了上蒼！拜金指數大幅歸零，妳現在整個人散發著女神的光芒。", 
+                    "angel"
+                );
+            } else {
+                // Refusal (Bad-ish)
+                totalScore += 5; // Slight increase
+                fireDanmu(8); // Slight hate
+                showEventResult(
+                    "錯失良機", 
+                    "天使搖搖頭嘆息飛走了。妳還是捨不得放手那些身外之物...", 
+                    "normal"
+                );
+            }
+        }
+
+        // --- Visual Result Overlay (Replaces Alert) ---
+        function showEventResult(title, msg, type) {
+            const overlay = document.getElementById('event-result-overlay');
+            const rTitle = document.getElementById('event-result-title');
+            const rMsg = document.getElementById('event-result-msg');
+            const rEmoji = document.getElementById('event-result-emoji');
+            const bg = document.getElementById('event-result-bg');
+
+            rTitle.innerText = title;
+            rMsg.innerText = msg;
+
+            // Reset classes
+            bg.className = "absolute inset-0 opacity-20";
+            rTitle.className = "text-2xl font-black mb-3 relative z-10";
+
+            if (type === 'devil') {
+                rEmoji.innerText = "👿";
+                rTitle.classList.add('text-red-600');
+                bg.classList.add('bg-red-900');
+            } else if (type === 'angel') {
+                rEmoji.innerText = "👼";
+                rTitle.classList.add('text-blue-500');
+                bg.classList.add('bg-blue-200');
+            } else if (type === 'good') {
+                rEmoji.innerText = "✨";
+                rTitle.classList.add('text-yellow-500');
+                bg.classList.add('bg-yellow-200');
+            } else {
+                rEmoji.innerText = "😐";
+                rTitle.classList.add('text-gray-600');
+                bg.classList.add('bg-gray-200');
+            }
+
+            overlay.classList.remove('hidden');
+            overlay.classList.remove('animate__zoomOut');
+            overlay.classList.add('animate__zoomIn');
+        }
+
+        function closeEventResult() {
+            const overlay = document.getElementById('event-result-overlay');
+            overlay.classList.remove('animate__zoomIn');
+            overlay.classList.add('animate__zoomOut');
+            setTimeout(() => {
+                overlay.classList.add('hidden');
+                renderQuestion(); // Continue Game
+            }, 300);
+        }
+
+        function handleAnswer(option) {
+            // Update Data
+            totalScore += option.s;
+            totalCost += (option.cost + Math.floor(Math.random() * 500)); 
+            
+            updateStats();
+
+            // Trigger Danmu
+            fireDanmu(option.s);
+
+            // Show Reaction Overlay
+            showReaction(option, () => {
+                // Next Question or Result
+                currentQuestionIndex++;
+                if (currentQuestionIndex < currentQuestions.length) {
+                    renderQuestion();
+                } else {
+                    showResult();
+                }
+            });
+        }
+
+        function updateStats() {
+            // Update Bar
+            const effectiveMax = 80; 
+            const percentage = Math.min(100, Math.max(0, (totalScore / effectiveMax) * 100));
+            const bar = document.getElementById('gold-bar');
+            const text = document.getElementById('bar-text');
+            const emoji = document.getElementById('emoji-reaction');
+            const costEl = document.getElementById('maintenance-cost');
+
+            bar.style.width = `${percentage}%`;
+
+            // Format Cost
+            costEl.innerText = `$${totalCost.toLocaleString()}`;
+
+            if (percentage < 20) {
+                text.innerText = "清心寡慾";
+                emoji.innerText = "😇";
+                bar.className = "h-full bg-gradient-to-r from-green-400 to-green-600 transition-all duration-500";
+            } else if (percentage < 50) {
+                text.innerText = "偶爾奢侈";
+                emoji.innerText = "🙂";
+                bar.className = "h-full bg-gradient-to-r from-green-400 via-yellow-300 to-yellow-500 transition-all duration-500";
+            } else if (percentage < 80) {
+                text.innerText = "拜金潛力股";
+                emoji.innerText = "🤑";
+                bar.className = "h-full bg-gradient-to-r from-yellow-400 via-orange-500 to-red-500 transition-all duration-500";
+            } else {
+                text.innerText = "貪婪黑洞";
+                emoji.innerText = "👿";
+                bar.className = "h-full bg-gradient-to-r from-red-500 via-purple-600 to-black transition-all duration-500 animate-pulse";
+            }
+        }
+
+        // --- Slow Motion Danmu ---
+        function fireDanmu(score) {
+            const layer = document.getElementById('danmu-layer');
+            let comments = [];
+            let colorClass = "";
+
+            if (score <= 2) {
+                comments = danmuComments.low;
+                colorClass = "text-green-600";
+            } else if (score <= 7) {
+                comments = danmuComments.mid;
+                colorClass = "text-yellow-700";
+            } else {
+                comments = danmuComments.high;
+                colorClass = "text-red-600";
+            }
+
+            // Create fewer but slower comments
+            const count = Math.floor(Math.random() * 2) + 2;
+            for(let i=0; i<count; i++) {
+                const span = document.createElement('div');
+                span.innerText = comments[Math.floor(Math.random() * comments.length)];
+                span.className = `danmu-item text-xl md:text-3xl ${colorClass}`;
+                
+                // Random positioning
+                const topPos = Math.random() * 80 + 10; 
+                // Slower duration: 6s to 10s
+                const duration = Math.random() * 4 + 6; 
+                const delay = Math.random() * 1;
+
+                span.style.top = `${topPos}%`;
+                span.style.animationDuration = `${duration}s`;
+                span.style.animationDelay = `${delay}s`;
+
+                layer.appendChild(span);
+
+                setTimeout(() => {
+                    span.remove();
+                }, (duration + delay) * 1000 + 100);
+            }
+        }
+
+        function showReaction(option, callback) {
+            const overlay = document.getElementById('reaction-overlay');
+            const rTitle = document.getElementById('reaction-title');
+            const rDesc = document.getElementById('reaction-desc');
+            const rEmoji = document.getElementById('reaction-emoji');
+
+            rTitle.innerText = option.r;
+            rDesc.innerText = option.d;
+
+            if (option.s >= 8) {
+                rEmoji.innerText = "💸";
+                createCoins(); 
+                rTitle.className = "text-3xl font-black text-red-500 mb-2 shake-element";
+            } else if (option.s === 0) {
+                rEmoji.innerText = "🙏";
+                rTitle.className = "text-3xl font-black text-green-400 mb-2";
+            } else {
+                rEmoji.innerText = "🤔";
+                rTitle.className = "text-3xl font-black text-yellow-400 mb-2";
+            }
+
+            overlay.classList.remove('hidden');
+            overlay.classList.remove('animate__zoomOut');
+            overlay.classList.add('animate__zoomIn');
+
+            setTimeout(() => {
+                overlay.classList.remove('animate__zoomIn');
+                overlay.classList.add('animate__zoomOut');
+                setTimeout(() => {
+                    overlay.classList.add('hidden');
+                    callback();
+                }, 300);
+            }, 1200); 
+        }
+
+        function createCoins() {
+            for (let i = 0; i < 20; i++) {
+                const coin = document.createElement('div');
+                coin.innerText = '💰';
+                coin.className = 'coin';
+                coin.style.left = Math.random() * 100 + 'vw';
+                coin.style.animationDuration = (Math.random() * 2 + 1) + 's';
+                document.body.appendChild(coin);
+                setTimeout(() => coin.remove(), 3000);
+            }
+        }
+
+        // --- Enhanced Result System ---
+        function showResult() {
+            document.getElementById('game-screen').classList.add('hidden');
+            document.getElementById('result-screen').classList.remove('hidden');
+            
+            const rTitle = document.getElementById('result-title');
+            const rDesc = document.getElementById('result-desc');
+            const rEmoji = document.getElementById('result-emoji');
+            const rBf = document.getElementById('result-bf');
+            const fScore = document.getElementById('final-score');
+            const cCount = document.getElementById('chicken-count');
+            const fCost = document.getElementById('final-cost');
+
+            // Calculate Percentage (Cap at 100 for display, though logic goes higher)
+            // 7 questions * 10 = 70 + Devil(30) = 100 theoretical max
+            let p = (totalScore / 70) * 100;
+            if (p > 100) p = 100;
+            if (p < 0) p = 0;
+
+            fScore.innerText = Math.round(p) + "%";
+            fCost.innerText = `$${totalCost.toLocaleString()}`;
+            
+            const chickens = Math.floor(totalScore * 5); 
+            cCount.innerText = chickens + " 份";
+
+            // 8 Tiers Logic
+            if (p <= 5) {
+                rEmoji.innerText = "🧘";
+                rTitle.innerText = "再世活佛";
+                rTitle.className = "text-3xl font-black text-green-700 mb-2";
+                rDesc.innerText = "妳已經超脫了物質的束縛。鹹酥雞對妳來說都是奢侈品，妳喝露水就能活。妳是這亂世中的清流，但小心不要活得太像出家人。";
+                rBf.innerText = "動保志工、社工師、苦行僧";
+            } else if (p <= 20) {
+                rEmoji.innerText = "🌱";
+                rTitle.innerText = "森林系女孩";
+                rTitle.className = "text-3xl font-black text-green-500 mb-2";
+                rDesc.innerText = "清新脫俗，對名牌無感。妳喜歡的是手作的溫度和真誠的心意。跟妳在一起壓力很小，是標準的「經濟適用型」女友。";
+                rBf.innerText = "文青攝影師、基層公務員";
+            } else if (p <= 40) {
+                rEmoji.innerText = "🙂";
+                rTitle.innerText = "平凡老百姓";
+                rTitle.className = "text-3xl font-black text-blue-500 mb-2";
+                rDesc.innerText = "最正常的區間。懂得享受生活，但不會過度揮霍。偶爾會羨慕別人的名牌包，但看看自己的存摺還是會乖乖去吃乾麵。";
+                rBf.innerText = "工程師、一般上班族";
+            } else if (p <= 60) {
+                rEmoji.innerText = "💅";
+                rTitle.innerText = "精緻小資女";
+                rTitle.className = "text-3xl font-black text-pink-500 mb-2";
+                rDesc.innerText = "「對自己好一點」是妳的口頭禪。妳需要儀式感，節日沒禮物會生氣。雖然養妳有點貴，但帶出去很有面子。";
+                rBf.innerText = "外商主管、資深業務";
+            } else if (p <= 75) {
+                rEmoji.innerText = "👸";
+                rTitle.innerText = "輕度公主病";
+                rTitle.className = "text-3xl font-black text-purple-600 mb-2";
+                rDesc.innerText = "妳認為男生付錢是天經地義。AA制？那是羞辱。妳的價值觀已經開始有點偏離軌道，非名車不上，非名店不吃。";
+                rBf.innerText = "醫生、律師、家中獨子";
+            } else if (p <= 90) {
+                rEmoji.innerText = "💍";
+                rTitle.innerText = "黃金獵人";
+                rTitle.className = "text-3xl font-black text-yellow-600 mb-2";
+                rDesc.innerText = "專業級別。妳的眼裡內建驗鈔機，一眼就能看出對方的身價。沒有麵包的愛情對妳來說就是垃圾。";
+                rBf.innerText = "富二代、傳產小開";
+            } else if (p <= 100) {
+                rEmoji.innerText = "🕳️";
+                rTitle.innerText = "金融黑洞";
+                rTitle.className = "text-3xl font-black text-red-600 mb-2";
+                rDesc.innerText = "妳是行走的碎鈔機。任何凡人靠近妳都會破產。妳追求的已經不是物質，而是「掠奪」的快感。";
+                rBf.innerText = "石油王子、華爾街之狼";
+            } else {
+                // Secret Tier (>100 or Devil triggered high)
+                rEmoji.innerText = "🪐";
+                rTitle.innerText = "宇宙吞噬者";
+                rTitle.className = "text-3xl font-black text-black mb-2 animate-pulse";
+                rDesc.innerText = "妳已經把靈魂賣給了惡魔。地球上的貨幣已經無法滿足妳，妳大概需要擁有一個星系才能填滿妳的慾望。";
+                rBf.innerText = "薩諾斯 (Thanos)";
+            }
+        }
+
+        function resetGame() {
+            document.getElementById('result-screen').classList.add('hidden');
+            document.getElementById('start-screen').classList.remove('hidden');
+        }
+
+        function shareResult() {
+            const title = document.getElementById('result-title').innerText;
+            const score = document.getElementById('final-score').innerText;
+            const cost = document.getElementById('final-cost').innerText;
+            const text = `我在《拜金探測器 v4.1》測出了「${title}」稱號！\n拜金指數 ${score}，月養護費高達 ${cost}！\n你也來面對真實的自己吧？ #拜金測驗`;
+            
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            document.body.appendChild(textarea);
+            textarea.select();
+            try {
+                document.execCommand('copy');
+                alert('報告已複製！去嚇嚇妳的朋友們吧！');
+            } catch (err) {
+                console.error('Copy failed', err);
+            }
+            document.body.removeChild(textarea);
+        }
+
+    </script>
+</body>
+</html>
