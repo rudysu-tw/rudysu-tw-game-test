@@ -1,0 +1,968 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>功夫過招 - 武林奇遇版</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;700;900&display=swap');
+
+        body {
+            font-family: 'Noto Serif TC', serif;
+            background-color: #1a1a1a;
+            color: #e5e5e5;
+            overflow-x: hidden;
+            user-select: none;
+        }
+
+        .wuxia-border {
+            border: 2px solid #d4af37;
+            box-shadow: 0 0 10px rgba(212, 175, 55, 0.3), inset 0 0 20px rgba(0,0,0,0.8);
+            background: rgba(30, 30, 30, 0.9);
+            position: relative;
+        }
+        
+        .wuxia-border::after {
+            content: '';
+            position: absolute;
+            top: 2px; left: 2px; right: 2px; bottom: 2px;
+            border: 1px solid rgba(212, 175, 55, 0.5);
+            pointer-events: none;
+        }
+
+        .card-hover:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(212, 175, 55, 0.6);
+            border-color: #fff;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #1a1a1a; }
+        ::-webkit-scrollbar-thumb { background: #555; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #d4af37; }
+
+        .shake { animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both; }
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-1px, 0, 0); }
+            20%, 80% { transform: translate3d(2px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+            40%, 60% { transform: translate3d(4px, 0, 0); }
+        }
+
+        .flash-hit { animation: flash-red 0.3s; }
+        .flash-clash { animation: flash-white 0.3s; }
+        .flash-event { animation: flash-yellow 0.5s; }
+        @keyframes flash-red { 0% { background-color: rgba(255,0,0,0.5); } 100% { background-color: transparent; } }
+        @keyframes flash-white { 0% { background-color: rgba(255,255,255,0.8); } 100% { background-color: transparent; } }
+        @keyframes flash-yellow { 0% { background-color: rgba(255,200,0,0.4); } 50% { background-color: transparent; } 100% { background-color: rgba(255,200,0,0.4); } }
+
+
+        .elem-icon {
+            width: 20px; height: 20px; display: inline-flex;
+            align-items: center; justify-content: center;
+            border-radius: 50%; font-size: 10px; font-weight: bold;
+            color: #fff; margin-right: 4px;
+        }
+        .elem-metal { background: #E6B800; }
+        .elem-wood { background: #4CAF50; }
+        .elem-water { background: #2196F3; }
+        .elem-fire { background: #F44336; }
+        .elem-earth { background: #795548; }
+
+        .move-type-attack { background-color: #991b1b; } 
+        .move-type-buff { background-color: #15803d; } 
+        .move-type-defend { background-color: #1e40af; } 
+
+        #battle-log p {
+            margin-bottom: 4px; padding-bottom: 4px; border-bottom: 1px solid #333;
+        }
+    </style>
+</head>
+<body class="flex flex-col h-screen select-none">
+
+    <!-- Header -->
+    <header class="p-4 text-center border-b border-gray-700 bg-gray-900 relative z-10">
+        <h1 class="text-3xl font-bold text-yellow-500 tracking-widest" style="text-shadow: 2px 2px 4px #000;">功夫過招 - 武林奇遇版</h1>
+        <div id="turn-indicator" class="text-sm text-gray-400 mt-1">回合: <span id="turn-count">0</span> | 計數: <span id="tick-count">0</span></div>
+    </header>
+
+    <!-- Main Game Area -->
+    <main id="game-container" class="flex-1 flex flex-col md:flex-row overflow-hidden relative">
+        
+        <!-- Left: Player Stats -->
+        <div class="w-full md:w-1/4 p-4 flex flex-col items-center bg-gradient-to-r from-gray-900 to-transparent z-10">
+            <div id="player-avatar" class="w-24 h-24 rounded-full border-4 border-blue-500 bg-gray-800 flex items-center justify-center text-4xl mb-2 shadow-lg relative">
+                🧑
+                <div id="player-element-badge" class="absolute -top-2 -right-2 w-8 h-8 rounded-full flex items-center justify-center text-xs border border-white"></div>
+            </div>
+            <h2 id="player-name" class="text-xl font-bold mb-1">玩家</h2>
+            <div class="text-sm text-gray-400 mb-2" id="player-sect">門派: --</div>
+            <div id="player-sect-feature" class="text-xs text-yellow-300 mb-2 p-1 border border-yellow-800 rounded">門派特性: --</div>
+            
+            <div class="w-full max-w-xs bg-gray-700 h-6 rounded-full overflow-hidden border border-gray-600 relative">
+                <div id="player-hp-bar" class="h-full bg-green-600 transition-all duration-500" style="width: 100%;"></div>
+                <span id="player-hp-text" class="absolute inset-0 flex items-center justify-center text-xs font-bold text-white shadow-black drop-shadow-md">100/100</span>
+            </div>
+            <div id="player-status" class="mt-2 text-xs text-red-300 min-h-[20px]"></div>
+        </div>
+
+        <!-- Center: Battle Visualizer -->
+        <div class="flex-1 flex flex-col justify-start p-2 md:p-6 relative">
+            
+            <!-- Overlay for Start/End -->
+            <div id="overlay-screen" class="absolute inset-0 bg-black/90 z-50 flex flex-col items-center justify-center text-center p-8">
+                <h1 class="text-4xl md:text-6xl text-yellow-500 mb-6 font-bold">武林大會</h1>
+                <p class="text-gray-300 mb-8 max-w-lg leading-relaxed">
+                    五大門派，各有所長。招式系統以 20 計數為上限。<br>
+                    招式步驟數代表蓄力時間，步驟值越大，威力越強，但越容易被先手招式擊中。<br>
+                    現在比武過程將隨機出現**武林奇遇**，影響戰局。
+                </p>
+                <button onclick="game.init()" class="px-8 py-3 bg-red-700 hover:bg-red-600 text-white text-xl font-bold rounded border-2 border-red-400 shadow-[0_0_15px_rgba(220,38,38,0.6)] transition-all">
+                    開始比武
+                </button>
+            </div>
+
+            <div id="game-over-screen" class="hidden absolute inset-0 bg-black/90 z-50 flex flex-col items-center justify-center text-center p-8">
+                <h1 id="end-title" class="text-5xl text-white mb-4 font-bold">勝負已分</h1>
+                <p id="end-reason" class="text-xl text-gray-300 mb-8">...</p>
+                <button onclick="game.init()" class="px-6 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded border border-gray-500">
+                    再來一局
+                </button>
+            </div>
+
+            <!-- Timeline Visualization Area -->
+            <div class="w-full bg-gray-800/50 rounded-lg p-4 border border-gray-700 mb-4 flex-shrink-0 relative min-h-[180px] flex flex-col justify-center">
+                
+                <!-- Animation Layer -->
+                <div id="battle-anim-layer" class="absolute inset-0 pointer-events-none z-20 overflow-hidden flex items-center justify-center"></div>
+
+                <div class="mb-1 flex justify-between text-xs text-gray-500">
+                    <span>0</span><span>計數(Tick)</span><span>20</span>
+                </div>
+
+                <!-- Enemy Timeline -->
+                <div class="relative h-10 w-full bg-gray-900 rounded mb-1 flex overflow-hidden border border-red-900/30" id="enemy-timeline">
+                    <!-- Segments injected by JS -->
+                </div>
+                <div class="text-right text-xs text-red-400 mb-4 pr-2 flex justify-between items-center" id="enemy-move-detail">
+                    <span id="enemy-move-type">對手招式類型: --</span>
+                    <span id="enemy-move-name">對手正在運氣...</span>
+                </div>
+
+                <!-- Indicator Line -->
+                <div class="relative h-2 w-full bg-gray-800 mb-4">
+                    <div id="timeline-cursor" class="absolute top-[-60px] bottom-[-60px] w-1 bg-yellow-500 shadow-[0_0_10px_#eab308] z-30 transition-all duration-75" style="left: 0%;"></div>
+                </div>
+
+                <!-- Player Timeline -->
+                <div class="text-left text-xs text-blue-400 mb-1 pl-2 flex justify-between items-center" id="player-move-detail">
+                    <span id="player-move-name">請選擇招式...</span>
+                    <span id="player-move-type">招式類型: --</span>
+                </div>
+                <div class="relative h-10 w-full bg-gray-900 rounded flex overflow-hidden border border-blue-900/30" id="player-timeline">
+                    <!-- Segments injected by JS -->
+                </div>
+            </div>
+
+            <!-- Battle Log -->
+            <div id="battle-log" class="flex-1 wuxia-border p-4 overflow-y-auto font-mono text-sm md:text-base text-gray-300 bg-black/40 max-h-[200px] md:max-h-none">
+                <div class="text-center text-gray-500 italic">--- 武林風雲錄 ---</div>
+            </div>
+
+        </div>
+
+        <!-- Right: Enemy Stats -->
+        <div class="w-full md:w-1/4 p-4 flex flex-col items-center bg-gradient-to-l from-gray-900 to-transparent z-10">
+            <div id="enemy-avatar" class="w-24 h-24 rounded-full border-4 border-red-500 bg-gray-800 flex items-center justify-center text-4xl mb-2 shadow-lg relative">
+                🥷
+                <div id="enemy-element-badge" class="absolute -top-2 -right-2 w-8 h-8 rounded-full flex items-center justify-center text-xs border border-white"></div>
+            </div>
+            <h2 id="enemy-name" class="text-xl font-bold mb-1">對手</h2>
+            <div class="text-sm text-gray-400 mb-2" id="enemy-sect">門派: --</div>
+            <div id="enemy-sect-feature" class="text-xs text-yellow-300 mb-2 p-1 border border-yellow-800 rounded">門派特性: --</div>
+
+            <div class="w-full max-w-xs bg-gray-700 h-6 rounded-full overflow-hidden border border-gray-600 relative">
+                <div id="enemy-hp-bar" class="h-full bg-red-600 transition-all duration-500" style="width: 100%;"></div>
+                <span id="enemy-hp-text" class="absolute inset-0 flex items-center justify-center text-xs font-bold text-white shadow-black drop-shadow-md">100/100</span>
+            </div>
+            <div id="enemy-status" class="mt-2 text-xs text-red-300 min-h-[20px]"></div>
+        </div>
+
+    </main>
+
+    <!-- Footer: Control Panel -->
+    <footer id="control-panel" class="bg-gray-900 border-t border-gray-700 p-2 md:p-4 z-20">
+        <div class="max-w-6xl mx-auto">
+            <div id="move-selection-title" class="text-center text-yellow-500 mb-2 text-sm font-bold animate-pulse">輪到你出招了，請選擇一式:</div>
+            <div id="move-cards" class="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-4">
+                <!-- Move Cards Generated Here -->
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // --- Data & Constants ---
+        const ELEMENTS = {
+            METAL: { name: '金', icon: '⚔️', weakness: 'FIRE', beats: 'WOOD', color: 'bg-yellow-600', textColor: 'text-yellow-600' },
+            WOOD: { name: '木', icon: '🌳', weakness: 'METAL', beats: 'EARTH', color: 'bg-green-600', textColor: 'text-green-600' },
+            WATER: { name: '水', icon: '💧', weakness: 'EARTH', beats: 'FIRE', color: 'bg-blue-600', textColor: 'text-blue-600' },
+            FIRE: { name: '火', icon: '🔥', weakness: 'WATER', beats: 'METAL', color: 'bg-red-600', textColor: 'text-red-600' },
+            EARTH: { name: '土', icon: '⛰️', weakness: 'WOOD', beats: 'WATER', color: 'bg-amber-800', textColor: 'text-amber-800' }
+        };
+
+        const SECTS = [
+            { id: 'shaolin', name: '少林 (金)', element: 'METAL', feature: '金剛不壞：每回合開始時，獲得 3 點臨時防禦。', skillPrefix: ['羅漢', '金剛', '韋陀', '達摩', '伏虎'], types: { ATTACK: 0.5, DEFEND: 0.3, BUFF: 0.2 } },
+            { id: 'wudang', name: '武當 (水)', element: 'WATER', feature: '太極圓轉：回合結束後，若本回合未受傷害，回復 5 點生命。', skillPrefix: ['太極', '兩儀', '柔雲', '綿', '玄虛'], types: { ATTACK: 0.4, DEFEND: 0.4, BUFF: 0.2 } },
+            { id: 'emei', name: '峨嵋 (火)', element: 'FIRE', feature: '烈火燎原：成功發動攻擊時有 20% 機率讓對方獲得「燃燒」Debuff (每回合持續扣 5 HP)。', skillPrefix: ['飄雪', '截手', '佛光', '金頂', '四象'], types: { ATTACK: 0.6, DEFEND: 0.2, BUFF: 0.2 } },
+            { id: 'beggar', name: '丐幫 (土)', element: 'EARTH', feature: '化險為夷：當生命值低於 30% 時，所有招式威力提升 25%。', skillPrefix: ['降龍', '打狗', '逍遙', '混元', '蓮花'], types: { ATTACK: 0.5, DEFEND: 0.3, BUFF: 0.2 } },
+            { id: 'huashan', name: '華山 (木)', element: 'WOOD', feature: '劍走偏鋒：發動小步驟(3-5 ticks)攻擊時，有 30% 機率造成爆擊 (+50% 傷害)。', skillPrefix: ['獨孤', '紫霞', '狂風', '養吾', '奪命'], types: { ATTACK: 0.6, DEFEND: 0.2, BUFF: 0.2 } }
+        ];
+        
+        const SKILL_SUFFIXES = ['手', '掌', '指', '劍', '刀', '拳', '腿', '法', '式', '訣'];
+
+
+        const MOVE_TYPES = {
+            ATTACK: { name: '攻擊', desc: '主要造成傷害', style: 'move-type-attack', stepsMin: 2, stepsMax: 6, stepMaxVal: 9, basePower: 1.5 },
+            DEFEND: { name: '防禦', desc: '提升防禦力，步驟值越高防禦加成越多', style: 'move-type-defend', stepsMin: 2, stepsMax: 4, stepMaxVal: 12, basePower: 0.5 },
+            BUFF: { name: '增益', desc: '給自己增加 Buff 或解除 Debuff', style: 'move-type-buff', stepsMin: 1, stepsMax: 3, stepMaxVal: 19, basePower: 0 }
+        };
+
+        // --- 2. 隨機事件定義 (共 21 種) ---
+        const EVENTS = [
+            // Positive Events (Heal/Buff)
+            { name: '仙鶴引導', type: 'heal', magnitude: 10, target: 'self', log: '🧘 奇遇仙鶴引導，靈氣灌體，回復 {mag} 點內傷。' },
+            { name: '丹藥之力', type: 'heal', magnitude: 15, target: 'self', log: '💊 服用隨身攜帶的靈丹，氣血瞬間回復 {mag} 點。' },
+            { name: '龍虎嘯', type: 'atk_boost', magnitude: 1.5, duration: 1, target: 'self', log: '🐅 突發龍虎嘯之氣勢，下一擊攻擊力暴漲 50%！' },
+            { name: '銅皮鐵骨', type: 'def_boost', magnitude: 8, duration: 1, target: 'self', log: '🛡️ 內力護體，金鐘罩現形，下一擊防禦力臨時增加 {mag} 點。' },
+            { name: '風助火勢', type: 'atk_boost', magnitude: 1.3, duration: 2, target: 'self', element: 'FIRE', log: '🌬️ 風助火勢！火屬性招式在接下來的回合威力增加 30%。' },
+            { name: '經脈舒暢', type: 'heal', magnitude: 8, target: 'all', log: '✨ 忽感經脈舒暢，雙方皆回復 {mag} 點氣力。' },
+            { name: '天降異寶', type: 'heal', magnitude: 20, target: 'self', log: '💎 天降異寶，吸收其靈氣，回復 {mag} 點生命！' },
+            // Negative Events (Damage/Debuff)
+            { name: '走火入魔', type: 'dmg', magnitude: 12, target: 'self', log: '💥 內力逆行，走火入魔，自損 {mag} 點精元！' },
+            { name: '踏空失位', type: 'def_debuff', magnitude: 5, duration: 1, target: 'self', log: '⬇️ 腳下踏空，身形不穩，下一擊防禦力臨時降低 {mag} 點。' },
+            { name: '毒瘴侵襲', type: 'dmg', magnitude: 8, target: 'all', log: '💀 毒瘴突現！雙方皆受侵襲，各損失 {mag} 點生命！' },
+            { name: '狂風呼嘯', type: 'atk_debuff', magnitude: 0.7, duration: 1, target: 'other', log: '🌪️ 狂風呼嘯！對手出招受阻，下一擊攻擊力臨時降低 30%。' },
+            { name: '地動山搖', type: 'def_debuff', magnitude: 10, duration: 1, target: 'other', log: '⛰️ 地動山搖！對手防守產生破綻，下一擊防禦力臨時降低 {mag} 點。' },
+            { name: '器械受損', type: 'atk_debuff', magnitude: 0.6, duration: 1, target: 'self', log: '⚔️ 兵器受損，下一擊攻擊力大減 40%！' },
+            { name: '巨石滾落', type: 'dmg', magnitude: 15, target: 'other', log: '🗿 巨石滾落！對手閃避不及，重創 {mag} 點！' },
+            { name: '大雨滂沱', type: 'atk_debuff', magnitude: 0.7, duration: 1, target: 'all', element: 'FIRE', log: '🌧️ 大雨滂沱，火屬性招式威力大幅降低 30%。' },
+            // Neutral/Mixed Events
+            { name: '頓悟虛實', type: 'def_boost', magnitude: 5, duration: 1, target: 'self', log: '☯️ 頓悟虛實之道，防禦提升 5 點。' },
+            { name: '以弱擊強', type: 'atk_boost', magnitude: 1.2, duration: 1, target: 'self', log: '💡 領悟以弱擊強之奧秘，攻擊提升 20%。' },
+            { name: '寒氣逼人', type: 'atk_debuff', magnitude: 0.8, duration: 1, target: 'self', element: 'WATER', log: '🥶 寒氣逼人，非水屬性招式威力下降 20%。' },
+            { name: '烈日當空', type: 'def_debuff', magnitude: 5, duration: 1, target: 'all', log: '☀️ 烈日當空，雙方體力受損，防禦皆降低 5 點。' },
+            { name: '隔空點穴', type: 'def_debuff', magnitude: 15, duration: 1, target: 'other', log: '🎯 領悟隔空點穴，對手被破防，下一擊防禦降低 {mag} 點。' },
+            { name: '破釜沉舟', type: 'atk_boost', magnitude: 2.0, duration: 1, target: 'self', min_hp: 30, log: '🔥 破釜沉舟，生命值低於 30% 時攻擊力瞬間翻倍！' }
+        ];
+        
+        // --- Helper Functions ---
+        function randomInt(min, max) {
+            return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+        
+        function getRandomKeyByWeight(weights) {
+            let total = 0;
+            for (let key in weights) { total += weights[key]; }
+            let rand = Math.random() * total;
+            for (let key in weights) {
+                if (rand < weights[key]) return key;
+                rand -= weights[key];
+            }
+        }
+
+        function getElementInfo(key) { return ELEMENTS[key]; }
+
+        /**
+         * 修正後的招式生成器
+         */
+        function generateMove(sectKey) {
+            const sect = SECTS.find(s => s.id === sectKey);
+            const totalTicks = 20;
+
+            const typeKey = getRandomKeyByWeight(sect.types);
+            const type = MOVE_TYPES[typeKey];
+            const numSteps = randomInt(type.stepsMin, type.stepsMax);
+            
+            let steps = [];
+            let moveGenerated = false;
+            
+            for (let attempt = 0; attempt < 10; attempt++) { 
+                steps = [];
+                let breaks = [0, totalTicks]; 
+
+                for (let i = 0; i < numSteps - 1; i++) {
+                    breaks.push(randomInt(1, totalTicks - 1));
+                }
+                breaks.sort((a, b) => a - b);
+
+                for (let i = 0; i < breaks.length - 1; i++) {
+                    steps.push(breaks[i+1] - breaks[i]);
+                }
+
+                const isValid = steps.every(step => step >= 2 && step <= type.stepMaxVal);
+                
+                if (isValid) {
+                    moveGenerated = true;
+                    break;
+                }
+            }
+
+            if (!moveGenerated) {
+                steps = [5, 5, 5, 5].slice(0, numSteps);
+                let currentSum = steps.reduce((a, b) => a + b, 0);
+                if (currentSum !== 20) {
+                    steps[steps.length - 1] += (20 - currentSum);
+                }
+            }
+            
+            const name = sect.skillPrefix[randomInt(0, sect.skillPrefix.length-1)] + 
+                         SKILL_SUFFIXES[randomInt(0, SKILL_SUFFIXES.length-1)] + 
+                         " (" + type.name + ")";
+
+            let effectDesc;
+            if (typeKey === 'DEFEND') {
+                const defAmount = steps.length * 3;
+                effectDesc = `提升 ${defAmount} 點防禦。 (回合結束觸發)`;
+            } else if (typeKey === 'BUFF') {
+                effectDesc = '清除自身 Debuff 並回復少量 HP。 (回合結束觸發)';
+            } else {
+                 effectDesc = '威力值基於步驟長度 (越長越強)';
+            }
+
+            return {
+                name: name,
+                element: sect.element,
+                steps: steps, 
+                totalTicks: 20,
+                sectName: sect.name,
+                type: typeKey, 
+                desc: type.desc,
+                power: type.basePower,
+                effect: effectDesc,
+                damageReceived: 0 
+            };
+        }
+
+
+        // --- Game Class ---
+        class KungFuGame {
+            constructor() {
+                this.player = null;
+                this.enemy = null;
+                this.turn = 0;
+                this.currentTick = 0;
+                this.gameState = 'START';
+                this.combatInterval = null;
+                this.logEl = document.getElementById('battle-log');
+            }
+
+            init() {
+                // Stop any previous combat interval
+                if (this.combatInterval) clearInterval(this.combatInterval);
+                
+                document.getElementById('overlay-screen').classList.add('hidden');
+                document.getElementById('game-over-screen').classList.add('hidden');
+                
+                // Random Sect Assignment
+                let pSectIdx = randomInt(0, 4);
+                let eSectIdx;
+                do {
+                    eSectIdx = randomInt(0, 4);
+                } while (eSectIdx === pSectIdx);
+
+                this.player = this.createFighter(SECTS[pSectIdx], 'player', '大俠');
+                this.enemy = this.createFighter(SECTS[eSectIdx], 'enemy', '高手');
+                
+                this.turn = 0;
+                this.currentTick = 0;
+                
+                // --- FIX 1: Update Sect Name Display ---
+                document.getElementById('player-sect').innerText = `門派: ${this.player.sect.name}`;
+                document.getElementById('enemy-sect').innerText = `門派: ${this.enemy.sect.name}`;
+                // --- END FIX 1 ---
+
+                this.updateUIStats();
+                this.logEl.innerHTML = '<div class="text-center text-gray-500 italic">--- 武林風雲錄 ---</div>';
+                this.log("🚩 武林大會開幕！氣氛肅殺，戰意高昂。", 'info');
+                this.log(`大俠您出身【${this.player.sect.name}】，將面對【${this.enemy.sect.name}】的強勁挑戰。`, 'info');
+                
+                // Display Sect features
+                document.getElementById('player-sect-feature').innerText = `門派特性: ${this.player.sect.feature}`;
+                document.getElementById('enemy-sect-feature').innerText = `門派特性: ${this.enemy.sect.feature}`;
+
+                this.startTurn();
+            }
+
+            createFighter(sect, type, name) {
+                return {
+                    name: name,
+                    type: type,
+                    sect: sect,
+                    element: sect.element,
+                    hp: 100,
+                    maxHp: 100,
+                    def: 0, 
+                    currentMove: null,
+                    statusEffects: [], 
+                    moveAttacks: [], 
+                    currentStepIndex: 0,
+                    // New fields for event buffs
+                    temp_mods: [], // {type: 'atk_boost', value: 1.5, duration: 1, element: 'FIRE'}
+                };
+            }
+
+            updateUIStats() {
+                // Update HP and Status for both fighters
+                [this.player, this.enemy].forEach(fighter => {
+                    const prefix = fighter.type;
+                    
+                    document.getElementById(`${prefix}-hp-bar`).style.width = `${(fighter.hp / fighter.maxHp) * 100}%`;
+                    document.getElementById(`${prefix}-hp-text`).innerText = `${Math.floor(fighter.hp)}/100`;
+                    
+                    // Show temporary buffs/debuffs from events
+                    const tempMods = fighter.temp_mods.map(m => {
+                        let icon = '✨';
+                        if (m.type.includes('debuff')) icon = '🔻';
+                        if (m.type.includes('boost')) icon = '🔺';
+                        return `<span class="text-yellow-300">[${icon}${m.name} ${m.duration}]</span>`;
+                    });
+
+                    const statusText = fighter.statusEffects.map(s => `<span class="${getElementInfo(fighter.element).textColor}">[${s.name} ${s.duration}]</span>`).join(' ');
+
+                    document.getElementById(`${prefix}-status`).innerHTML = `防禦: ${fighter.def} | 狀態: ${statusText} ${tempMods.join(' ')}`;
+
+                    const elem = getElementInfo(fighter.element);
+                    const badge = document.getElementById(`${prefix}-element-badge`);
+                    badge.className = `absolute -top-2 -right-2 w-8 h-8 rounded-full flex items-center justify-center text-xs border border-white ${elem.color}`;
+                    badge.innerText = elem.icon;
+                });
+
+                document.getElementById('turn-count').innerText = this.turn;
+                document.getElementById('tick-count').innerText = this.currentTick;
+            }
+
+            log(msg, type = 'neutral') {
+                const div = document.createElement('p');
+                div.className = 'py-1';
+                
+                // --- 3. 豐富戰鬥記錄 ---
+                if (type === 'damage') div.className += ' text-red-400 font-bold border-l-4 border-red-700 px-2';
+                else if (type === 'info') div.className += ' text-yellow-400 border-l-4 border-yellow-700 px-2';
+                else if (type === 'clash') div.className += ' text-white bg-yellow-900/30 px-2 border-l-4 border-yellow-500';
+                else if (type === 'buff') div.className += ' text-green-400 border-l-4 border-green-700 px-2';
+                else if (type === 'event') div.className += ' text-orange-300 bg-orange-900/40 px-2 border-l-4 border-orange-500 font-semibold';
+                else div.className += ' text-gray-400';
+                // --- END 3. ---
+
+                div.innerHTML = msg;
+                this.logEl.appendChild(div);
+                this.logEl.scrollTop = this.logEl.scrollHeight;
+            }
+
+            startTurn() {
+                this.turn++;
+                this.currentTick = 0;
+                this.gameState = 'SELECTION';
+                
+                this.player.currentMove = { damageReceived: 0 }; 
+                this.enemy.currentMove = { damageReceived: 0 }; 
+                
+                // Decay temporary buffs/debuffs
+                this.decayTempMods(this.player);
+                this.decayTempMods(this.enemy);
+
+                this.applySectPreTurnEffects(this.player);
+                this.applySectPreTurnEffects(this.enemy);
+
+                this.updateUIStats();
+                
+                const moves = [];
+                for(let i=0; i<4; i++) moves.push(generateMove(this.player.sect.id));
+
+                this.renderMoveSelection(moves);
+                
+                document.getElementById('player-timeline').innerHTML = '';
+                document.getElementById('enemy-timeline').innerHTML = '';
+                document.getElementById('player-move-name').innerText = '請選擇招式...';
+                document.getElementById('player-move-type').innerText = '招式類型: --';
+                document.getElementById('enemy-move-name').innerText = '對手正在運氣...';
+                document.getElementById('enemy-move-type').innerText = '對手招式類型: --';
+                document.getElementById('timeline-cursor').style.left = '0%';
+            }
+
+            decayTempMods(fighter) {
+                // Decrease duration of all temporary modifiers
+                fighter.temp_mods = fighter.temp_mods.map(mod => ({
+                    ...mod,
+                    duration: mod.duration - 1
+                })).filter(mod => mod.duration > 0);
+            }
+            
+            applySectPreTurnEffects(fighter) {
+                // 少林 (金剛不壞): +3 temp def
+                if (fighter.sect.id === 'shaolin') {
+                    fighter.def += 3; 
+                    this.log(`${fighter.name}運轉【金剛不壞】，獲得 3 點臨時防禦。`, 'buff');
+                }
+                
+                // Apply Status Damage and Decay (like '燃燒')
+                let statusMsg = '';
+                fighter.statusEffects = fighter.statusEffects.filter(s => {
+                    if (s.name === '燃燒') {
+                        statusMsg += `🔥 ${fighter.name}受到「燃燒」灼燒，損失 ${s.dmg} 點生命！`;
+                        fighter.hp -= s.dmg;
+                        fighter.currentMove.damageReceived += s.dmg;
+                    }
+                    s.duration--;
+                    return s.duration > 0;
+                });
+                if (statusMsg) this.log(statusMsg, 'damage');
+            }
+
+            renderMoveSelection(moves) {
+                const container = document.getElementById('move-cards');
+                container.innerHTML = '';
+                document.getElementById('control-panel').classList.remove('opacity-50', 'pointer-events-none');
+
+                moves.forEach(move => {
+                    const btn = document.createElement('button');
+                    const moveType = MOVE_TYPES[move.type];
+                    const elem = getElementInfo(move.element);
+
+                    btn.className = `bg-gray-800 wuxia-border p-2 md:p-3 rounded flex flex-col items-start text-left card-hover transition-all active:scale-95 ${moveType.style}`;
+                    
+                    let barHtml = `<div class="flex w-full h-2 mt-2 rounded overflow-hidden bg-gray-900 border border-black/20">`;
+                    move.steps.forEach((step, idx) => {
+                        const widthPct = (step / 20) * 100;
+                        let colorClass = elem.color; 
+                        if (move.type === 'DEFEND') colorClass = 'bg-blue-800'; 
+                        if (move.type === 'BUFF') colorClass = 'bg-green-700';
+                        barHtml += `<div style="width:${widthPct}%;" class="${colorClass} border-r border-black/20" title="蓄力 ${step} 單位"></div>`;
+                    });
+                    barHtml += `</div>`;
+
+                    btn.innerHTML = `
+                        <div class="flex justify-between w-full">
+                            <span class="font-bold text-white text-sm md:text-base truncate">${move.name}</span>
+                            <span class="text-xs font-mono text-gray-200">類型: ${moveType.name}</span>
+                        </div>
+                        <div class="text-xs text-gray-200 mt-1 flex items-center">
+                            <span class="elem-icon ${elem.color} mr-2">${elem.icon}</span>
+                            <span>特性: ${move.desc}</span>
+                        </div>
+                        <div class="text-[10px] text-gray-300 mt-1">效果: ${move.effect}</div>
+                        ${barHtml}
+                        <div class="mt-1 text-[10px] text-gray-400">節奏: ${move.steps.join('+')} (共 ${move.steps.length} 步)</div>
+                    `;
+
+                    btn.onclick = () => this.playerSelectMove(move);
+                    btn.onmouseenter = () => this.previewTimeline(move, 'player');
+                    
+                    container.appendChild(btn);
+                });
+            }
+
+            previewTimeline(move, who) {
+                const container = document.getElementById(who + '-timeline');
+                container.innerHTML = '';
+                const elem = getElementInfo(move.element);
+                const type = MOVE_TYPES[move.type];
+                
+                // Update Name/Type in Timeline
+                document.getElementById(`${who}-move-name`).innerText = move.name;
+                document.getElementById(`${who}-move-type`).innerText = `類型: ${type.name} / 屬性: ${elem.name} ${elem.icon}`;
+
+
+                move.steps.forEach((step, idx) => {
+                    const widthPct = (step / 20) * 100;
+                    const div = document.createElement('div');
+                    
+                    let colorClass = elem.color; 
+                    if (move.type === 'DEFEND') colorClass = 'bg-blue-800'; 
+                    if (move.type === 'BUFF') colorClass = 'bg-green-700'; 
+
+                    div.className = `${colorClass} h-full border-r border-black/50 flex items-center justify-center text-[10px] text-white/80 relative`;
+                    div.style.width = `${widthPct}%`;
+                    
+                    if (move.type === 'ATTACK') {
+                        const icon = document.createElement('div');
+                        icon.className = 'absolute right-0 top-0 bottom-0 w-1 bg-white/70 shadow-[0_0_5px_rgba(255,255,255,0.8)]';
+                        div.appendChild(icon);
+                    }
+                    div.title = `蓄力 ${step} 單位`;
+                    
+                    container.appendChild(div);
+                });
+            }
+
+            playerSelectMove(playerMove) {
+                this.gameState = 'COMBAT';
+                this.player.currentMove = playerMove;
+                this.player.currentMove.damageReceived = 0; 
+                
+                // Enemy AI: Simple Random, weighted towards player's weakness
+                let eMove;
+                const counterElement = getElementInfo(this.player.element).weakness;
+                
+                for (let i = 0; i < 5; i++) {
+                    eMove = generateMove(this.enemy.sect.id);
+                    if (eMove.element === counterElement && Math.random() < 0.7) { 
+                        break;
+                    }
+                }
+
+                this.enemy.currentMove = eMove;
+                this.enemy.currentMove.damageReceived = 0; 
+
+                // Lock UI
+                document.getElementById('control-panel').classList.add('opacity-50', 'pointer-events-none');
+                this.previewTimeline(this.enemy.currentMove, 'enemy');
+                this.previewTimeline(this.player.currentMove, 'player'); 
+
+                this.log(`<br>=== 第 ${this.turn} 回合：${this.player.name}使出【${playerMove.name}】，${this.enemy.name}以【${this.enemy.currentMove.name}】應戰！ ===`, 'info');
+                
+                // Pre-calculate attack ticks
+                this.player.moveAttacks = this.getAttackTicks(this.player.currentMove);
+                this.enemy.moveAttacks = this.getAttackTicks(this.enemy.currentMove);
+                this.player.currentStepIndex = 0;
+                this.enemy.currentStepIndex = 0;
+
+                this.runCombatPhase();
+            }
+            
+            getAttackTicks(move) {
+                if (move.type !== 'ATTACK') return []; 
+                let t = 0;
+                return move.steps.map(s => {
+                    t += s;
+                    return { tick: t, power: s }; 
+                });
+            }
+
+            runCombatPhase() {
+                this.currentTick = 0;
+                const maxTicks = 20;
+                const tickDuration = 200; 
+                const eventChance = 0.15; // 15% chance per tick to trigger an event
+
+                this.combatInterval = setInterval(() => {
+                    this.currentTick++;
+                    
+                    const cursorPct = (this.currentTick / maxTicks) * 100;
+                    document.getElementById('timeline-cursor').style.left = `${cursorPct}%`;
+                    document.getElementById('tick-count').innerText = this.currentTick;
+                    
+                    // --- 2. 隨機事件觸發 ---
+                    if (Math.random() < eventChance) {
+                        this.triggerRandomEvent();
+                    }
+                    // --- END 2. ---
+                    
+                    // --- Resolve Actions ---
+                    const pAttacks = this.player.moveAttacks.filter(a => a.tick === this.currentTick);
+                    const eAttacks = this.enemy.moveAttacks.filter(a => a.tick === this.currentTick);
+
+                    if (pAttacks.length > 0 && eAttacks.length > 0) {
+                        this.resolveClash(pAttacks, eAttacks);
+                    } else if (pAttacks.length > 0) {
+                        this.resolveAttack(this.player, this.enemy, pAttacks[0]);
+                    } else if (eAttacks.length > 0) {
+                        this.resolveAttack(this.enemy, this.player, eAttacks[0]);
+                    }
+                    
+                    // Resolve Effects on End of 20 ticks
+                    if (this.currentTick >= maxTicks) {
+                        this.resolveEndOfMove(this.player);
+                        this.resolveEndOfMove(this.enemy);
+                        
+                        // Decay Sect temp defense (Shaolin's +3)
+                        this.player.def = Math.max(0, this.player.def - 3);
+                        this.enemy.def = Math.max(0, this.enemy.def - 3);
+
+                        // Decay Defend move bonus
+                        if (this.player.currentMove.type === 'DEFEND') this.player.def = Math.max(0, this.player.def - this.player.currentMove.steps.length * 3);
+                        if (this.enemy.currentMove.type === 'DEFEND') this.enemy.def = Math.max(0, this.enemy.def - this.enemy.currentMove.steps.length * 3);
+                        
+                        clearInterval(this.combatInterval);
+                        if (this.player.hp > 0 && this.enemy.hp > 0) {
+                            setTimeout(() => this.startTurn(), 1000);
+                        } else {
+                            this.endGame();
+                        }
+                    }
+
+                    this.updateUIStats();
+                    if (this.player.hp <= 0 || this.enemy.hp <= 0) {
+                        clearInterval(this.combatInterval);
+                        this.endGame();
+                    }
+                }, tickDuration);
+            }
+
+            triggerRandomEvent() {
+                const event = EVENTS[randomInt(0, EVENTS.length - 1)];
+                const f1 = this.player;
+                const f2 = this.enemy;
+                let targets = [];
+
+                if (event.min_hp && f1.hp / f1.maxHp * 100 > event.min_hp && f2.hp / f2.maxHp * 100 > event.min_hp) {
+                    return; // Condition not met for specific event
+                }
+
+                // Determine target(s)
+                if (event.target === 'all') {
+                    targets = [f1, f2];
+                } else if (event.target === 'self') {
+                    // Randomly select one fighter
+                    targets = [Math.random() < 0.5 ? f1 : f2];
+                } else if (event.target === 'other') {
+                    // Randomly select one fighter, target is the other
+                    const primary = Math.random() < 0.5 ? f1 : f2;
+                    targets = [primary === f1 ? f2 : f1];
+                }
+
+                // Apply event effects
+                let logMessage = `🚨 【${event.name}】發動！` + event.log.replace('{mag}', event.magnitude);
+                let hitTarget = false;
+
+                targets.forEach(fighter => {
+                    // Element check for environment events
+                    if (event.element && fighter.element !== event.element && (event.type.includes('boost') || event.type.includes('debuff'))) {
+                         // If event is element-specific and fighter is not that element, ignore stat mod (but allow damage/heal)
+                        if (!event.type.includes('dmg') && !event.type.includes('heal')) return; 
+                    }
+                    
+                    // Apply HP/Damage
+                    if (event.type === 'heal') {
+                        fighter.hp = Math.min(fighter.maxHp, fighter.hp + event.magnitude);
+                        hitTarget = true;
+                    } else if (event.type === 'dmg') {
+                        const actualDmg = event.magnitude;
+                        this.applyDamage(fighter, actualDmg);
+                        hitTarget = true;
+                    }
+                    
+                    // Apply temporary stat modifiers
+                    if (event.type.includes('boost') || event.type.includes('debuff')) {
+                        // Check for existing similar modifier (optional: replace or stack)
+                        fighter.temp_mods.push({
+                            name: event.name,
+                            type: event.type,
+                            value: event.magnitude,
+                            duration: event.duration
+                        });
+                        hitTarget = true;
+                    }
+                });
+
+                if (hitTarget) {
+                     this.log(logMessage, 'event');
+                     const gameContainer = document.getElementById('game-container');
+                     gameContainer.classList.add('flash-event');
+                     setTimeout(() => gameContainer.classList.remove('flash-event'), 500);
+                     this.updateUIStats();
+                }
+            }
+
+
+            applyDamage(target, damage) {
+                target.hp = Math.max(0, target.hp - damage);
+                target.currentMove.damageReceived += damage;
+                this.updateUIStats();
+            }
+
+            resolveEndOfMove(fighter) {
+                const move = fighter.currentMove;
+                
+                // 武當 (太極圓轉): 回合未受傷害 (damageReceived <= 0) 則回血
+                if (fighter.sect.id === 'wudang' && fighter.currentMove.damageReceived <= 0) {
+                    const healAmount = 5;
+                    fighter.hp = Math.min(fighter.maxHp, fighter.hp + healAmount);
+                    this.log(`☯️ 【太極圓轉】發威！${fighter.name}毫髮無傷，回復了 ${healAmount} 點生命。`, 'buff');
+                }
+
+                // BUFF move: clear Debuff and heal
+                if (move.type === 'BUFF') {
+                    const originalStatusCount = fighter.statusEffects.length;
+                    fighter.statusEffects = fighter.statusEffects.filter(s => s.name !== '燃燒');
+                    if (originalStatusCount > fighter.statusEffects.length) {
+                        this.log(`✨ ${fighter.name}的【${move.name}】內功運轉，清除所有異常 Debuff！`, 'buff');
+                    }
+                    const healAmount = 10;
+                    fighter.hp = Math.min(fighter.maxHp, fighter.hp + healAmount);
+                    this.log(`🌱 ${fighter.name}的氣息平順，回復 ${healAmount} 點氣力。`, 'buff');
+                }
+            }
+
+            resolveClash(pAttacks, eAttacks) {
+                this.animEffect('clash');
+                const pAttack = pAttacks[0]; 
+                const eAttack = eAttacks[0];
+
+                const pPower = pAttack.power;
+                const ePower = eAttack.power;
+
+                const baseDmgP = this.calcDamage(pPower, this.player, this.enemy, true);
+                const baseDmgE = this.calcDamage(ePower, this.enemy, this.player, true);
+                
+                const finalDmgP = Math.max(1, Math.floor(baseDmgE * 0.4)); 
+                const finalDmgE = Math.max(1, Math.floor(baseDmgP * 0.4));
+                
+                this.applyDamage(this.player, finalDmgP);
+                this.applyDamage(this.enemy, finalDmgE);
+
+                // --- 3. 豐富戰鬥記錄 - 招式碰撞 ---
+                this.log(`[T${this.currentTick}] 💥 雙方拳勁【${this.player.currentMove.name}】與【${this.enemy.currentMove.name}】在空中激烈相撞！內力反震，${this.player.name}受損 ${finalDmgP}，${this.enemy.name}受損 ${finalDmgE}。`, 'clash');
+                // --- END 3. ---
+            }
+
+            resolveAttack(attacker, defender, attack) {
+                if (attacker.currentMove.type !== 'ATTACK') return;
+
+                const baseDmg = this.calcDamage(attack.power, attacker, defender, false);
+                
+                let totalDef = defender.def;
+                
+                // Get temporary defense boost from events
+                defender.temp_mods.filter(m => m.type === 'def_boost' || m.type === 'def_debuff').forEach(m => {
+                    if (m.type === 'def_boost') totalDef += m.value;
+                    if (m.type === 'def_debuff') totalDef = Math.max(0, totalDef - m.value); // Debuff is reductive
+                });
+                
+                let finalDmg = Math.max(0, baseDmg - totalDef);
+                
+                if (finalDmg > 0) {
+                    this.animEffect(attacker.type === 'player' ? 'hit-enemy' : 'hit-player');
+                    this.applyDamage(defender, finalDmg);
+                    
+                    // --- 3. 豐富戰鬥記錄 - 招式命中 ---
+                    const defenseBlocked = baseDmg - finalDmg;
+                    const hitMessage = defenseBlocked > 0 ? `防禦已抵銷 ${defenseBlocked} 點傷害。` : '防禦瞬間被擊穿！';
+                    this.log(`[T${this.currentTick}] ⚡️ ${attacker.name}招式猛攻！精準命中，造成【${finalDmg}】點傷害。(${hitMessage})`, 'damage');
+                    // --- END 3. ---
+                    
+                    // 峨嵋 (烈火燎原) - Apply Debuff
+                    if (attacker.sect.id === 'emei' && Math.random() < 0.2) { 
+                        const isBurning = defender.statusEffects.some(s => s.name === '燃燒');
+                        if (!isBurning) {
+                            defender.statusEffects.push({ name: '燃燒', duration: 3, dmg: 5 });
+                            this.log(`🔥 烈火燎原！${defender.name}身中「燃燒」Debuff (持續 3 回合)！`, 'damage');
+                        }
+                    }
+                } else {
+                    // --- 3. 豐富戰鬥記錄 - 招式被化解 ---
+                    this.log(`[T${this.currentTick}] 🌬️ ${defender.name}【${defender.currentMove.name}】守式精妙，將攻勢完全化解！滴水不漏。`, 'buff');
+                    // --- END 3. ---
+                }
+            }
+
+            calcDamage(stepPower, attacker, defender, isClash) {
+                let dmg = stepPower * attacker.currentMove.power;
+                let attackModifier = 1.0;
+                
+                // Get temporary attack boost from events
+                attacker.temp_mods.filter(m => m.type === 'atk_boost' || m.type === 'atk_debuff').forEach(m => {
+                    // Element filter
+                    if (m.element && attacker.element !== m.element) return;
+
+                    if (m.type === 'atk_boost') attackModifier *= m.value;
+                    if (m.type === 'atk_debuff') attackModifier *= m.value;
+                });
+                
+                dmg *= attackModifier; // Apply temp mods
+
+                // 1. Element Check (Only on ATTACK moves)
+                if (attacker.currentMove.type === 'ATTACK') {
+                    const attEl = getElementInfo(attacker.element);
+                    
+                    if (attEl.beats === defender.element) {
+                        dmg *= 1.3; 
+                        if (!isClash) this.log(`[T${this.currentTick}] ⚔️ 五行相剋 ( ${attEl.name} > ${getElementInfo(defender.element).name} )，威力激增 30%！`, 'info');
+                    } else if (attEl.weakness === defender.element) {
+                        dmg *= 0.8; 
+                    }
+                }
+
+                // 2. Sect Bonuses
+                // 華山 (劍走偏鋒): 30% crit on fast hits (stepPower 3-5)
+                if (attacker.sect.id === 'huashan' && stepPower >= 3 && stepPower <= 5 && Math.random() < 0.3) {
+                    dmg *= 1.5; 
+                    if (!isClash) this.log(`[T${this.currentTick}] ⚡️ ${attacker.name}【劍走偏鋒】發動！招式輕靈，造成致命爆擊！`, 'damage');
+                }
+
+                // 丐幫 (化險為夷): Power boost below 30% HP
+                if (attacker.sect.id === 'beggar' && attacker.hp / attacker.maxHp <= 0.3) {
+                    dmg *= 1.25;
+                    if (!isClash) this.log(`[T${this.currentTick}] 💪 ${attacker.name}【化險為夷】發動！浴血奮戰，威力大增！`, 'damage');
+                }
+
+                return Math.floor(dmg);
+            }
+
+            animEffect(type) {
+                const gameContainer = document.getElementById('game-container');
+                
+                if (type === 'hit-enemy') {
+                    document.getElementById('enemy-avatar').classList.add('shake', 'flash-hit');
+                    setTimeout(() => document.getElementById('enemy-avatar').classList.remove('shake', 'flash-hit'), 500);
+                    this.showFloatingText("👊💥", "right");
+                } else if (type === 'hit-player') {
+                    document.getElementById('player-avatar').classList.add('shake', 'flash-hit');
+                    setTimeout(() => document.getElementById('player-avatar').classList.remove('shake', 'flash-hit'), 500);
+                    this.showFloatingText("👊💥", "left");
+                } else if (type === 'clash') {
+                    gameContainer.classList.add('flash-clash');
+                    setTimeout(() => gameContainer.classList.remove('flash-clash'), 300);
+                    this.showFloatingText("⚔️", "center");
+                }
+            }
+
+            showFloatingText(text, pos) {
+                const el = document.createElement('div');
+                el.innerText = text;
+                el.className = "absolute text-4xl animate-bounce transition-opacity duration-1000 pointer-events-none opacity-100 font-extrabold";
+                el.style.top = "40%";
+                el.style.transform = "translate(-50%, -50%)"; 
+                
+                if(pos === 'left') el.style.left = "20%";
+                else if(pos === 'right') el.style.left = "80%";
+                else el.style.left = "50%";
+                
+                document.getElementById('battle-anim-layer').appendChild(el);
+                
+                setTimeout(() => el.classList.remove('opacity-100'), 100);
+                setTimeout(() => el.remove(), 1000);
+            }
+
+            endGame() {
+                const screen = document.getElementById('game-over-screen');
+                const title = document.getElementById('end-title');
+                const reason = document.getElementById('end-reason');
+                screen.classList.remove('hidden');
+                
+                if (this.combatInterval) clearInterval(this.combatInterval);
+
+                if (this.player.hp <= 0 && this.enemy.hp <= 0) {
+                    title.innerText = "兩敗俱傷";
+                    title.className = "text-5xl text-gray-400 mb-4 font-bold";
+                    reason.innerText = "雙方內力耗盡，同歸於盡！這是一場沒有贏家的慘烈之戰。";
+                } else if (this.player.hp > 0) {
+                    title.innerText = "恭喜勝出";
+                    title.className = "text-5xl text-yellow-500 mb-4 font-bold";
+                    reason.innerText = `大俠以${this.player.sect.name}絕學的【${this.player.currentMove.name}】絕殺，擊敗了${this.enemy.sect.name}的高手！揚名立萬！`;
+                } else {
+                    title.innerText = "遺憾敗北";
+                    title.className = "text-5xl text-red-600 mb-4 font-bold";
+                    reason.innerText = `大俠雖竭力應戰，但最終仍惜敗於${this.enemy.sect.name}的【${this.enemy.currentMove.name}】。苦練內功，東山再起！`;
+                }
+            }
+        }
+
+        // Start Game Instance
+        const game = new KungFuGame();
+
+    </script>
+</body>
+</html>
