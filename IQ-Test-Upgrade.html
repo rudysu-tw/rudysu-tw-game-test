@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>升級版 IQ測驗</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', 'Microsoft JhengHei', Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .container {
+            background: #fff;
+            border-radius: 18px;
+            box-shadow: 0 14px 40px rgba(102, 126, 234, 0.18);
+            max-width: 500px;
+            width: 100%;
+            padding: 32px 18px 22px 18px;
+        }
+        .header h1 {
+            font-size: 1.9em;
+            color: #667eea;
+            text-align: center;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+        }
+        .iq-bar-bg {
+            height: 12px;
+            background: #e0e0ef;
+            border-radius: 6px;
+            margin: 16px 0;
+            overflow: hidden;
+        }
+        .iq-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #fbc531 0%, #10ac84 100%);
+            border-radius: 6px;
+            transition: width 0.4s cubic-bezier(.87,-0.41,.19,1.71);
+        }
+        .question-container {
+            margin: 0 0 18px 0;
+            display: none;
+        }
+        .question-container.active {
+            display: block;
+            animation: fadeIn .2s;
+        }
+        @keyframes fadeIn {
+            from{ opacity:0;transform: translateY(10px);}
+            to{ opacity:1;transform: translateY(0);}
+        }
+        .question-number {
+            color: #667eea;
+            font-size: 0.94em;
+            margin-bottom: 7px;
+            text-align: left;
+        }
+        .question-text {
+            font-size: 1.15em;
+            font-weight: 600;
+            color: #222;
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+        .options {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .option {
+            background: #f6f6fa;
+            border: 2px solid #e0e0ef;
+            padding: 13px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: all .2s;
+            position: relative;
+        }
+        .option.selected {
+            border: 2px solid #667eea;
+            background: #ecf0fa;
+        }
+        .option input[type=radio] {
+            accent-color: #667eea;
+            margin-right: 6px;
+        }
+        .nav-btns{
+            display:flex;
+            gap:15px;
+            margin-top:15px;
+        }
+        button{
+            padding: 10px 22px;
+            font-size: 1em;
+            border-radius: 7px;
+            border: none;
+            background: #667eea;
+            color: #fff;
+            font-weight: 600;
+            cursor: pointer;
+            transition:.2s;
+            min-width: 100px;
+        }
+        .btn-prev{
+            background: #e6e9fa;
+            color:#555;
+        }
+        .btn-prev:hover, .btn-next:hover, .btn-restart:hover{ box-shadow:0 2px 10px #a6b0f68d;}
+        .btn-next[disabled]{
+            opacity:.6;
+            cursor:not-allowed;
+        }
+
+        /* 結果頁 */
+        .result-container{
+            display:none;
+            text-align:center;
+            padding:0 10px;
+            animation: fadeIn .4s;
+        }
+        .result-container.active{
+            display:block;
+        }
+        .result-score{
+            font-size: 40px;
+            color: #667eea;
+            font-weight: 700;
+            margin-bottom: 6px;
+        }
+        .result-level{
+            font-size: 22px;
+            color:#764ba2;
+            margin-bottom:7px;
+        }
+        .result-emoji{
+            font-size: 60px;
+            margin-bottom:4px;
+        }
+        .result-description{
+            margin: 13px 0 18px 0;
+            background: #f5f5fe;
+            border-left: 4px solid #667eea;
+            border-radius: 6px;
+            padding: 11px 8px 10px 13px;
+            color: #666;
+            font-size:1em;
+            line-height:1.65;
+        }
+        .stats{
+            display:flex;
+            justify-content:space-around;
+            gap:18px;
+            margin:14px 0 18px 0;
+        }
+        .stat-box{
+            background: #f7f7fa;
+            border-radius:7px;
+            padding:10px;
+            min-width:96px;
+        }
+        .stat-label{
+            color:#888;
+            font-size:.9em;
+        }
+        .stat-value{
+            font-size:21px;
+            color:#667eea;
+            font-weight:700;
+            margin-top:2px;
+        }
+        .btn-restart{
+            width:100%;
+            background: linear-gradient(135deg,#667eea,#a987ee 100%);
+            margin-top:14px;
+        }
+        /* 啟動畫面 */
+        .start-screen{
+            text-align:center;
+            animation: fadeIn .4s;
+        }
+        .start-emoji{
+            font-size:80px;
+            margin-bottom:18px;
+            animation: bounce 1.8s infinite;
+        }
+        @keyframes bounce{
+            0%,100%{transform:translateY(0);}
+            50%{transform:translateY(-18px);}
+        }
+        @media (max-width:480px){
+            .container{max-width:99vw;padding:12px 3vw 16px 3vw;}
+            .header h1{font-size:1.1em;}
+            .question-text{font-size:1em;}
+        }
+        /* --- 特效互動區 --- */
+        .emoji-feedback{
+            position: fixed;
+            z-index: 999;
+            left: 50%;
+            top: 30%;
+            transform: translateX(-50%);
+            pointer-events: none;
+            font-size: 60px;
+            opacity: 0;
+            animation: feedbackPop .88s forwards;
+        }
+        @keyframes feedbackPop {
+            0% {transform:scale(0.5) translateX(-50%); opacity:0;}
+            30%{transform:scale(1.15) translateX(-50%); opacity:0.93;}
+            60%{transform:scale(1) translateX(-50%);opacity:1;}
+            100%{transform:scale(0.6) translateX(-50%); opacity:0;}
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <!-- 啟動畫面 -->
+    <div class="start-screen" id="startScreen">
+        <div class="start-emoji">🧠</div>
+        <h2>IQ測驗 升級版</h2>
+        <div style="color:#666;font-size:.98em;">每次測驗都會從題庫隨機抽出20題<br>來挑戰你的邏輯思維！</div>
+        <button class="btn-next" style="margin-top:26px;width:100%;" onclick="startTest()">開始測驗</button>
+    </div>
+
+    <!-- 主測驗畫面 -->
+    <div id="testScreen" style="display: none;">
+        <div class="header">
+            <h1>🧠 升級版 IQ測驗</h1>
+        </div>
+        <div class="iq-bar-bg">
+            <div class="iq-bar" id="iqBar"></div>
+        </div>
+        <div id="questionsContainer"></div>
+        <div class="nav-btns">
+            <button class="btn-prev" onclick="previousQuestion()" id="btnPrev">← 上一題</button>
+            <button class="btn-next" onclick="nextQuestion()" id="btnNext" disabled>下一題 →</button>
+        </div>
+    </div>
+
+    <!-- 結果畫面 -->
+    <div class="result-container" id="resultScreen">
+        <div class="result-emoji" id="resultEmoji">🎉</div>
+        <div class="result-level" id="resultLevel"></div>
+        <div class="result-score" id="resultScore">--</div>
+        <div class="result-description" id="resultDescription"></div>
+        <div class="stats">
+            <div class="stat-box">
+                <div class="stat-label">正確答案</div>
+                <div class="stat-value" id="correctCount"></div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">正確率</div>
+                <div class="stat-value" id="correctRate"></div>
+            </div>
+        </div>
+        <button class="btn-restart" onclick="restartTest()">重新測驗 🔄</button>
+    </div>
+</div>
+<!-- emoji回饋 -->
+<div id="emojiFeedback" class="emoji-feedback" style="display:none"></div>
+<script>
+const questionBank = [
+    {question:"2, 4, 6, 8, ? — 下一個數字是什麼？",options:["9","10","12","14"],correct:2},
+    {question:"如果一個正方形有4個角，那麼圓形有幾個角？",options:["0","1","4","無限"],correct:0},
+    {question:"25 ÷ 5 = ?",options:["4","5","6","7"],correct:1},
+    {question:"哪個單字的字母順序不對？",options:["ABCD","EFGH","IJKL","MNPQ"],correct:3},
+    {question:"如果今天是星期三，10天後是星期幾？",options:["星期二","星期三","星期四","星期五"],correct:2},
+    {question:"一個蛋糕切4份，每份佔蛋糕的？",options:["1/2","1/4","1/3","1/5"],correct:1},
+    {question:"CAT、DOG、BIRD — 下一個應該是？",options:["ELEPHANT","FISH","MOUSE","無法判斷"],correct:3},
+    {question:"3 × 7 = ?",options:["20","21","22","23"],correct:1},
+    {question:"哪個詞與其他三個不同類？",options:["蘋果","香蕉","椅子","橙子"],correct:2},
+    {question:"100 - 25 = ?",options:["65","70","75","80"],correct:2},
+    {question:"如果A=1, B=2, 那麼C=?",options:["2","3","4","5"],correct:1},
+    {question:"一小時有多少分鐘？",options:["30","60","120","3600"],correct:1},
+    {question:"哪個形狀有最多邊？",options:["三角形","正方形","五邊形","圓形"],correct:2},
+    {question:"8 + 12 - 5 = ?",options:["13","14","15","16"],correct:2},
+    {question:"一本書100頁，讀完5/10需要多少頁？",options:["25","40","50","60"],correct:2},
+    {question:"哪個是「開心」的反義詞？",options:["快樂","難過","興奮","驚訝"],correct:1},
+    {question:"9 × 2 + 3 = ?",options:["19","20","21","22"],correct:2},
+    {question:"一週有多少天？",options:["5","6","7","8"],correct:2},
+    {question:"48 ÷ 6 = ?",options:["6","7","8","9"],correct:2},
+    {question:"昨天是12/31，今天是？",options:["12/30","1/1","1/2","12/32"],correct:1},
+    // 以下新增10題
+    {question:"哪個國家在亞洲？",options:["法國","中國","埃及","加拿大"],correct:1},
+    {question:"4+4×2=?",options:["12","16","8","10"],correct:0},
+    {question:"下列哪個是液體？",options:["鐵","水","鹽","玻璃"],correct:1},
+    {question:"腳有幾根腳趾？",options:["3","4","5","6"],correct:2},
+    {question:"太陽從哪邊升起？",options:["東","南","西","北"],correct:0},
+    {question:"1, 3, 6, 10, ? — 下一個數字？",options:["14","15","16","18"],correct:1},
+    {question:"2, 3, 5, 7, 11, ? — 下一個質數？",options:["13","14","15","17"],correct:0},
+    {question:"一打有幾個？",options:["6","10","12","20"],correct:2},
+    {question:"紅綠燈紅燈代表？",options:["前進","禁止","停止","警告"],correct:2},
+    {question:"哪個是哺乳動物？",options:["青蛙","企鵝","鯨魚","鯊魚"],correct:2}
+];
+// --- 本地記錄題目答對/錯情況 ---
+function getHistory(){
+    const data = localStorage.getItem("IQTestHistory");
+    return data ? JSON.parse(data) : {};
+}
+function setHistory(obj){
+    localStorage.setItem("IQTestHistory",JSON.stringify(obj));
+}
+// --- 主流程變數 ---
+let selectedQuestions=[];
+let current=0, answers=[];
+function startTest(){
+    // 隨機抽取20題，順序洗牌
+    let idx = Array.from({length:questionBank.length}, (_,i)=>i);
+    idx = shuffle(idx).slice(0,20);
+    selectedQuestions = idx.map(i=>questionBank[i]);
+    answers = Array(20).fill(-1);
+    current = 0;
+
+    document.getElementById("startScreen").style.display = "none";
+    document.getElementById("testScreen").style.display = "";
+
+    renderQuestions();
+    updateIQBar();
+}
+function renderQuestions(){
+    const qs=document.getElementById("questionsContainer");
+    qs.innerHTML="";
+    selectedQuestions.forEach((q,idx)=>{
+        const div=document.createElement("div");
+        div.className=`question-container${current===idx?' active':''}`;
+        let optionsHtml = "";
+        q.options.forEach((opt,oi)=>{
+            optionsHtml +=
+            `<div class="option${answers[idx]===oi?" selected":""}"
+                onclick="selectAnswer(${idx},${oi},this)">
+                <input type="radio" name="option${idx}" value="${oi}" ${answers[idx]===oi?"checked":""} readonly>
+                ${opt}
+            </div>`;
+        });
+        div.innerHTML=`
+            <div class="question-number">第 ${idx+1} / 20 題</div>
+            <div class="question-text">❓ ${q.question}</div>
+            <div class="options">${optionsHtml}</div>
+        `;
+        qs.appendChild(div);
+    });
+    updateNavUI();
+}
+function selectAnswer(idx,oi,dom){
+    answers[idx]=oi;
+    // 對的即時互動
+    const correctAns = selectedQuestions[idx].correct;
+    if(oi==correctAns){
+        showEmoji("🎉");
+        animateIQBar(true);
+    } else {
+        showEmoji("💡");
+        animateIQBar(false);
+    }
+    // 本地記錄更新
+    let hist = getHistory();
+    const qid = selectedQuestions[idx].question;
+    if(!hist[qid]) hist[qid]={correct:0,wrong:0};
+    if(oi==correctAns) hist[qid].correct++;
+    else hist[qid].wrong++;
+    setHistory(hist);
+
+    renderQuestions();
+}
+function updateNavUI(){
+    document.getElementById("btnPrev").style.display = current>0 ? "" : "none";
+    document.getElementById("btnNext").disabled = answers[current]===-1;
+    document.getElementById("btnNext").innerText = current===19?"完成測驗 ✓":"下一題 →";
+}
+function nextQuestion(){
+    if(current<19) {current++; renderQuestions(); updateIQBar();}
+    else showResult();
+}
+function previousQuestion(){
+    if(current>0){current--; renderQuestions(); updateIQBar();}
+}
+function showResult(){
+    document.getElementById("testScreen").style.display="none";
+    document.getElementById("resultScreen").classList.add("active");
+    let correct=0;
+    answers.forEach((a,i)=>{if(a==selectedQuestions[i].correct) correct++;});
+    // 分數與等級
+    const rate = Math.round((correct/20)*100);
+    const iqScore = Math.round(90 + (rate/100)*40);
+    let level, emoji, desc;
+    if(iqScore>=130){
+        level='🌟 天才級別';emoji='🏆';desc='驚人的智商！你的邏輯思維和分析能力堪稱一流。';
+    }else if(iqScore>=120){
+        level='⭐ 非常優秀';emoji='😎';desc='非常棒的表現！你的智商遠高於平均水平。';
+    }else if(iqScore>=110){
+        level='👍 優秀';emoji='😊';desc='很不錯！你的表現超越平均，邏輯思維良好。';
+    }else if(iqScore>=100){
+        level='✅ 標準智商';emoji='🤔';desc='表現不錯！你的智商處於平均水平。';
+    }else if(iqScore>=90){
+        level='📚 需要努力';emoji='💪';desc='還有進步的空間，多練習會更好！';
+    }else{
+        level='🎯 加油！';emoji='🌈';desc='每次練習都是學習的機會，繼續努力！';
+    }
+    document.getElementById("resultLevel").innerText=level;
+    document.getElementById("resultEmoji").innerText=emoji;
+    document.getElementById("resultScore").innerText=iqScore;
+    document.getElementById("resultDescription").innerText=desc;
+    document.getElementById("correctCount").innerText=`${correct}/20`;
+    document.getElementById("correctRate").innerText=`${rate}%`;
+    updateIQBar(20);
+    // 成長條拉滿
+}
+function restartTest(){
+    document.getElementById("resultScreen").classList.remove("active");
+    document.getElementById("startScreen").style.display="";
+    document.getElementById("iqBar").style.width="0%";
+}
+function shuffle(arr){
+    for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+}
+// IQ成長條動畫
+function updateIQBar(forced){
+    let currentAns = answers.filter(a=>a!==-1).length;
+    document.getElementById("iqBar").style.width = ((currentAns/20)*100)+"%";
+}
+function animateIQBar(correct){
+    const bar = document.getElementById("iqBar");
+    bar.style.boxShadow = correct
+        ? "0 0 8px 3px #10ac84a3"
+        : "0 0 7px 3px #fbc53195";
+    setTimeout(()=>{bar.style.boxShadow="";},500);
+}
+// 答題後浮現表情
+function showEmoji(emoji){
+    const dom = document.getElementById("emojiFeedback");
+    dom.innerText = emoji;
+    dom.style.display = "block";
+    dom.style.opacity = 1;
+    setTimeout(()=>{dom.style.display="none";dom.innerText="";},870);
+}
+// 把主要功能注入 window 讓 HTML 事件正常呼叫
+window.startTest = startTest;
+window.renderQuestions = renderQuestions;
+window.selectAnswer = selectAnswer;
+window.updateNavUI = updateNavUI;
+window.nextQuestion = nextQuestion;
+window.previousQuestion = previousQuestion;
+window.showResult = showResult;
+window.restartTest = restartTest;
+</script>
+</body>
+</html>
