@@ -3,19 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>小蝦米修仙之旅 V4.0</title>
+    <title>小蝦米修仙之旅 V5.1 (修復版)</title>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&display=swap" rel="stylesheet">
     <style>
         :root {
             --primary: #4a69bd;
             --primary-dark: #1e3799;
             --accent: #e55039;
-            --success: #26de81;
+            --mid-risk: #f39c12;
+            --success: #27ae60;
             --warning: #f7b731;
             --special: #8e44ad;
             --text-main: #2f3542;
             --bg-color: #f1f2f6;
-            --card-bg: #ffffff;
         }
 
         * {
@@ -30,7 +30,7 @@
             font-family: 'Noto Sans TC', sans-serif;
             background: #2f3640;
             color: var(--text-main);
-            height: 100vh; /* Fallback */
+            height: 100vh;
             height: 100dvh;
             width: 100vw;
             display: flex;
@@ -50,7 +50,6 @@
             box-shadow: 0 0 50px rgba(0,0,0,0.5);
         }
 
-        /* PC / Tablet Optimization */
         @media (min-width: 501px) {
             #app-container {
                 max-width: 480px;
@@ -58,72 +57,31 @@
                 border-radius: 20px;
                 border: 8px solid #dfe4ea;
             }
-            .story-icon { font-size: 4rem; }
-            .btn-lg { max-width: 300px; }
         }
 
-        /* Mobile Optimization */
-        @media (max-width: 500px) {
-            .story-card {
-                padding: 15px !important;
-                margin-bottom: 10px !important;
-            }
-            .story-icon {
-                font-size: 3rem !important; /* Smaller icon on mobile */
-                margin-bottom: 5px !important;
-            }
-            .story-title {
-                font-size: 1.2rem !important;
-                margin-bottom: 5px !important;
-            }
-            .story-desc {
-                font-size: 0.95rem !important;
-                line-height: 1.4 !important;
-            }
-            .choice-item {
-                padding: 12px 10px !important; /* Larger touch area */
-                margin-bottom: 8px !important;
-            }
-            .top-bar {
-                padding: 8px 12px !important;
-            }
-            .stat-box {
-                font-size: 0.7rem !important;
-            }
-            .stat-box span {
-                font-size: 0.9rem !important;
-            }
-        }
-
+        /* 畫面切換邏輯 (修復白屏問題) */
         .screen {
             flex: 1;
-            display: flex;
+            display: none; /* 預設完全隱藏 */
             flex-direction: column;
             padding: 20px;
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
+            width: 100%;
+            height: 100%;
             background: var(--bg-color);
-            transition: transform 0.3s ease, opacity 0.3s;
-            opacity: 0;
-            pointer-events: none;
-            transform: scale(0.98);
-            z-index: 0;
+            animation: fadeIn 0.4s ease; /* 加入淡入動畫 */
         }
 
         .screen.active {
-            opacity: 1;
-            pointer-events: auto;
-            transform: scale(1);
-            z-index: 10;
+            display: flex; /* 啟動時顯示 */
         }
 
-        /* UI Components */
-        h1 {
-            font-size: 1.8rem;
-            color: var(--primary-dark);
-            margin: 10px 0;
-            text-align: center;
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
+
+        /* UI 元件樣式 */
+        h1 { font-size: 1.8rem; color: var(--primary-dark); margin: 10px 0; text-align: center; }
 
         .btn {
             border: none; outline: none; cursor: pointer;
@@ -140,127 +98,94 @@
             margin: 20px auto; display: block;
         }
 
-        /* Gender Selection */
-        .gender-box {
-            display: flex; justify-content: center; gap: 15px; margin: 20px 0;
-        }
+        .gender-box { display: flex; justify-content: center; gap: 15px; margin: 20px 0; }
         .gender-option {
-            width: 80px; height: 80px;
-            border-radius: 15px; background: white;
-            display: flex; flex-direction: column;
-            justify-content: center; align-items: center;
+            width: 80px; height: 80px; border-radius: 15px; background: white;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
             font-size: 2rem; border: 3px solid transparent;
             cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.1);
         }
-        .gender-option.selected {
-            border-color: var(--primary); background: #eef2ff;
-        }
+        .gender-option.selected { border-color: var(--primary); background: #eef2ff; }
         .gender-option span { font-size: 0.9rem; margin-top: 5px; font-weight: bold; }
 
-        /* Game Layout */
+        /* Status Bar */
         .top-bar {
-            background: white; padding: 10px 15px;
-            border-radius: 0 0 20px 20px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-            display: flex; flex-direction: column; gap: 8px;
-            flex-shrink: 0; /* Don't shrink */
-        }
-
-        .stats-grid {
-            display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px;
-            text-align: center;
-        }
-        .stat-box {
-            background: #f1f2f6; padding: 4px; border-radius: 8px;
-            font-size: 0.75rem; color: #747d8c;
-        }
-        .stat-box span { display: block; font-size: 1rem; color: var(--text-main); font-weight: bold; }
-
-        .hp-container {
-            width: 100%; background: #dfe4ea; height: 8px;
-            border-radius: 4px; overflow: hidden;
-        }
-        .hp-fill { height: 100%; background: var(--success); width: 100%; transition: width 0.3s; }
-
-        .info-row {
-            display: flex; justify-content: space-between; align-items: center;
-            font-size: 0.8rem; color: #57606f;
-        }
-        
-        .identity-badge {
-            background: var(--special); color: white;
-            padding: 2px 8px; border-radius: 10px;
-            font-size: 0.75rem; margin-left: 5px;
-        }
-
-        /* Event Area */
-        .event-container {
-            flex: 1; padding: 10px 0;
-            display: flex; flex-direction: column;
-            overflow-y: auto; /* Allow scroll inside */
-            -webkit-overflow-scrolling: touch;
-        }
-
-        .story-card {
-            background: white; border-radius: 15px; padding: 20px;
-            margin: 0 10px 15px 10px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
-            text-align: center; border-top: 4px solid var(--accent);
+            background: white; padding: 10px 15px; border-radius: 0 0 20px 20px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05); display: flex; flex-direction: column; gap: 8px;
             flex-shrink: 0;
         }
-
-        .story-icon { display: block; margin: 0 auto 10px auto; }
-        .story-title { font-weight: bold; color: var(--text-main); }
-        .story-desc { color: #57606f; text-align: justify; }
-
-        .choices-list {
-            padding: 0 10px 20px 10px;
-            display: flex; flex-direction: column; gap: 10px;
-        }
-
-        .choice-item {
-            background: white; border: 1px solid #dfe4ea;
-            border-radius: 12px; padding: 15px;
-            cursor: pointer; position: relative;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-            transition: background 0.2s;
-        }
-        .choice-item:active { background: #f1f2f6; }
+        .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; text-align: center; }
+        .stat-box { background: #f1f2f6; padding: 4px; border-radius: 8px; font-size: 0.75rem; color: #747d8c; }
+        .stat-box span { display: block; font-size: 1rem; color: var(--text-main); font-weight: bold; }
+        .hp-container { width: 100%; background: #dfe4ea; height: 8px; border-radius: 4px; overflow: hidden; }
+        .hp-fill { height: 100%; background: var(--success); width: 100%; transition: width 0.3s; }
         
-        .choice-main { font-weight: bold; font-size: 1rem; margin-bottom: 5px; color: var(--text-main); }
-        .choice-meta {
-            display: flex; justify-content: space-between; align-items: center;
-            font-size: 0.75rem; color: #747d8c;
+        .identity-badge {
+            background: var(--special); color: white; padding: 2px 8px;
+            border-radius: 10px; font-size: 0.75rem; margin-left: 5px;
         }
 
-        .tag { padding: 2px 6px; border-radius: 4px; font-weight: bold; }
-        .tag-high { color: #e55039; background: rgba(229, 80, 57, 0.1); } /* High Risk */
-        .tag-mid { color: #f39c12; background: rgba(243, 156, 18, 0.1); } /* Mid Risk */
-        .tag-safe { color: #27ae60; background: rgba(39, 174, 96, 0.1); } /* Safe */
-        .tag-bonus { color: var(--special); background: rgba(142, 68, 173, 0.1); border: 1px solid var(--special); } /* Identity Bonus */
+        /* Events */
+        .event-container {
+            flex: 1; padding: 10px 0; display: flex; flex-direction: column;
+            overflow-y: auto; -webkit-overflow-scrolling: touch;
+        }
+        .story-card {
+            background: white; border-radius: 15px; padding: 20px; margin: 0 10px 15px 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05); text-align: center; border-top: 4px solid var(--primary);
+            flex-shrink: 0;
+        }
+        .story-icon { font-size: 4rem; display: block; margin: 0 auto 10px auto; }
+        .story-title { font-size: 1.3rem; font-weight: bold; color: var(--text-main); margin-bottom: 10px;}
+        .story-desc { color: #57606f; text-align: justify; line-height: 1.6; font-size: 1rem; }
+
+        @media (max-width: 500px) {
+            .story-icon { font-size: 3rem; }
+            .story-title { font-size: 1.2rem; }
+            .story-desc { font-size: 0.95rem; }
+        }
+
+        .choices-list { padding: 0 10px 20px 10px; display: flex; flex-direction: column; gap: 10px; }
+        .choice-item {
+            background: white; border: 1px solid #dfe4ea; border-radius: 12px; padding: 15px;
+            cursor: pointer; position: relative; box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            transition: background 0.2s; border-left: 5px solid transparent;
+        }
+        .choice-item:active { background: #f1f2f6; transform: scale(0.98); }
+        
+        .risk-high { border-left-color: var(--accent); }
+        .risk-mid { border-left-color: var(--mid-risk); }
+        .risk-safe { border-left-color: var(--success); }
+
+        .choice-main { font-weight: bold; font-size: 1rem; margin-bottom: 5px; color: var(--text-main); display: flex; justify-content: space-between; }
+        .choice-meta { display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem; color: #747d8c; }
+
+        .tag { padding: 2px 6px; border-radius: 4px; font-weight: bold; margin-left: 5px; }
+        .tag-high { color: var(--accent); background: rgba(229, 80, 57, 0.1); }
+        .tag-mid { color: var(--mid-risk); background: rgba(243, 156, 18, 0.1); }
+        .tag-safe { color: var(--success); background: rgba(39, 174, 96, 0.1); }
+        .tag-bonus { color: var(--special); background: rgba(142, 68, 173, 0.1); border: 1px solid var(--special); }
 
         /* Modal */
         .modal-overlay {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.5); backdrop-filter: blur(3px);
-            z-index: 100; display: none;
-            justify-content: center; align-items: center;
-            padding: 20px; animation: fadeIn 0.2s;
+            z-index: 100; display: none; justify-content: center; align-items: center;
+            padding: 20px; animation: modalFade 0.2s;
         }
+        @keyframes modalFade { from {opacity: 0;} to {opacity: 1;} }
+
         .modal-card {
-            background: white; width: 100%; max-width: 360px;
+            background: white; width: 90%; max-width: 360px;
             border-radius: 20px; padding: 25px; text-align: center;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
         }
-        @keyframes fadeIn { from {opacity: 0;} to {opacity: 1;} }
 
         .result-title { font-size: 1.5rem; font-weight: bold; margin-bottom: 10px; }
         .text-green { color: var(--success); }
         .text-red { color: var(--accent); }
         
-        .changes-grid {
-            display: flex; flex-wrap: wrap; justify-content: center; gap: 5px; margin: 15px 0;
-        }
+        .changes-grid { display: flex; flex-wrap: wrap; justify-content: center; gap: 5px; margin: 15px 0; }
         .change-pill {
             font-size: 0.8rem; padding: 3px 8px; border-radius: 6px;
             background: #f1f2f6; font-weight: bold;
@@ -269,26 +194,15 @@
         .pill-bad { color: var(--accent); border: 1px solid var(--accent); }
 
         /* End Screen */
-        .summary-box {
-            background: white; padding: 15px; border-radius: 12px;
-            margin: 15px 0; text-align: left;
-        }
-        .summary-row {
-            display: flex; justify-content: space-between; 
-            padding: 8px 0; border-bottom: 1px solid #eee;
-        }
-
-        /* Floating Text */
+        .summary-box { background: white; padding: 15px; border-radius: 12px; margin: 15px 0; text-align: left; }
+        .summary-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #eee; }
+        
         .float-text {
-            position: absolute; font-weight: bold; font-size: 1.2rem;
-            pointer-events: none; animation: floatUp 1.2s forwards; z-index: 50;
-            text-shadow: 1px 1px 0 white;
+            position: absolute; font-weight: bold; font-size: 1.5rem; pointer-events: none;
+            animation: floatUp 1.2s forwards; z-index: 99; text-shadow: 2px 2px 0 #fff;
+            width: 100%; text-align: center; left: 0;
         }
-        @keyframes floatUp {
-            0% { transform: translateY(0); opacity: 1; }
-            100% { transform: translateY(-60px); opacity: 0; }
-        }
-
+        @keyframes floatUp { 0% { transform: translateY(0); opacity: 1; } 100% { transform: translateY(-80px); opacity: 0; } }
     </style>
 </head>
 <body>
@@ -298,11 +212,10 @@
     <!-- START SCREEN -->
     <div id="start-screen" class="screen active" style="justify-content: center; overflow-y: auto;">
         <div style="text-align: center; padding: 20px;">
-            <div style="color: var(--accent); font-weight: bold; transform: rotate(-3deg); display: inline-block; border: 2px solid var(--accent); padding: 5px 10px; border-radius: 8px; margin-bottom: 10px;">V4.0 八大出身版</div>
+            <div style="color: var(--accent); font-weight: bold; transform: rotate(-3deg); display: inline-block; border: 2px solid var(--accent); padding: 5px 10px; border-radius: 8px; margin-bottom: 10px;">V5.1 修復版</div>
             <h1>小蝦米修仙之旅</h1>
-            <p style="color: #747d8c; margin-bottom: 20px;">一指修仙，快樂無邊</p>
             
-            <p style="color: #666; font-size: 0.9rem;">請選擇道友法相：</p>
+            <p style="color: #666; font-size: 0.9rem;">單指逆天，笑看紅塵</p>
             <div class="gender-box">
                 <div class="gender-option selected" onclick="selectGender('male')" id="btn-male">
                     👦<span>少俠</span>
@@ -312,11 +225,11 @@
                 </div>
             </div>
 
-            <div style="background: white; padding: 15px; border-radius: 12px; margin: 15px 0; font-size: 0.85rem; color: #555; text-align: left; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
-                <div style="font-weight: bold; color: var(--primary); margin-bottom: 5px;">📜 版本更新：</div>
-                1. <b>八大隨機出身</b>：富家子弟、武林世家、天煞孤星...不同出身影響初始數值與判定機率！<br>
-                2. <b>策略選擇</b>：高風險高回報，低風險求穩。<br>
-                3. <b>手機優化</b>：單手操作更順暢。
+            <div style="background: white; padding: 15px; border-radius: 12px; margin: 15px 0; font-size: 0.85rem; color: #555; text-align: left; box-shadow: 0 2px 5px rgba(0,0,0,0.05); line-height: 1.6;">
+                <div style="font-weight: bold; color: var(--primary); margin-bottom: 5px;">🔧 更新說明：</div>
+                1. 修正了進入遊戲後白畫面的問題。<br>
+                2. 優化了手機版面顯示。<br>
+                3. 平衡了高/中/低風險選項的機率。
             </div>
 
             <button class="btn btn-lg" onclick="startGame()">輪迴轉世 (開始)</button>
@@ -325,9 +238,8 @@
 
     <!-- GAME SCREEN -->
     <div id="game-screen" class="screen">
-        <!-- Top Stats Bar -->
         <div class="top-bar">
-            <div class="info-row">
+            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem; color: #666;">
                 <span style="font-weight: bold; color: var(--primary);">壽元(HP)</span>
                 <span id="disp-hp-val">100/100</span>
             </div>
@@ -335,35 +247,30 @@
                 <div id="hp-bar" class="hp-fill"></div>
             </div>
 
-            <div class="stats-grid">
+            <div class="stats-grid" style="margin-top: 5px;">
                 <div class="stat-box">修為<span id="disp-cult">0</span></div>
                 <div class="stat-box">體魄<span id="disp-str">10</span></div>
                 <div class="stat-box">悟性<span id="disp-int">10</span></div>
                 <div class="stat-box">機緣<span id="disp-luck">10</span></div>
             </div>
             
-            <div class="info-row" style="border-top: 1px dashed #ddd; padding-top: 5px;">
+            <div style="border-top: 1px dashed #ddd; padding-top: 5px; margin-top: 5px; display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem;">
                 <div style="display: flex; align-items: center;">
                     <span>💰 <b id="disp-money">0</b></span>
                     <span id="identity-tag" class="identity-badge">凡人</span>
                 </div>
-                <span style="background: var(--text-main); color: white; padding: 2px 8px; border-radius: 10px; font-size: 0.7rem;">第 <span id="round-num">1</span>/20 劫</span>
+                <span style="background: var(--text-main); color: white; padding: 2px 8px; border-radius: 10px;">第 <span id="round-num">1</span>/20 劫</span>
             </div>
         </div>
 
-        <!-- Event Area -->
         <div class="event-container">
             <div class="story-card" id="card-elem">
-                <span class="story-icon" id="event-icon">🤖</span>
-                <div class="story-title" id="event-title">載入中...</div>
-                <div class="story-desc" id="event-desc">
-                    正在生成隨機事件...
-                </div>
+                <span class="story-icon" id="event-icon">🔄</span>
+                <div class="story-title" id="event-title">命運流轉中...</div>
+                <div class="story-desc" id="event-desc">正在生成你的修仙機緣...</div>
             </div>
 
-            <div class="choices-list" id="choices-box">
-                <!-- Choices rendered here -->
-            </div>
+            <div class="choices-list" id="choices-box"></div>
         </div>
     </div>
 
@@ -373,11 +280,7 @@
             <div style="font-size: 3rem; margin-bottom: 10px;" id="res-icon">✨</div>
             <div class="result-title" id="res-title">成功</div>
             <p style="color: #666; line-height: 1.4; margin-bottom: 15px;" id="res-text">結果描述</p>
-            
-            <div class="changes-grid" id="res-changes">
-                <!-- Change pills -->
-            </div>
-
+            <div class="changes-grid" id="res-changes"></div>
             <button class="btn btn-lg" style="margin: 0 auto; width: 100%;" onclick="nextEvent()">繼續修仙</button>
         </div>
     </div>
@@ -405,176 +308,155 @@
             <button class="btn btn-lg" onclick="resetGame()">再入輪迴</button>
         </div>
     </div>
-
 </div>
 
 <script>
 /**
- * 小蝦米修仙之旅 V4.0 Logic
+ * V5.1 Logic - Fix White Screen & Full Data
  */
 
 let player = {
-    gender: 'male',
-    hp: 100,
-    maxHp: 100,
-    cultivation: 0,
-    str: 10,
-    int: 10,
-    luck: 10,
-    money: 0,
-    round: 1,
-    identity: null
+    gender: 'male', hp: 100, maxHp: 100, cultivation: 0,
+    str: 10, int: 10, luck: 10, money: 0, round: 1, identity: null
 };
 
 const MAX_ROUNDS = 20;
 
-// --- 8大出身 (Identities) ---
-// type 決定了哪種判定有加成: 'str', 'int', 'luck', 'money', 'all'
+// 身份定義
 const identities = [
-    { name: "富家子弟", bonus: "初始靈石+200，金錢消耗類事件有優惠感(腦補)", init: (p)=>{p.money+=200;}, type: 'money' },
-    { name: "武學世家", bonus: "初始體魄+20，戰鬥判定(體魄)成功率+15%", init: (p)=>{p.str+=20;}, type: 'str' },
-    { name: "書香門第", bonus: "初始悟性+20，智謀判定(悟性)成功率+15%", init: (p)=>{p.int+=20;}, type: 'int' },
-    { name: "天選之人", bonus: "初始機緣+20，運氣判定(機緣)成功率+15%", init: (p)=>{p.luck+=20;}, type: 'luck' },
-    { name: "藥王傳人", bonus: "初始壽元+50，生存力極強", init: (p)=>{p.maxHp+=50; p.hp+=50;}, type: 'hp' },
-    { name: "市井流氓", bonus: "體魄+10 機緣+10，擅長逃跑與投機", init: (p)=>{p.str+=10; p.luck+=10;}, type: 'mix_str_luck' },
-    { name: "落魄貴族", bonus: "初始修為+100，但身無分文", init: (p)=>{p.cultivation+=100; p.money=0;}, type: 'cult' },
-    { name: "轉世仙人", bonus: "全屬性+8，所有判定成功率+5%", init: (p)=>{p.str+=8; p.int+=8; p.luck+=8; p.money+=20;}, type: 'all' }
+    { name: "富家子弟", desc: "初始靈石+150", init: (p)=>{p.money+=150;}, type: 'money' },
+    { name: "武學世家", desc: "初始體魄+25 (體魄判定UP)", init: (p)=>{p.str+=25;}, type: 'str' },
+    { name: "書香門第", desc: "初始悟性+25 (悟性判定UP)", init: (p)=>{p.int+=25;}, type: 'int' },
+    { name: "天選之人", desc: "初始機緣+25 (機緣判定UP)", init: (p)=>{p.luck+=25;}, type: 'luck' },
+    { name: "藥王傳人", desc: "初始壽元+80", init: (p)=>{p.maxHp+=80; p.hp+=80;}, type: 'hp' },
+    { name: "市井流氓", desc: "體魄+15 機緣+15", init: (p)=>{p.str+=15; p.luck+=15;}, type: 'mix_str_luck' },
+    { name: "落魄貴族", desc: "初始修為+150，靈石歸零", init: (p)=>{p.cultivation+=150; p.money=0;}, type: 'cult' },
+    { name: "轉世仙人", desc: "全屬性+10，靈石+30", init: (p)=>{p.str+=10; p.int+=10; p.luck+=10; p.money+=30;}, type: 'all' }
 ];
 
-// --- Events Pool ---
-// We define structure: 3 choices. 
-// 1. High Risk/Reward (Diff ~50-60)
-// 2. Mid Risk/Reward (Diff ~30-40)
-// 3. Low Risk/Safe (Diff <20 or Cost)
+// 完整事件庫
 const eventPool = [
     {
-        title: "遭遇山賊",
-        desc: "一群凶神惡煞的山賊攔住了去路，領頭的看起來是個練家子。",
+        title: "上古劍塚",
+        desc: "一把散發著毀滅氣息的魔劍插在石縫中。",
         icon: "⚔️",
         choices: [
-            { txt: "單挑寨主 (高報酬)", type: "str", diff: 55, succ: "你一拳打飛寨主，收繳了山寨寶庫！", fail: "你被寨主按在地上摩擦。", succEff: {cultivation: 80, money: 100}, failEff: {hp: -40} },
-            { txt: "威嚇嘍囉 (中庸)", type: "str", diff: 30, succ: "嘍囉們被你的氣勢嚇跑了。", fail: "虛張聲勢失敗，被圍毆。", succEff: {cultivation: 30}, failEff: {hp: -15} },
-            { txt: "破財消災 (安全)", type: "money", cost: 20, succ: "交錢走人，平安無事。", fail: "沒錢，被打了一頓。", succEff: {luck: 5}, failEff: {hp: -20} }
+            { txt: "強行拔劍", risk: "high", type: "str", succ: "你如神魔降世，拔出魔劍！", fail: "劍氣爆發，你被震飛吐血。", succEff: {cultivation: 120, str: 20}, failEff: {hp: -50} },
+            { txt: "感悟劍意", risk: "mid", type: "int", succ: "雖未得劍，但劍道大進。", fail: "坐了半天腿麻了。", succEff: {cultivation: 60, int: 5}, failEff: {hp: -10} },
+            { txt: "撿把鐵劍", risk: "safe", succ: "撿把普通的劍防身。", succEff: {str: 5} }
         ]
     },
     {
-        title: "古老殘卷",
-        desc: "地攤上發現一本破破爛爛的書，隱約散發著靈氣。",
-        icon: "📜",
+        title: "珍瓏棋局",
+        desc: "山洞中無人自弈的棋局，似乎蘊含天地至理。",
+        icon: "♟️",
         choices: [
-            { txt: "強行參悟 (高風險)", type: "int", diff: 60, succ: "頓悟了上古神功！修為暴漲！", fail: "走火入魔，經脈逆行！", succEff: {cultivation: 150, int: 20}, failEff: {hp: -50, cultivation: -20} },
-            { txt: "研究序言 (中庸)", type: "int", diff: 35, succ: "學到了一些實用的小法術。", fail: "看不懂，看得頭痛。", succEff: {cultivation: 40, int: 5}, failEff: {hp: -10} },
-            { txt: "買下來收藏 (安全)", type: "money", cost: 30, succ: "雖然看不懂，但感覺很有格調。", fail: "錢不夠。", succEff: {luck: 10}, failEff: {} }
+            { txt: "落子破局", risk: "high", type: "int", succ: "勝天半子！天地靈氣灌頂！", fail: "算力不足，大腦當機。", succEff: {cultivation: 150, int: 20}, failEff: {int: -5, hp: -30} },
+            { txt: "觀摩棋路", risk: "mid", type: "int", succ: "略有所得，棋藝精進。", fail: "看睡著了。", succEff: {cultivation: 50, int: 8}, failEff: {hp: -5} },
+            { txt: "打亂棋盤", risk: "safe", succ: "你把棋子亂扔，感覺很解壓。", succEff: {hp: 5} }
         ]
     },
     {
-        title: "懸崖採藥",
-        desc: "懸崖邊長著一株千年靈芝，但周圍有妖風陣陣。",
-        icon: "🍄",
+        title: "賭石大會",
+        desc: "這塊石頭標價 50 靈石，有人說裡面有仙玉。",
+        icon: "💎",
         choices: [
-            { txt: "飛身摘取 (高風險)", type: "luck", diff: 55, succ: "一陣風把你吹到了靈芝旁，幸運！", fail: "一陣風把你吹下了懸崖。", succEff: {cultivation: 100, hp: 50}, failEff: {hp: -60} },
-            { txt: "小心攀爬 (中庸)", type: "str", diff: 35, succ: "雖然費力，但成功採到了靈芝。", fail: "手滑了，摔得不輕。", succEff: {hp: 30, str: 5}, failEff: {hp: -20} },
-            { txt: "放棄離開 (安全)", type: "free", succ: "命比藥重要。", succEff: {int: 2} }
+            { txt: "透視眼開", risk: "high", type: "luck", succ: "開出極品仙玉，全場震驚！", fail: "開出一塊鵝卵石，氣到吐血。", succEff: {money: 300, cultivation: 50}, failEff: {money: -50, hp: -10} },
+            { txt: "憑經驗挑", risk: "mid", type: "int", succ: "小賺一筆。", fail: "看走眼了。", succEff: {money: 80}, failEff: {money: -20} },
+            { txt: "不買立省", risk: "safe", succ: "看熱鬧不嫌事大。", succEff: {int: 2} }
         ]
     },
     {
-        title: "宗門賭局",
-        desc: "宗門內正在開設賭局，賭誰能成為首席弟子。",
-        icon: "🎲",
+        title: "合歡宗招親",
+        desc: "合歡宗聖女/聖子正在拋繡球招親。",
+        icon: "💕",
         choices: [
-            { txt: "梭哈冷門 (高風險)", type: "luck", diff: 65, succ: "爆冷門！你贏得盆滿缽滿！", fail: "輸得只剩褲衩。", succEff: {money: 300}, failEff: {money: -999} }, // clear money
-            { txt: "小賭怡情 (中庸)", type: "luck", diff: 40, succ: "運氣不錯，贏了一點。", fail: "運氣一般，輸了點零花錢。", succEff: {money: 50}, failEff: {money: -20} },
-            { txt: "不賭為贏 (安全)", type: "free", succ: "十賭九輸，我不玩。", succEff: {int: 5} }
+            { txt: "搶繡球", risk: "high", type: "str", succ: "抱得美人/帥哥歸，獲得雙修秘法！", fail: "被其他追求者打成豬頭。", succEff: {cultivation: 100, luck: 20}, failEff: {hp: -40} },
+            { txt: "展現魅力", risk: "mid", type: "luck", succ: "對方對你青眼有加，送你禮物。", fail: "被無視了，好尷尬。", succEff: {cultivation: 40, money: 30}, failEff: {cultivation: -5} },
+            { txt: "花錢買通", risk: "safe", type: "money", cost: 40, succ: "走後門獲得了面試機會。", succEff: {cultivation: 20, int: 5} }
         ]
     },
     {
-        title: "心魔劫",
-        desc: "修煉時心魔作祟，化作你最恐懼的樣子。",
-        icon: "👻",
+        title: "遭遇獸潮",
+        desc: "無數妖獸奔湧而來，前路被阻。",
+        icon: "🐺",
         choices: [
-            { txt: "斬滅心魔 (高風險)", type: "str", diff: 60, succ: "心魔消散，道心堅如磐石！", fail: "被心魔反噬，元氣大傷。", succEff: {cultivation: 120, str: 15}, failEff: {hp: -50, cultivation: -30} },
-            { txt: "靜心咒 (中庸)", type: "int", diff: 30, succ: "心魔暫時退去。", fail: "念錯咒語，咬到舌頭。", succEff: {cultivation: 40}, failEff: {hp: -10} },
-            { txt: "吃藥壓驚 (安全)", type: "money", cost: 40, succ: "嗑了一顆清心丹，沒事了。", fail: "沒錢買藥，硬抗。", succEff: {hp: 10}, failEff: {hp: -20} }
+            { txt: "擒賊擒王", risk: "high", type: "str", succ: "萬軍從中取獸王首級！", fail: "被獸王一口吞了半截。", succEff: {cultivation: 150, str: 15}, failEff: {hp: -60} },
+            { txt: "禍水東引", risk: "mid", type: "int", succ: "你把獸潮引向了敵對宗門。", fail: "引到了自己家門口。", succEff: {cultivation: 60, money: 20}, failEff: {hp: -20, money: -20} },
+            { txt: "躲地洞", risk: "safe", succ: "雖然憋屈，但活下來了。", succEff: {hp: -5} }
         ]
     },
     {
-        title: "英雄救美/救帥",
-        desc: "路遇惡霸強搶民女/民男。",
-        icon: "❤️",
-        choices: [
-            { txt: "出手相救 (高風險)", type: "str", diff: 50, succ: "打跑惡霸，對方以身相許（送禮）。", fail: "被打得鼻青臉腫，對方也跑了。", succEff: {cultivation: 60, luck: 20, money: 50}, failEff: {hp: -40} },
-            { txt: "講道理 (中庸)", type: "int", diff: 35, succ: "惡霸被你的口才折服。", fail: "秀才遇到兵，有理說不清。", succEff: {cultivation: 30, int: 10}, failEff: {hp: -15} },
-            { txt: "報官 (安全)", type: "luck", diff: 20, succ: "官兵及時趕到。", fail: "官兵來晚了。", succEff: {money: 10}, failEff: {cultivation: -5} }
-        ]
-    },
-    {
-        title: "神秘拍賣會",
-        desc: "拍賣會上出現了一件疑似神器的物品。",
+        title: "拍賣會壓軸",
+        desc: "壓軸寶物是傳說中的「築基丹」，起拍價高昂。",
         icon: "🔨",
         choices: [
-            { txt: "競價 (高風險)", type: "money", cost: 100, succ: "居然真的是神器！賺翻了！", fail: "買了個贗品，虧大了。", succEff: {cultivation: 150, str: 20}, failEff: {cultivation: -10} },
-            { txt: "鑑寶 (中庸)", type: "int", diff: 40, succ: "看穿了是假貨，避免了損失。", fail: "看走眼了，錯過好東西。", succEff: {int: 15}, failEff: {luck: -5} },
-            { txt: "看熱鬧 (安全)", type: "free", succ: "吃瓜群眾最快樂。", succEff: {hp: 5} }
+            { txt: "殺人奪寶", risk: "high", type: "str", succ: "雖然名聲臭了，但丹藥到手！", fail: "被拍賣場供奉打殘。", succEff: {cultivation: 200}, failEff: {hp: -50, cultivation: -20} },
+            { txt: "撿漏贗品", risk: "mid", type: "luck", succ: "在廢品區淘到了真寶貝！", fail: "買了一堆垃圾。", succEff: {cultivation: 80, money: 20}, failEff: {money: -30} },
+            { txt: "高價競拍", risk: "safe", type: "money", cost: 80, succ: "錢能通神，順利拿下。", succEff: {cultivation: 100} }
         ]
     },
     {
-        title: "煉丹房事故",
-        desc: "師弟煉丹操作失誤，丹爐即將爆炸！",
-        icon: "💥",
+        title: "宗門內捲",
+        desc: "師兄弟們都在瘋狂加班修煉，你要加入嗎？",
+        icon: "😫",
         choices: [
-            { txt: "壓制丹爐 (高風險)", type: "str", diff: 65, succ: "挽狂瀾於既倒，煉出極品丹藥！", fail: "炸得滿臉黑灰，頭髮都焦了。", succEff: {cultivation: 100, money: 100}, failEff: {hp: -60} },
-            { txt: "疏散人群 (中庸)", type: "int", diff: 30, succ: "無人傷亡，功德一件。", fail: "跑得太慢，被碎片砸中。", succEff: {cultivation: 40, luck: 10}, failEff: {hp: -20} },
-            { txt: "先跑為敬 (安全)", type: "free", succ: "只要我跑得快，爆炸就追不上我。", succEff: {luck: 2} }
+            { txt: "極限修煉", risk: "high", type: "str", succ: "你是捲王之王！修為暴漲！", fail: "過勞倒下，住進ICU。", succEff: {cultivation: 100, str: 10}, failEff: {hp: -40} },
+            { txt: "摸魚修煉", risk: "mid", type: "int", succ: "勞逸結合，效果不錯。", fail: "被師傅發現偷懶，罰站。", succEff: {cultivation: 40}, failEff: {cultivation: -10} },
+            { txt: "直接擺爛", risk: "safe", succ: "只要我躺得夠平，就不會跌倒。", succEff: {hp: 10} }
         ]
     },
     {
-        title: "迷之洞窟",
-        desc: "一個深不見底的洞窟，傳來詭異的聲音。",
-        icon: "🕳️",
-        choices: [
-            { txt: "深入探索 (高風險)", type: "luck", diff: 60, succ: "發現前輩遺府，繼承遺產！", fail: "遇到千年殭屍，逃命要緊。", succEff: {cultivation: 200, money: 100}, failEff: {hp: -50} },
-            { txt: "投石問路 (中庸)", type: "int", diff: 30, succ: "判斷出裡面有危險，撤退。", fail: "石頭砸醒了蝙蝠群。", succEff: {int: 10}, failEff: {hp: -15} },
-            { txt: "封閉洞口 (安全)", type: "str", diff: 20, succ: "防止他人受害，做好事。", fail: "搬不動石頭。", succEff: {cultivation: 10}, failEff: {str: -2} }
-        ]
-    },
-    {
-        title: "頓悟時刻",
-        desc: "看著落葉飄零，你突然有所感悟。",
-        icon: "🍂",
-        choices: [
-            { txt: "參悟大道 (高風險)", type: "int", diff: 70, succ: "天人合一，境界突破！", fail: "想太多，腦袋打結了。", succEff: {cultivation: 300}, failEff: {int: -10, hp: -10} },
-            { txt: "作詩一首 (中庸)", type: "int", diff: 40, succ: "才氣逼人，受到眾人追捧。", fail: "無病呻吟，被路人鄙視。", succEff: {cultivation: 50, luck: 10}, failEff: {cultivation: -10} },
-            { txt: "掃地 (安全)", type: "free", succ: "掃地僧也是一種修行。", succEff: {str: 5} }
-        ]
-    }
-];
-
-// 補充更多隨機事件以達到豐富度，結構相同...
-// (此處為了代碼長度省略重複結構，實際遊戲會重複上述邏輯生成更多事件)
-// 為了演示，我們複製並微調一些事件進去
-const extraEvents = [
-    {
-        title: "遭遇碰瓷",
-        desc: "一隻老烏龜躺在路中間，說是你踩傷了它。",
-        icon: "🐢",
-        choices: [
-            { txt: "踢飛它 (高風險)", type: "str", diff: 50, succ: "原來是神獸玄武的親戚，你把它打服了。", fail: "你的腳骨折了，龜殼太硬。", succEff: {str: 20, cultivation: 60}, failEff: {hp: -30} },
-            { txt: "辯論 (中庸)", type: "int", diff: 30, succ: "你證明了是它自己翻過來的。", fail: "被它繞暈了，賠了錢。", succEff: {int: 10}, failEff: {money: -20} },
-            { txt: "賠錢 (安全)", type: "money", cost: 10, succ: "破財免災。", fail: "沒錢。", succEff: {luck: 2}, failEff: {hp: -10} }
-        ]
-    },
-    {
-        title: "天上掉餡餅",
-        desc: "一個不明物體從天而降。",
+        title: "神秘盲盒",
+        desc: "修仙界流行的扭蛋機，100%有獎？",
         icon: "🎁",
         choices: [
-            { txt: "接住 (高風險)", type: "str", diff: 60, succ: "接住了！是天外隕鐵！", fail: "被砸進了地裡，是隕石。", succEff: {money: 150, str: 10}, failEff: {hp: -60} },
-            { txt: "觀察 (中庸)", type: "int", diff: 30, succ: "算出落點，提前挖到了寶貝。", fail: "算錯落點，只能看個坑。", succEff: {money: 50}, failEff: {} },
-            { txt: "躲開 (安全)", type: "free", succ: "安全第一。", succEff: {luck: 5} }
+            { txt: "賭隱藏款", risk: "high", type: "luck", succ: "金光一閃！SSR神器！", fail: "全是N卡垃圾。", succEff: {money: 200, str: 20}, failEff: {money: -50} },
+            { txt: "連抽十次", risk: "mid", type: "luck", succ: "保底出貨，不虧。", fail: "全是保底，虧了。", succEff: {money: 50, cultivation: 20}, failEff: {money: -30} },
+            { txt: "買個空盒", risk: "safe", type: "money", cost: 10, succ: "雖然沒東西，但盒子挺好看。", succEff: {int: 5} }
+        ]
+    },
+    {
+        title: "懸崖傳說",
+        desc: "前面有個懸崖，牌子上寫著「跳崖得神功」。",
+        icon: "⛰️",
+        choices: [
+            { txt: "直接跳", risk: "high", type: "luck", succ: "掛樹上撿到戒指老爺爺！", fail: "自由落體，啪嘰。", succEff: {cultivation: 150, int: 20}, failEff: {hp: -70} },
+            { txt: "吊繩下去", risk: "mid", type: "int", succ: "發現前人洞府，小有收穫。", fail: "繩子斷了，摔斷腿。", succEff: {cultivation: 50, money: 30}, failEff: {hp: -20} },
+            { txt: "扔石頭", risk: "safe", succ: "聽個響，確認是實心的。", succEff: {int: 2} }
+        ]
+    },
+    {
+        title: "天劫降臨",
+        desc: "烏雲密佈，雷劫將至，避無可避！",
+        icon: "⚡",
+        choices: [
+            { txt: "肉身抗雷", risk: "high", type: "str", succ: "雷霆淬體，金剛不壞！", fail: "被劈成黑炭，奄奄一息。", succEff: {cultivation: 120, str: 30}, failEff: {hp: -60} },
+            { txt: "佈陣引雷", risk: "mid", type: "int", succ: "將雷電轉化為靈力吸收。", fail: "陣法漏電。", succEff: {cultivation: 70}, failEff: {hp: -20} },
+            { txt: "法寶擋災", risk: "safe", type: "money", cost: 50, succ: "法寶碎了，人沒事。", succEff: {hp: 5} }
+        ]
+    },
+    {
+        title: "路遇乞丐",
+        desc: "一個髒兮兮的乞丐攔住你，說你骨骼驚奇。",
+        icon: "🦴",
+        choices: [
+            { txt: "拜師學藝", risk: "high", type: "luck", succ: "他是隱世高手！傳你絕學！", fail: "他是騙子，騙你身子。", succEff: {cultivation: 150, str: 10}, failEff: {money: -50, hp: -10} },
+            { txt: "探查虛實", risk: "mid", type: "int", succ: "發現他是魔教探子，舉報有獎。", fail: "看不透，被他嘲笑。", succEff: {money: 50}, failEff: {int: -5} },
+            { txt: "給錢打發", risk: "safe", type: "money", cost: 10, succ: "日行一善。", succEff: {luck: 5} }
+        ]
+    },
+    {
+        title: "煉丹房",
+        desc: "你嘗試煉製傳說中的「九轉金丹」。",
+        icon: "💊",
+        choices: [
+            { txt: "加入猛料", risk: "high", type: "int", succ: "丹成龍鳳現！極品神丹！", fail: "炸爐了！毀天滅地！", succEff: {cultivation: 150, hp: 50}, failEff: {hp: -50, money: -50} },
+            { txt: "按部就班", risk: "mid", type: "int", succ: "煉出一爐上品丹藥。", fail: "火候沒控好，煉成焦炭。", succEff: {cultivation: 50}, failEff: {money: -10} },
+            { txt: "煉大力丸", risk: "safe", succ: "簡單的丹藥，必定成功。", succEff: {str: 5, money: 10} }
         ]
     }
 ];
-eventPool.push(...extraEvents); // Add extras
 
 // DOM Elements
 const screens = {
@@ -617,8 +499,6 @@ const display = {
     endMoney: document.getElementById('end-money-val')
 };
 
-// --- Game Functions ---
-
 function selectGender(g) {
     player.gender = g;
     document.getElementById('btn-male').classList.toggle('selected', g === 'male');
@@ -626,37 +506,40 @@ function selectGender(g) {
 }
 
 function startGame() {
-    // 1. Reset Player
-    player.hp = 100; player.maxHp = 100;
-    player.cultivation = 0;
-    player.str = 10 + Math.floor(Math.random()*5);
-    player.int = 10 + Math.floor(Math.random()*5);
-    player.luck = 10 + Math.floor(Math.random()*5);
-    player.money = 20 + Math.floor(Math.random()*20);
-    player.round = 1;
+    try {
+        // 1. Reset
+        player.hp = 100; player.maxHp = 100;
+        player.cultivation = 0;
+        player.str = 10; player.int = 10; player.luck = 10; player.money = 20;
+        player.round = 1;
 
-    // 2. Pick Identity
-    const iden = identities[Math.floor(Math.random() * identities.length)];
-    player.identity = iden;
-    iden.init(player); // Apply init bonus
+        // 2. Identity
+        const iden = identities[Math.floor(Math.random() * identities.length)];
+        player.identity = iden;
+        iden.init(player);
 
-    // 3. UI Update
-    display.identity.innerText = iden.name;
-    screens.start.classList.remove('active');
-    screens.game.classList.add('active');
+        display.identity.innerText = iden.name;
+        
+        // 3. Screen Switch (Display none -> flex)
+        screens.start.classList.remove('active');
+        screens.game.classList.add('active');
 
-    // Float text for identity
-    setTimeout(() => showFloat(`出身：${iden.name}`, '#8e44ad'), 500);
-
-    updateUI();
-    loadEvent();
+        // 4. Float Text
+        setTimeout(() => showFloat(`出身：${iden.name}`, '#8e44ad'), 300);
+        
+        // 5. Load
+        updateUI();
+        loadEvent();
+    } catch (e) {
+        alert("遊戲初始化失敗，請重新整理頁面。\n" + e);
+    }
 }
 
 function updateUI() {
-    display.hpVal.innerText = `${player.hp}/${player.maxHp}`;
+    display.hpVal.innerText = `${Math.ceil(player.hp)}/${player.maxHp}`;
     let pct = (player.hp / player.maxHp) * 100;
     display.hpBar.style.width = Math.max(0, pct) + '%';
-    display.hpBar.style.background = pct < 30 ? '#e55039' : '#26de81';
+    display.hpBar.style.background = pct < 30 ? '#e55039' : '#27ae60';
 
     display.cult.innerText = player.cultivation;
     display.str.innerText = player.str;
@@ -670,94 +553,93 @@ function loadEvent() {
     if (player.hp <= 0) return endGame("dead");
     if (player.round > MAX_ROUNDS) return endGame("win");
 
-    // Random Event
     const ev = eventPool[Math.floor(Math.random() * eventPool.length)];
     
     display.eventIcon.innerText = ev.icon;
     display.eventTitle.innerText = ev.title;
     display.eventDesc.innerText = ev.desc;
     
-    // Render Choices
     display.choicesBox.innerHTML = '';
     ev.choices.forEach(c => {
         let btn = document.createElement('div');
-        btn.className = 'choice-item';
+        let riskClass = c.risk === 'high' ? 'risk-high' : (c.risk === 'mid' ? 'risk-mid' : 'risk-safe');
+        btn.className = `choice-item ${riskClass}`;
 
-        // Calculate Probability
+        // CALC PROBABILITY
         let prob = 100;
-        let diff = c.diff || 0;
         let statVal = 0;
+        let statName = "";
+        
+        if (c.type === 'str') { statVal = player.str; statName = "體魄"; }
+        if (c.type === 'int') { statVal = player.int; statName = "悟性"; }
+        if (c.type === 'luck') { statVal = player.luck; statName = "機緣"; }
+
+        if (c.risk === 'high') {
+            // High Risk: Base 30% + Stat. Max 60%.
+            prob = 30 + statVal; 
+            if (prob > 60) prob = 60;
+        } else if (c.risk === 'mid') {
+            // Mid Risk: Base 60% + Stat. Max 90%.
+            prob = 60 + statVal;
+            if (prob > 90) prob = 90;
+        } else {
+            // Safe
+            prob = 100;
+        }
+
+        // Identity Bonus (+15% break cap if matching type)
         let isBonus = false;
-
-        if(c.type === 'str') statVal = player.str;
-        if(c.type === 'int') statVal = player.int;
-        if(c.type === 'luck') statVal = player.luck;
-
-        if (['str','int','luck'].includes(c.type)) {
-            // Formula: 70 + (Stat - Diff)*2 + IdentityBonus
-            prob = 65 + (statVal - diff) * 2;
-            
-            // Check Identity Bonus
-            if (player.identity.type === c.type || player.identity.type === 'all' || (player.identity.type === 'mix_str_luck' && (c.type==='str'||c.type==='luck'))) {
+        if (player.identity && (player.identity.type === 'all' || player.identity.type === c.type || (player.identity.type === 'mix_str_luck' && (c.type==='str'||c.type==='luck')))) {
+            if (c.risk !== 'safe') {
                 prob += 15;
                 isBonus = true;
             }
-            
-            prob = Math.min(95, Math.max(5, prob));
         }
 
-        let tagClass = 'tag-mid';
-        let tagText = '';
-
-        if (c.type === 'free') {
-            tagClass = 'tag-safe'; tagText = '安全';
-        } else if (c.type === 'money') {
-            tagClass = 'tag-safe'; tagText = `-${c.cost} 靈石`;
-        } else {
-            tagText = `${Math.floor(prob)}% 成功`;
-            if (diff >= 50) tagClass = 'tag-high'; // High risk
-            else if (diff <= 25) tagClass = 'tag-safe';
-            else tagClass = 'tag-mid';
-        }
+        // Render UI Text
+        let badgeClass = c.risk === 'high' ? 'tag-high' : (c.risk === 'mid' ? 'tag-mid' : 'tag-safe');
+        let badgeText = "";
         
-        if (isBonus) {
-            tagText += " (天賦UP)";
-            tagClass = 'tag-bonus';
+        if (c.risk === 'safe') {
+            if (c.type === 'money') badgeText = `-${c.cost} 靈石`;
+            else badgeText = "100% 安全";
+        } else {
+            badgeText = `${Math.floor(prob)}%`;
+            if (isBonus) badgeText += " (↑天賦)";
         }
 
-        // Check disabled
+        // Check Disabled
         let disabled = (c.type === 'money' && player.money < c.cost);
         if (disabled) {
             btn.style.opacity = 0.5;
-            tagText = '靈石不足';
-            tagClass = 'tag-high';
+            badgeText = "靈石不足";
+            badgeClass = 'tag-high';
         }
 
+        // Stat Requirement Text
+        let reqText = c.risk === 'safe' ? '消耗/保底' : `${statName}判定`;
+
         btn.innerHTML = `
-            <div class="choice-main">${c.txt}</div>
+            <div class="choice-main">
+                <span>${c.txt}</span>
+                <span class="tag ${badgeClass}">${badgeText}</span>
+            </div>
             <div class="choice-meta">
-                <span>${getStatName(c.type)}</span>
-                <span class="tag ${tagClass}">${tagText}</span>
+                <span>${reqText}</span>
+                <span style="font-size:0.7rem; color:#aaa;">${c.risk==='high'?'高回報':(c.risk==='mid'?'中回報':'穩健')}</span>
             </div>
         `;
 
-        if(!disabled) btn.onclick = () => resolveChoice(c, prob);
-        
+        if (!disabled) {
+            btn.onclick = () => resolveChoice(c, prob);
+        }
         display.choicesBox.appendChild(btn);
     });
 }
 
-function getStatName(t) {
-    if(t==='str') return '體魄判定';
-    if(t==='int') return '悟性判定';
-    if(t==='luck') return '機緣判定';
-    if(t==='money') return '消耗靈石';
-    return '無須判定';
-}
-
 function resolveChoice(c, prob) {
     let success = false;
-    if (c.type === 'free' || c.type === 'money') success = true;
+    if (c.risk === 'safe') success = true;
     else {
         success = Math.random() * 100 < prob;
     }
@@ -812,9 +694,7 @@ function showFloat(text, color) {
     el.className = 'float-text';
     el.innerText = text;
     el.style.color = color;
-    el.style.left = '50%';
     el.style.top = '40%';
-    el.style.transform = 'translateX(-50%)';
     document.getElementById('app-container').appendChild(el);
     setTimeout(()=>el.remove(), 1200);
 }
@@ -824,7 +704,6 @@ function endGame(type) {
     screens.modal.style.display = 'none';
     screens.end.classList.add('active');
 
-    // Fill Summary
     display.endCult.innerText = player.cultivation;
     display.endStr.innerText = player.str;
     display.endInt.innerText = player.int;
@@ -834,15 +713,17 @@ function endGame(type) {
     let rank = 'C';
     let title = '路人甲';
     let desc = '修仙路漫漫，你最終還是歸於平凡。';
+    
+    let totalScore = player.cultivation + (player.str + player.int + player.luck) * 5 + player.money;
 
     if (type === 'dead') {
-        rank = 'F'; title = '道消身死'; desc = '出師未捷身先死，長使英雄淚滿襟。';
+        rank = 'F'; title = '道消身死'; desc = '出師未捷身先死，請大俠重新來過。';
     } else {
-        let score = player.cultivation + (player.str+player.int+player.luck)*2 + player.money/2;
-        if (score > 800) { rank = 'SSS'; title = '仙帝轉世'; desc = '你已經無敵了，這屆修仙者一個能打的都沒有。'; }
-        else if (score > 600) { rank = 'S'; title = '一方巨擘'; desc = '開宗立派，受萬人景仰。'; }
-        else if (score > 450) { rank = 'A'; title = '元嬰老祖'; desc = '雖然不是最強，但也逍遙自在。'; }
-        else if (score > 300) { rank = 'B'; title = '結丹修士'; desc = '比上不足，比下有餘。'; }
+        if (totalScore > 1000) { rank = 'SSS'; title = '仙帝轉世'; desc = '你的名字響徹三界，獨斷萬古！'; }
+        else if (totalScore > 800) { rank = 'SS'; title = '飛昇大能'; desc = '距離成仙僅一步之遙。'; }
+        else if (totalScore > 600) { rank = 'S'; title = '一方巨擘'; desc = '開宗立派，受萬人景仰。'; }
+        else if (totalScore > 400) { rank = 'A'; title = '元嬰老祖'; desc = '逍遙自在，壽元綿長。'; }
+        else if (totalScore > 200) { rank = 'B'; title = '結丹修士'; desc = '比上不足，比下有餘。'; }
     }
 
     display.endRank.innerText = rank;
@@ -854,7 +735,6 @@ function resetGame() {
     screens.end.classList.remove('active');
     screens.start.classList.add('active');
 }
-
 </script>
 </body>
 </html>
