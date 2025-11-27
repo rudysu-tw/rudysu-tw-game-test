@@ -1,0 +1,990 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>詭屋異行：命運迴廊 - 終極恐懼版</title>
+    <!-- 引入 FontAwesome 圖示庫 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --bg-color: #050505;
+            --text-color: #c0c0c0;
+            --accent-color: #8b0000; /* 血紅色 */
+            --san-color: #4a90e2;    /* 理智藍 */
+            --hp-color: #e74c3c;     /* 生命紅 */
+            --courage-color: #f1c40f; /* 勇氣黃 */
+            --insight-color: #9b59b6;/* 洞察紫 */
+            --item-color: #f39c12;   /* 道具金 */
+            --ui-bg: #141414;
+            --border-color: #444;
+            --success-color: #2ecc71;
+            --fail-color: #e74c3c;
+            --fuel-color: #3498db;   /* 燃料藍 */
+            --event-color: #e67e22;  /* 事件橘 */
+        }
+
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: "Courier New", "Microsoft JhengHei", monospace;
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* 主容器 */
+        #app-container {
+            width: 100%;
+            max-width: 800px;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            background: var(--ui-bg);
+            border-left: 1px solid var(--border-color);
+            border-right: 1px solid var(--border-color);
+            position: relative;
+            z-index: 5;
+            box-shadow: 0 0 20px rgba(0,0,0,0.8);
+        }
+
+        /* 氣氛機制: 心跳暗角 & 濾鏡 */
+        #vignette {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            box-shadow: inset 0 0 100px rgba(0,0,0,0.9);
+            z-index: 10;
+            transition: box-shadow 0.5s ease;
+        }
+        
+        .pulse-fast { animation: heartbeat 0.8s infinite; }
+        .pulse-slow { animation: heartbeat 2s infinite; }
+        @keyframes heartbeat {
+            0% { box-shadow: inset 0 0 50px rgba(139, 0, 0, 0.2); }
+            50% { box-shadow: inset 0 0 150px rgba(139, 0, 0, 0.6); }
+            100% { box-shadow: inset 0 0 50px rgba(139, 0, 0, 0.2); }
+        }
+
+        /* 視覺特效：畫面震動 */
+        .shake {
+            animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+        }
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-1px, 0, 0); }
+            20%, 80% { transform: translate3d(2px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+            40%, 60% { transform: translate3d(4px, 0, 0); }
+        }
+
+        /* 視覺特效：SAN值低 - 文字扭曲 */
+        .text-distort {
+            text-shadow: 2px 0 var(--hp-color), -2px 0 var(--san-color);
+            animation: glitch-text 0.2s infinite;
+        }
+        @keyframes glitch-text {
+            0% { transform: translate(0); opacity: 1; }
+            20% { transform: translate(-2px, 1px); opacity: 0.8; }
+            40% { transform: translate(1px, -2px); }
+            60% { transform: translate(-1px, -1px); opacity: 0.9; }
+            80% { transform: translate(2px, 1px); }
+            100% { transform: translate(0); opacity: 1; }
+        }
+
+        /* 視覺特效：SAN值極低 - 幻覺模糊 */
+        .hallucination {
+            filter: blur(1.5px) hue-rotate(45deg) contrast(1.2);
+            transition: filter 1s;
+        }
+
+        /* 視覺特效：獲得道具光芒 */
+        @keyframes item-glow {
+            0% { box-shadow: 0 0 5px var(--item-color); background: #333; }
+            50% { box-shadow: 0 0 30px var(--item-color), inset 0 0 20px var(--item-color); background: #543; }
+            100% { box-shadow: 0 0 5px var(--item-color); background: #222; }
+        }
+        .item-get-anim {
+            animation: item-glow 0.8s ease-out;
+        }
+
+        /* 介面元素 */
+        #start-screen, #end-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(5, 5, 5, 0.98);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 30;
+            text-align: center;
+            padding: 20px;
+        }
+
+        h1 {
+            color: var(--accent-color);
+            font-size: 2.2rem;
+            text-shadow: 0 0 10px rgba(139, 0, 0, 0.8);
+            margin-bottom: 10px;
+            letter-spacing: 2px;
+        }
+
+        .start-btn {
+            background: rgba(20, 20, 20, 0.8);
+            color: #ddd;
+            border: 1px solid var(--accent-color);
+            padding: 15px 40px;
+            font-size: 1.2rem;
+            cursor: pointer;
+            margin-top: 30px;
+            transition: all 0.3s;
+            font-family: inherit;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            box-shadow: 0 0 10px rgba(139, 0, 0, 0.2);
+            border-radius: 5px;
+        }
+        .start-btn:hover {
+            background: var(--accent-color);
+            color: #fff;
+            box-shadow: 0 0 20px var(--accent-color);
+        }
+
+        header {
+            padding: 12px 15px;
+            border-bottom: 1px solid var(--border-color);
+            background: #0f0f0f;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.95rem;
+        }
+
+        #status-bar {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 1px;
+            background: var(--border-color);
+            padding-bottom: 1px;
+        }
+
+        .stat-box {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 8px 5px;
+            background: #111;
+            transition: background 0.3s;
+        }
+        .stat-label { font-size: 0.7rem; color: #666; margin-bottom: 2px; }
+        .stat-value { font-weight: bold; font-size: 1.1rem; }
+        .hp-val { color: var(--hp-color); }
+        .san-val { color: var(--san-color); }
+        .courage-val { color: var(--courage-color); }
+        .ins-val { color: var(--insight-color); }
+        .fuel-val { color: var(--fuel-color); }
+
+        #inventory-bar {
+            padding: 8px 15px;
+            background: #0a0a0a;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            gap: 10px;
+            min-height: 40px;
+            align-items: center;
+            overflow-x: auto;
+        }
+        .inv-item {
+            background: #222;
+            border: 1px solid #444;
+            padding: 4px 8px;
+            font-size: 0.8rem;
+            border-radius: 4px;
+            color: var(--item-color);
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            white-space: nowrap;
+        }
+
+        #story-area {
+            flex: 1;
+            padding: 25px;
+            overflow-y: auto;
+            line-height: 1.7;
+            font-size: 1.1rem;
+            color: #e0e0e0;
+            border-bottom: 1px solid var(--border-color);
+            background-image: radial-gradient(circle at center, #1f1f1f 0%, #141414 100%);
+            position: relative;
+        }
+        .story-text {
+            margin-bottom: 20px;
+            opacity: 0;
+            animation: fadeIn 0.5s forwards;
+        }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        #choice-area {
+            padding: 15px;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 10px;
+            background: #111;
+            min-height: 180px;
+        }
+        @media (min-width: 600px) {
+            #choice-area { grid-template-columns: 1fr 1fr; }
+        }
+
+        .choice-btn {
+            background: #1e1e1e;
+            border: 1px solid #333;
+            color: #bbb;
+            padding: 15px;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 0.95rem;
+            text-align: left;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            border-radius: 4px;
+            position: relative;
+        }
+        .choice-btn i {
+            font-size: 1.2rem;
+            margin-right: 10px;
+            color: #666;
+            width: 25px;
+            text-align: center;
+        }
+        .choice-btn:hover { background: #2a2a2a; color: #fff; border-color: #555; }
+        .choice-btn:hover i { color: var(--item-color); }
+        .chance-tag {
+            margin-left: auto;
+            font-size: 0.75rem;
+            background: #333;
+            padding: 2px 6px;
+            border-radius: 3px;
+            color: #aaa;
+        }
+
+        /* 瘋狂選項樣式 */
+        .madness-choice {
+            border-color: var(--accent-color) !important;
+            color: var(--hp-color) !important;
+            font-family: "Impact", "Courier New", monospace;
+            letter-spacing: 1px;
+            animation: shake 2s infinite;
+        }
+
+        /* 日誌視窗 (置頂最新) */
+        #log-window {
+            height: 120px;
+            background: #000;
+            border-top: 2px solid var(--border-color);
+            padding: 10px;
+            font-size: 0.85rem;
+            font-family: "Courier New", monospace;
+            color: #0f0; 
+            overflow-y: scroll;
+            display: flex;
+            flex-direction: column;
+        }
+        .log-entry {
+            margin-bottom: 4px;
+            border-bottom: 1px dashed #222;
+            padding-bottom: 2px;
+            line-height: 1.4;
+            animation: fadeIn 0.3s;
+        }
+        .log-new { color: #fff; text-shadow: 0 0 5px #0f0; } /* 最新訊息高亮 */
+        .log-negative { color: var(--hp-color); }
+        .log-positive { color: var(--success-color); }
+        .log-info { color: #f1c40f; }
+        .log-item { color: var(--item-color); font-weight: bold; }
+        .log-event { color: var(--event-color); font-weight: bold; }
+
+        /* 擲骰檢定遮罩 (加速版) */
+        #dice-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.9);
+            z-index: 25;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        #dice-visual {
+            width: 120px;
+            height: 120px;
+            border: 4px solid #fff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 4rem;
+            font-weight: bold;
+            color: #fff;
+            background: #111;
+            box-shadow: 0 0 30px rgba(255,255,255,0.2);
+            border-radius: 15px;
+            margin-bottom: 20px;
+            transition: all 0.1s; /* 加速動畫 */
+        }
+        .dice-rolling { animation: roll 0.05s infinite; } /* 加速滾動 */
+        @keyframes roll {
+            0% { transform: rotate(0deg) scale(1); }
+            25% { transform: rotate(10deg) scale(1.05); }
+            50% { transform: rotate(0deg) scale(1); }
+            75% { transform: rotate(-10deg) scale(1.05); }
+            100% { transform: rotate(0deg) scale(1); }
+        }
+        .dice-success { 
+            border-color: var(--success-color) !important; 
+            color: var(--success-color) !important; 
+            box-shadow: 0 0 50px var(--success-color) !important; 
+            transform: scale(1.1);
+        }
+        .dice-fail { 
+            border-color: var(--fail-color) !important; 
+            color: var(--fail-color) !important; 
+            box-shadow: 0 0 50px var(--fail-color) !important; 
+            transform: scale(0.9);
+        }
+
+        /* 卷軸美化 */
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-track { background: #000; }
+        ::-webkit-scrollbar-thumb { background: #444; }
+    </style>
+</head>
+<body>
+
+    <!-- 氣氛濾鏡 -->
+    <div id="vignette"></div>
+
+    <!-- 擲骰遮罩 -->
+    <div id="dice-overlay">
+        <div id="dice-visual">?</div>
+        <div id="dice-msg" style="font-size: 1.5rem; color: #ddd; margin-bottom: 10px;">檢定中...</div>
+        <div id="dice-detail" style="font-size: 1rem; color: #888;"></div>
+    </div>
+
+    <div id="app-container">
+        <!-- 開始畫面 -->
+        <div id="start-screen">
+            <h1><i class="fas fa-dungeon"></i> 詭屋異行</h1>
+            <p style="color: #888; margin-bottom: 20px; font-size: 0.9rem;">DEPTHS OF MADNESS - FINAL CUT</p>
+            <div style="max-width: 450px; line-height: 1.6; text-align: left; background: #111; padding: 20px; border: 1px solid #333; border-radius: 5px; font-size: 0.9rem;">
+                <p><i class="fas fa-exclamation-triangle" style="color:red"></i> <b>警告：終極恐懼模式</b></p>
+                <ul style="margin-top: 10px; padding-left: 20px;">
+                    <li>遊戲共 <b>25 回合</b>，每一回合的抉擇都獨一無二。</li>
+                    <li><b>SAN值</b> 低於 30% 時，你會看到常人看不見的「東西」。</li>
+                    <li><b>魯莽行為</b> 的懲罰已大幅提高，請深思熟慮。</li>
+                    <li>後期劇情將根據你是否救出導師、收集的知識以及你的心理狀態而有巨大分歧。</li>
+                </ul>
+            </div>
+            <button class="start-btn" onclick="game.start()"><i class="fas fa-skull"></i> 進入洋館</button>
+        </div>
+
+        <!-- 遊戲主畫面 -->
+        <header>
+            <div><i class="fas fa-user-secret"></i> 學者：亞瑟 <span id="phobia-display" class="phobia-tag"></span></div>
+            <div class="turn-indicator"><i class="fas fa-hourglass-half"></i> 回合: <span id="turn-display">1</span>/25</div>
+        </header>
+
+        <section id="status-bar">
+            <div class="stat-box">
+                <i class="fas fa-heart hp-val"></i>
+                <span class="stat-label">生命</span>
+                <span class="stat-value hp-val" id="hp-val">100</span>
+            </div>
+            <div class="stat-box">
+                <i class="fas fa-brain san-val"></i>
+                <span class="stat-label">理智</span>
+                <span class="stat-value san-val" id="san-val">80</span>
+            </div>
+            <div class="stat-box">
+                <i class="fas fa-fist-raised courage-val"></i>
+                <span class="stat-label">勇氣</span>
+                <span class="stat-value courage-val" id="courage-val">50</span>
+            </div>
+            <div class="stat-box">
+                <i class="fas fa-eye ins-val"></i>
+                <span class="stat-label">洞察</span>
+                <span class="stat-value ins-val" id="insight-val">10</span>
+            </div>
+            <div class="stat-box">
+                <i class="fas fa-fire fuel-val"></i>
+                <span class="stat-label">燃料</span>
+                <span class="stat-value fuel-val" id="fuel-val">10</span>
+            </div>
+        </section>
+
+        <section id="inventory-bar">
+            <span style="color:#666; font-size:0.8rem;"><i class="fas fa-box-open"></i> 背包:</span>
+            <div id="inventory-list" style="display:flex; gap:10px;">
+                <!-- 道具 JS 插入 -->
+            </div>
+        </section>
+
+        <section id="story-area">
+            <div id="story-content" class="story-text">
+                <!-- 故事內容 -->
+            </div>
+        </section>
+
+        <section id="choice-area">
+            <!-- 按鈕 -->
+        </section>
+
+        <section id="log-window">
+            <div id="log-content">
+                <!-- 最新訊息在最上面 -->
+            </div>
+        </section>
+
+        <!-- 結局畫面 -->
+        <div id="end-screen" style="display: none;">
+            <h1 id="end-title">結局</h1>
+            <div id="end-icon" style="font-size: 4rem; margin: 20px 0; color: #555;"></div>
+            <p id="end-desc" style="max-width: 500px; margin: 10px 0; line-height: 1.6;"></p>
+            <div id="end-stats" style="color: #aaa; font-size: 0.9rem; margin-bottom: 20px;"></div>
+            <button class="start-btn reset-btn" onclick="game.reset()"><i class="fas fa-redo"></i> 再次挑戰輪迴</button>
+        </div>
+    </div>
+
+    <script>
+        /* 資料庫 */
+        const PHOBIAS = [
+            { id: 'dark', name: '幽閉恐懼', desc: '黑暗場景 SAN 懲罰加倍', icon: 'fa-dungeon' },
+            { id: 'blood', name: '恐血症', desc: '血腥場景 SAN 懲罰加倍', icon: 'fa-tint' },
+            { id: 'noise', name: '聲響恐懼', desc: '噪音場景 SAN 懲罰加倍', icon: 'fa-volume-up' }
+        ];
+
+        const ITEMS = {
+            key: { name: "鏽蝕鑰匙", icon: "fa-key", desc: "開啟地下室某扇門的關鍵。" },
+            crowbar: { name: "撬棍", icon: "fa-hammer", desc: "物理學聖劍，勇氣檢定 +10%。" },
+            amulet: { name: "舊印護符", icon: "fa-shield-alt", desc: "抵擋一次致命精神攻擊，儀式關鍵道具。" },
+            lighter: { name: "黃銅打火機", icon: "fa-fire", desc: "提供光源，減少黑暗恐懼。" },
+            journal: { name: "導師筆記", icon: "fa-book", desc: "記載儀式殘頁，洞察檢定 +10%。" },
+            gun: { name: "左輪手槍", icon: "fa-crosshairs", desc: "只有一發子彈，暴力結局關鍵。" },
+            medkit: { name: "急救包", icon: "fa-briefcase-medical", desc: "恢復少量生命值。" },
+            mirror_shard: { name: "鏡之碎片", icon: "fa-gem", desc: "可以看到真實的碎片。" }
+        };
+
+        const FORCED_EVENTS = [
+            { msg: "【突發】一隻巨大的老鼠跑過你的腳邊。你幾乎尖叫出聲！", effect: { san: -5 } },
+            { msg: "【突發】一陣風吹過，你感覺到一股強烈的氣味。理智稍微恢復。", effect: { san: 5 } },
+            { msg: "【突發】地面輕微震動，牆壁脫落一塊，你發現了一枚生鏽的子彈。", effect: { hp: -2, item: 'gun' }, condition: (g) => !g.hasItem('gun') },
+            { msg: "【突發】你發現了一個被遺忘的舊油桶，裡面還有一些燃料。", effect: { fuel: 10 } },
+            { msg: "【突發】你感到極度不安，全身起雞皮疙瘩。", effect: { san: -8 } },
+            { msg: "【突發】牆上隱藏的畫像突然倒下，你從中找到了小刀。", effect: { courage: 5, hp: 5 } },
+            { msg: "【突發】時間的錯覺，你感覺到自己被困在原地，浪費了寶貴的燃料。", effect: { fuel: -5 } },
+            { msg: "【突發】微光中，你似乎看到導師的幻影對你點頭，你的洞察力增長了。", effect: { insight: 15 } },
+            { msg: "【突發】你被一塊鬆動的地板絆倒了！", effect: { hp: -10, san: -5 } },
+            { msg: "【突發】你發現了一個未開封的罐頭，補充了體力。", effect: { hp: 15 } },
+            { msg: "【突發】你突然理解了屋子裡某種結構的規律，勇氣大增。", effect: { courage: 15 } }
+        ];
+
+        /* 完整 25 回合獨立劇本 */
+        const SCENARIOS = {
+            1: { text: "大門在你身後重重關上，金屬撞擊聲如同野獸低吼。這是一棟維多利亞時代的廢棄洋館。門廳中央有一張積灰的桌子，空氣中瀰漫著霉味與海水的鹹腥。", type: "dark", choices: [
+                { text: "搜索桌子", icon: "fa-search", type: "check", checkType: "insight", chance: 70, success: { item: 'lighter', msg: "你在抽屜找到一個還能用的打火機。" }, fail: { hp: -5, msg: "抽屜裡的毒蜘蛛咬了你一口。" } },
+                { text: "檢查地面痕跡", icon: "fa-eye", effect: { insight: 5, san: -2 }, msg: "你看到了泥土中拖行的痕跡，通往樓梯。" },
+                { text: "強行破壞大門", icon: "fa-door-closed", effect: { hp: -10, san: -10 }, msg: "徒勞無功。你用盡力氣，只是讓手掌流血。", reckless: true }
+            ]},
+            2: { text: "你來到宴會廳。長桌上擺滿了腐爛的食物，某些肉塊似乎還在輕微跳動。牆上掛著一幅巨大的家族肖像畫，畫中人的眼睛被挖空了。", type: "blood", choices: [
+                { text: "靠近觀察肖像畫", icon: "fa-image", effect: { insight: 10, san: -5 }, msg: "你發現畫框後面藏著紙條，但畫中人流出了血淚。" },
+                { text: "搜索餐具櫃", icon: "fa-box", type: "check", checkType: "insight", chance: 50, success: { item: 'key', msg: "你在銀器堆中發現一把鏽蝕的鑰匙。" }, fail: { hp: -5, san: -5, msg: "櫃子突然倒塌，壓傷了你的腿，聲響巨大。", tag: "noise" } },
+                { text: "無視一切快速通過", icon: "fa-running", effect: { courage: -2 }, msg: "你選擇逃避，雖然安全但錯過了可能的線索。" }
+            ]},
+            3: { text: "走廊深處傳來奇怪的低語聲。你看到一扇厚重的橡木門縫透出詭異的綠光。你的直覺告訴你裡面很危險。", type: "noise", choices: [
+                { text: "貼耳偷聽", icon: "fa-ear-listen", effect: { insight: 15, san: -15 }, msg: "你聽懂了幾個音節，那不屬於人類語言。你的大腦在顫抖。" },
+                { text: "撞開大門", icon: "fa-door-open", type: "check", checkType: "courage", chance: 40, success: { courage: 10, msg: "你撞開了門，打斷了裡面的幻影儀式。" }, fail: { hp: -10, msg: "你撞在門上，門板反彈讓你肩膀脫臼，且驚動了未知的存在。" } },
+                { text: "尋找其他入口", icon: "fa-search", effect: { insight: 5, fuel: -2 }, msg: "你花費時間繞路，發現了牆上的通風口，但燃料減少了。" }
+            ]},
+            4: { text: "【階段二：異變】屋子的結構開始改變。你身處二樓圖書室，這裡的書籍全都飄浮在空中，違背了重力法則。", type: "dark", choices: [
+                { text: "抓取飄浮的日記本", icon: "fa-book", type: "check", checkType: "insight", chance: 60, success: { item: 'journal', msg: "你跳起來抓住了導師的筆記。" }, fail: { san: -10, msg: "書本變成了一張張尖叫的人臉，咬傷了你的手。" } },
+                { text: "用撬棍擊落書本", icon: "fa-hammer", req: "crowbar", effect: { courage: 5, san: -5 }, msg: "你暴力地擊落了書本，這種破壞感讓你稍微找回控制權。" },
+                { text: "躲在桌子底下", icon: "fa-shield-alt", effect: { san: 5, hp: 5 }, msg: "你選擇暫時逃避現實，回復了一點狀態。" }
+            ]},
+            5: { text: "書架後方傳來沉重的腳步聲。一個無頭的影子正在巡邏。你必須決定行動。", type: "noise", choices: [
+                { text: "屏住呼吸不動", icon: "fa-stop", type: "check", checkType: "courage", chance: 50, success: { san: 5, msg: "影子沒有發現你，離開了。" }, fail: { san: -15, msg: "你忍不住發出聲響，影子穿過你的身體，帶走了你的體溫與理智。" } },
+                { text: "扔出物品引開它", icon: "fa-share", effect: { insight: 5, itemLost: 'lighter' }, msg: "你扔出了打火機（如果有的話），成功引開了它，但失去了光源。" },
+                { text: "與影子戰鬥", icon: "fa-fist-raised", effect: { hp: -20, courage: 20 }, msg: "你瘋狂地揮舞拳頭，影子消散了，但你也受了重傷。", reckless: true }
+            ]},
+            6: { text: "你在走廊盡頭發現了一間牢房。導師被鐵鍊鎖在裡面，他看起來神智不清，嘴裡唸叨著「眼睛...在看著...」。", type: "blood", choices: [
+                { text: "嘗試喚醒導師", icon: "fa-user-md", type: "check", checkType: "insight", chance: 40, success: { insight: 20, msg: "導師恢復了一絲清醒，告訴了你儀式的弱點！", flag: "mentor_hint" }, fail: { san: -10, msg: "導師對你尖叫，那聲音不像人類。" } },
+                { text: "用撬棍破壞鎖鏈", icon: "fa-hammer", req: "crowbar", type: "check", checkType: "courage", chance: 70, success: { courage: 10, msg: "你救出了導師！他雖然虛弱，但能跟隨你。", flag: "mentor_saved" }, fail: { hp: -10, msg: "鐵鍊反彈擊中了你的頭部。" } },
+                { text: "給他一把槍", icon: "fa-gun", req: "gun", effect: { san: -20, itemLost: 'gun' }, msg: "你把槍留給了他。一聲槍響後，牢房安靜了。你永遠失去了導師和武器。", reckless: true }
+            ]},
+            7: { text: "你進入了一個充滿腐臭味的廚房。巨大的鍋爐還在沸騰，裡面煮著不可名狀的東西。", type: "blood", choices: [
+                { text: "搜索廚櫃", icon: "fa-box-open", type: "check", checkType: "insight", chance: 60, success: { item: 'medkit', msg: "你找到了一個急救包！" }, fail: { hp: -5, msg: "一隻巨大的蟑螂咬了你的手。" } },
+                { text: "打翻鍋爐", icon: "fa-dumpster-fire", effect: { courage: 5, san: -10 }, msg: "湯汁流得滿地都是，裡面全是眼球。噁心，但毀掉了邪惡的晚餐。", reckless: true },
+                { text: "安靜離開", icon: "fa-walking", effect: { fuel: -1 }, msg: "你不想惹麻煩，悄悄離開了。" }
+            ]},
+            8: { text: "你來到僕人房。這裡的牆壁上寫滿了血書：「不要睡覺」、「它在鏡子裡」。房間角落有一面蒙著布的鏡子。", type: "dark", choices: [
+                { text: "揭開鏡子", icon: "fa-eye", type: "check", checkType: "courage", chance: 50, success: { insight: 15, item: "mirror_shard", msg: "鏡子碎了，你撿起一片碎片，發現它能映照出真實。" }, fail: { san: -20, msg: "你在鏡子裡看到自己正在腐爛。" } },
+                { text: "閱讀桌上的日記", icon: "fa-book-open", type: "check", checkType: "insight", chance: 70, success: { insight: 10, msg: "你了解到宅邸主人試圖召喚古神來復活女兒。" }, fail: { san: -5, msg: "日記裡的文字開始扭動，讓你頭痛。" } },
+                { text: "燒掉這個房間", icon: "fa-fire", req: "lighter", effect: { fuel: -5, san: 5 }, msg: "火焰淨化了一切，但也消耗了大量燃料。" }
+            ]},
+            9: { text: "通往地下室的階梯深不見底，黑暗彷彿有實體般纏繞著你。每走一步，溫度就下降幾分。", type: "dark", choices: [
+                { text: "點亮所有光源", icon: "fa-lightbulb", req: "fuel", effect: { fuel: -3, san: 5 }, msg: "光芒讓你稍微安心，但燃料消耗巨大。" },
+                { text: "摸黑前進", icon: "fa-walking", type: "check", checkType: "courage", chance: 40, success: { courage: 15 }, fail: { hp: -10, san: -10, msg: "你踩空了，滾下了幾階，黑暗中似乎有手推了你一把。" } },
+                { text: "投擲石頭探路", icon: "fa-cube", effect: { insight: 5 }, msg: "回音告訴你下面是一個巨大的空洞空間。" }
+            ]},
+            10: { text: "【階段三：深淵】你不得不前往地下室。這裡充滿了血肉組成的牆壁，每一次呼吸都帶著血腥味。", type: "blood", choices: [
+                { text: "用火燒出一條路", icon: "fa-fire", req: "lighter", effect: { fuel: -5, san: 5 }, msg: "火焰讓血肉退縮，你聞到了焦臭味，但路通了。" },
+                { text: "直接衝過去", icon: "fa-running", type: "check", checkType: "courage", chance: 50, success: { courage: 10, hp: -5 }, fail: { hp: -15, san: -10, msg: "你被觸手絆倒，甚至吞下了一些不明組織液。" } },
+                { text: "仔細解剖牆壁", icon: "fa-scalpel", type: "check", checkType: "insight", chance: 30, success: { insight: 20, item: "medkit" }, fail: { san: -20, msg: "你發現這些血肉...是你認識的人的組織。", reckless: true } }
+            ]},
+            11: { text: "地下走廊淹水了。汙濁的水深及腰部，水面上漂浮著傢俱殘骸...和屍體。", type: "water", choices: [
+                { text: "涉水而過", icon: "fa-water", type: "check", checkType: "courage", chance: 60, success: { courage: 5 }, fail: { hp: -10, msg: "水下的尖銳物劃破了你的腿，傷口刺痛。" } },
+                { text: "在屍體上尋找物資", icon: "fa-search", effect: { san: -10, item: "medkit" }, msg: "你忍著噁心搜身，找到了一個還能用的急救包。", reckless: true },
+                { text: "爬上管線移動", icon: "fa-grip-lines", type: "check", checkType: "courage", chance: 40, success: { hp: 0 }, fail: { hp: -15, msg: "管線斷裂，你重重摔進水裡，嗆了一大口汙水。" } }
+            ]},
+            12: { text: "幫浦室。巨大的活塞發出震耳欲聾的轟鳴聲，彷彿巨獸的心跳。這裡似乎控制著水流。", type: "noise", choices: [
+                { text: "破壞控制面板", icon: "fa-hammer", req: "crowbar", effect: { courage: 10, san: 5 }, msg: "機械停止了運轉，噪音消失了，世界清靜了。" },
+                { text: "研究操作手冊", icon: "fa-book-reader", type: "check", checkType: "insight", chance: 70, success: { insight: 15, msg: "你學會了如何排空下一個房間的水。" }, fail: { san: -5, msg: "手冊上的文字變成了爬蟲，你看不懂。" } },
+                { text: "躲在角落休息", icon: "fa-bed", effect: { hp: 10, fuel: -2 }, msg: "在噪音中你反而感到一種奇異的安全感，稍作休息。" }
+            ]},
+            13: { text: "你需要通過一條完全被水淹沒的隧道。如果你在幫浦室沒有排水，這將是一場賭博。", type: "water", choices: [
+                { text: "閉氣潛游", icon: "fa-swimmer", type: "check", checkType: "courage", chance: 50, success: { courage: 15 }, fail: { hp: -20, san: -10, msg: "你差點溺死，水中的黑影抓住了你的腳踝。" } },
+                { text: "使用鏡之碎片觀察水下", icon: "fa-search", req: "mirror_shard", effect: { insight: 10 }, msg: "鏡子讓你看清了水下的陷阱，你安全繞過了它們。" },
+                { text: "喝下不知名的藥水", icon: "fa-flask", effect: { hp: 20, san: -20 }, msg: "你喝下了在實驗室找到的藥水，身體充滿力量，但腦袋變得混亂。", reckless: true }
+            ]},
+            14: { text: "你闖入了一個充滿蛋的巢穴。這些蛋半透明，裡面蜷縮著人形的胚胎。如果不小心，就會驚動母體。", type: "dark", choices: [
+                { text: "悄悄通過", icon: "fa-shoe-prints", type: "check", checkType: "insight", chance: 60, success: { insight: 10 }, fail: { hp: -15, msg: "你踩碎了一顆蛋，酸液濺射，母體發出了尖嘯。" } },
+                { text: "火燒巢穴", icon: "fa-fire", req: "fuel", effect: { fuel: -10, courage: 20, san: -10 }, msg: "你燒光了一切。胚胎的慘叫聲將伴隨你一生，但威脅解除了。", reckless: true },
+                { text: "偷走一顆蛋", icon: "fa-egg", effect: { san: -30, insight: 30 }, msg: "你瘋了嗎？你把怪物裝進了背包。你感覺它在背包裡跳動。", reckless: true }
+            ]},
+            15: { text: "巨大的蓄水池。水面平靜得可怕，深處似乎有巨大的黑影在游動。", type: "dark", choices: [
+                { text: "快速游過去", icon: "fa-swimmer", type: "check", checkType: "courage", chance: 40, success: { courage: 20 }, fail: { hp: -30, msg: "水下的東西咬掉了你一塊肉！", tag: "blood" } },
+                { text: "投擲肉塊引開怪物", icon: "fa-drumstick-bite", effect: { san: -5, insight: 5 }, msg: "你割下自己的一點皮膚扔進水裡...這很瘋狂，但有效。", reckless: true },
+                { text: "用槍射擊水面", icon: "fa-gun", req: "gun", effect: { itemLost: "gun", courage: 10 }, msg: "槍聲在地下迴盪。怪物被激怒了，但你趁亂逃脫。槍掉進了水裡。" }
+            ]},
+            16: { text: "【階段四：異界】你穿過了一扇門，卻發現自己倒立在天花板上。這裡的幾何結構完全錯誤，看久了會讓人想吐。", type: "noise", choices: [
+                { text: "閉眼憑感覺走", icon: "fa-blind", type: "check", checkType: "insight", chance: 50, success: { insight: 10, san: 5 }, fail: { hp: -10, msg: "你撞到了看不見的牆角，頭破血流。" } },
+                { text: "強迫自己理解結構", icon: "fa-brain", effect: { insight: 30, san: -20 }, msg: "你理解了非歐幾里得幾何，但你的大腦結構似乎也被改變了。" },
+                { text: "服用急救包中的鎮定劑", icon: "fa-pills", req: "medkit", effect: { san: 20, hp: 5 }, msg: "藥物讓你冷靜下來，世界看起來稍微正常了一點。" }
+            ]},
+            17: { text: "時間似乎在這裡停滯。你看到前方的走廊上，有一個和你穿著一模一樣的人背對著你。", type: "dark", choices: [
+                { text: "拍他的肩膀", icon: "fa-hand-point-right", effect: { san: -30 }, msg: "他轉過頭，那是一具腐爛已久的骷髏。那是未來的你。", reckless: true },
+                { text: "開槍射擊", icon: "fa-gun", req: "gun", effect: { san: -10, itemLost: "gun" }, msg: "你殺了他。如果那是未來的你，那你剛剛自殺了嗎？槍支卡殼損壞。" },
+                { text: "繞道而行", icon: "fa-route", type: "check", checkType: "insight", chance: 60, success: { san: 5 }, fail: { san: -10, msg: "你聽到他在背後叫你的名字，聲音淒厲。" } }
+            ]},
+            18: { text: "你進入了一個充滿鐘錶的房間。所有的鐘錶都指向不同的時間，滴答聲匯聚成巨大的噪音。", type: "noise", choices: [
+                { text: "打破最大的鐘", icon: "fa-hammer", req: "crowbar", effect: { courage: 10, san: -5 }, msg: "鐘聲停止了，但時間似乎開始倒流。" },
+                { text: "調整自己的手錶", icon: "fa-clock", type: "check", checkType: "insight", chance: 70, success: { insight: 15, msg: "你找到了正確的時間頻率，擺脫了時間迷宮。" }, fail: { fuel: -5, msg: "你迷失了時間感，感覺過了好幾天，燃料耗盡。" } },
+                { text: "摀住耳朵尖叫", icon: "fa-deaf", effect: { san: -15 }, msg: "你試圖用自己的聲音蓋過鐘聲，這讓你顯得更加瘋狂。", reckless: true }
+            ]},
+            19: { text: "星空虛空。地板消失了，你漂浮在宇宙中。巨大的古神觸手在星辰間緩慢蠕動。", type: "dark", choices: [
+                { text: "直視古神", icon: "fa-eye", type: "check", checkType: "insight", chance: 30, success: { insight: 50, san: -40 }, fail: { san: -100, msg: "你的大腦瞬間被燒毀。即死判定。" } },
+                { text: "抓住漂浮的殘骸", icon: "fa-hand-rock", type: "check", checkType: "courage", chance: 60, success: { courage: 10 }, fail: { hp: -20, msg: "殘骸上有尖刺，你受了傷。" } },
+                { text: "使用護符保護自己", icon: "fa-shield-alt", req: "amulet", effect: { san: 10 }, msg: "護符張開了一道微弱的屏障，隔絕了虛空的寒冷。" }
+            ]},
+            20: { text: "【階段五：儀式】你終於重摔在祭壇前。現實與虛幻重疊。古神即將降臨。如果你救了導師，他現在正倒在血泊中畫著法陣。", type: "blood", choices: [
+                { text: "誦讀筆記上的反咒", icon: "fa-book", req: "journal", type: "check", checkType: "insight", chance: 70, success: { insight: 30, san: -10, msg: "咒語生效了！古神的動作變慢了。", flag: "ritual_started" }, fail: { san: -20, msg: "你唸錯了一個音節，腦袋像是要炸開一樣。" } },
+                { text: "物理破壞祭壇", icon: "fa-hammer", req: "crowbar", type: "check", checkType: "courage", chance: 60, success: { courage: 20, hp: -10, msg: "你砸碎了祭壇一角，能量亂流劃傷了你。", flag: "altar_damaged" }, fail: { hp: -30, msg: "反衝力將你擊飛，肋骨斷了幾根。" } },
+                { text: "獻祭自己", icon: "fa-skull", effect: { hp: -99, san: 0 }, msg: "你走上了祭壇，成為了祭品...", reckless: true }
+            ]},
+            21: { text: "祭壇的守護者出現了——一隻由無數人手組成的怪物。它擋在核心前。", type: "blood", choices: [
+                { text: "用槍射擊核心", icon: "fa-gun", req: "gun", effect: { itemLost: "gun", courage: 20 }, msg: "最後一顆子彈命中了！怪物發出哀嚎。槍膛炸裂。" },
+                { text: "用火攻", icon: "fa-fire", req: "fuel", effect: { fuel: -10, hp: -10 }, msg: "你將最後的燃料潑灑出去並點燃。你也被燒傷了。" },
+                { text: "靈活閃避", icon: "fa-running", type: "check", checkType: "courage", chance: 50, success: { hp: -5 }, fail: { hp: -40, msg: "你被數十隻手同時抓住，骨頭碎裂。" } }
+            ]},
+            22: { text: "古神的低語直接鑽入你的腦海。祂許諾給你無盡的知識與力量，只要你放棄抵抗。", type: "noise", choices: [
+                { text: "拒絕誘惑，咬破舌頭", icon: "fa-user-slash", effect: { hp: -10, san: 10, courage: 20 }, msg: "疼痛讓你保持清醒。你吐出一口血水，嘲笑神祇。" },
+                { text: "動搖，傾聽低語", icon: "fa-question", effect: { san: -30, insight: 20 }, msg: "你看到了一切的真理...人類只是塵埃。你快要崩潰了。" },
+                { text: "使用鏡之碎片反射", icon: "fa-gem", req: "mirror_shard", effect: { san: 10 }, msg: "你將鏡子對準虛空，古神似乎對自己的醜陋感到厭惡。" }
+            ]},
+            23: { text: "儀式到了最後階段。天空裂開，巨大的眼睛注視著你。你需要最後的準備。", type: "dark", choices: [
+                { text: "檢查所有裝備", icon: "fa-toolbox", type: "check", checkType: "insight", chance: 80, success: { insight: 10 }, fail: { san: -5, msg: "你發現大部分裝備都壞了，絕望感襲來。" } },
+                { text: "祈禱", icon: "fa-praying-hands", effect: { san: 20, courage: -10 }, msg: "你向任何可能聆聽的神祈禱。內心獲得了平靜，但鬥志消退。" },
+                { text: "注射急救包裡所有的藥", icon: "fa-syringe", req: "medkit", effect: { hp: 50, san: -20 }, msg: "你感覺不到疼痛了，你現在是個戰鬥機器，也是個瘋子。", reckless: true }
+            ]},
+            24: { text: "這是最後的抉擇。虛空之門即將完全打開，或者被永遠關閉。你的每一個細胞都在尖叫。", type: "dark", choices: [
+                { text: "使用護符封印 (需要儀式啟動)", icon: "fa-shield-alt", req: "amulet", effect: { final: "seal" }, msg: "你舉起護符，衝向光芒中心！" },
+                { text: "與古神同歸於盡 (需要燃料)", icon: "fa-bomb", req: "fuel", effect: { final: "boom" }, msg: "你點燃了所有剩餘的燃料，引爆了整個地下室！" },
+                { text: "逃跑，不顧一切", icon: "fa-running", effect: { final: "escape" }, msg: "你轉身狂奔，背後是世界的崩塌..." }
+            ]},
+            25: { text: "結局判定中...", type: "end", choices: [] }
+        };
+
+        /* 遊戲引擎 */
+        const game = {
+            turn: 1,
+            maxTurns: 25,
+            stats: { hp: 100, san: 80, courage: 50, insight: 10, fuel: 10 },
+            inventory: [],
+            flags: [],
+            phobia: null,
+            isGameOver: false,
+            finalChoice: null,
+            
+            start: function() {
+                this.turn = 1;
+                this.stats = { hp: 100, san: 80, courage: 50, insight: 10, fuel: 10 };
+                this.inventory = [];
+                this.flags = [];
+                this.isGameOver = false;
+                this.phobia = PHOBIAS[Math.floor(Math.random() * PHOBIAS.length)];
+                
+                document.getElementById('start-screen').style.display = 'none';
+                document.getElementById('end-screen').style.display = 'none';
+                document.getElementById('log-content').innerHTML = '';
+                
+                this.updateUI();
+                this.log(`進入詭屋。你的弱點是：${this.phobia.name} (${this.phobia.desc})`, "log-info");
+                this.loadScenario();
+                this.checkAtmosphere();
+            },
+
+            reset: function() {
+                document.getElementById('start-screen').style.display = 'flex';
+                document.getElementById('end-screen').style.display = 'none';
+            },
+
+            loadScenario: function() {
+                if (this.turn > this.maxTurns) {
+                    this.triggerEnding();
+                    return;
+                }
+
+                if (this.turn === 25) {
+                    this.triggerEnding();
+                    return;
+                }
+
+                let data = SCENARIOS[this.turn];
+                
+                let text = data.text;
+                let choices = [...data.choices];
+
+                // SAN值 < 30 的瘋狂效果
+                if (this.stats.san < 30) {
+                    text += " <span class='text-distort' style='display:block; margin-top:10px; color:#e74c3c;'>[幻聽] " + this.getMadnessText() + "</span>";
+                    
+                    if (Math.random() < 0.4) {
+                        choices.push({
+                            text: "聽從低語：挖出自己的眼睛",
+                            icon: "fa-eye-slash",
+                            effect: { hp: -50, san: -50 },
+                            msg: "你瘋了。世界陷入了黑暗。",
+                            reckless: true,
+                            isMadness: true
+                        });
+                    }
+                }
+
+                const storyContent = document.getElementById('story-content');
+                storyContent.innerHTML = `<i class="fas ${this.getScenarioIcon(this.turn)} story-icon"></i>` + text;
+                
+                storyContent.className = 'story-text';
+                void storyContent.offsetWidth; 
+                storyContent.classList.add(this.stats.san < 60 ? 'hallucination' : 'fade-in');
+
+                const choiceArea = document.getElementById('choice-area');
+                choiceArea.innerHTML = '';
+
+                choices.forEach(choice => {
+                    if (choice.req && !this.hasItem(choice.req)) return;
+                    if (choice.req === 'fuel' && this.stats.fuel <= 0) return;
+
+                    const btn = document.createElement('button');
+                    btn.className = 'choice-btn';
+                    if (choice.isMadness) btn.classList.add('madness-choice');
+                    
+                    let iconHtml = `<i class="fas ${choice.icon || 'fa-circle'}"></i>`;
+                    let chanceHtml = choice.type === 'check' ? `<span class="chance-tag">${this.calculateChance(choice)}%</span>` : '';
+                    
+                    btn.innerHTML = `${iconHtml} ${choice.text} ${chanceHtml}`;
+                    btn.onclick = () => this.handleInput(choice);
+                    choiceArea.appendChild(btn);
+                });
+
+                document.getElementById('turn-display').innerText = this.turn;
+            },
+
+            calculateChance: function(choice) {
+                let base = choice.chance;
+                if (choice.checkType === 'insight' && this.hasItem('journal')) base += 10;
+                if (choice.checkType === 'courage' && this.hasItem('crowbar')) base += 10;
+                return Math.min(95, base);
+            },
+
+            handleInput: async function(choice) {
+                if (this.isGameOver) return;
+
+                document.getElementById('app-container').classList.add('shake');
+                setTimeout(() => document.getElementById('app-container').classList.remove('shake'), 500);
+
+                if (choice.effect && choice.effect.final) this.finalChoice = choice.effect.final;
+
+                if (choice.type === 'check') {
+                    const chance = this.calculateChance(choice);
+                    const result = await this.rollDice(chance);
+                    if (result) {
+                        this.applyEffect(choice.success);
+                    } else {
+                        this.applyEffect(choice.fail);
+                    }
+                } else {
+                    this.applyEffect(choice.effect || choice);
+                    if (choice.msg) this.log(choice.msg, "log-info");
+                }
+
+                // 魯莽懲罰加重
+                if (choice.reckless) {
+                    this.stats.san -= 30; // 懲罰加重
+                    this.log("【魯莽行為】你的理智受到了重創！ SAN -30", "log-negative");
+                }
+
+                // 恐懼症檢定
+                const currentScene = SCENARIOS[this.turn] || {};
+                if (currentScene.type === this.phobia.id) {
+                    if (this.stats.san < 60) {
+                        this.stats.san -= 10;
+                        this.log(`【恐懼症】${this.phobia.name}發作！ SAN -10`, "log-negative");
+                    }
+                }
+
+                this.postTurnProcess();
+            },
+
+            applyEffect: function(effect) {
+                if (!effect) return;
+                if (effect.hp) this.stats.hp += effect.hp;
+                if (effect.san) this.stats.san += effect.san;
+                if (effect.courage) this.stats.courage += effect.courage;
+                if (effect.insight) this.stats.insight += effect.insight;
+                if (effect.fuel) this.stats.fuel += effect.fuel;
+                
+                if (effect.item) {
+                    this.addItem(effect.item);
+                    document.getElementById('inventory-bar').classList.add('item-get-anim');
+                    setTimeout(()=>document.getElementById('inventory-bar').classList.remove('item-get-anim'), 1000);
+                }
+                if (effect.itemLost) this.removeItem(effect.itemLost);
+                if (effect.flag) this.flags.push(effect.flag);
+                
+                if (effect.msg) {
+                    const type = (effect.hp < 0 || effect.san < 0) ? "log-negative" : "log-positive";
+                    this.log(effect.msg, type);
+                }
+                this.logStatsChange(effect);
+            },
+
+            postTurnProcess: function() {
+                this.stats.hp = Math.min(100, Math.max(0, this.stats.hp));
+                this.stats.san = Math.min(100, Math.max(0, this.stats.san));
+                this.stats.fuel = Math.min(50, Math.max(0, this.stats.fuel));
+
+                if (this.hasItem('lighter')) {
+                    this.stats.fuel -= 1;
+                    if (this.stats.fuel <= 0) this.log("打火機燃料耗盡！", "log-negative");
+                }
+
+                this.updateUI();
+                this.checkAtmosphere();
+
+                if (this.stats.hp <= 0) {
+                    this.endGame("死亡結局", "fa-skull-crossbones", "你的肉體無法承受這些傷害。你倒下了，成為了這棟屋子新的養分。");
+                    return;
+                }
+                if (this.stats.san <= 0) {
+                    this.endGame("瘋狂結局", "fa-dizzy", "你的理智徹底崩潰。你挖出了自己的雙眼，因為這樣就不用再看到那些恐懼了。");
+                    return;
+                }
+
+                if (Math.random() < 0.20 && this.turn < 24) {
+                    const evt = FORCED_EVENTS[Math.floor(Math.random() * FORCED_EVENTS.length)];
+                    if (!evt.condition || evt.condition(this)) {
+                        this.log(evt.msg, "log-event");
+                        this.applyEffect(evt.effect);
+                    }
+                }
+
+                this.turn++;
+                setTimeout(() => this.loadScenario(), 500); // 加快過場
+            },
+
+            /* 視覺化擲骰 (極速版) */
+            rollDice: function(chance) {
+                return new Promise(resolve => {
+                    const overlay = document.getElementById('dice-overlay');
+                    const diceVisual = document.getElementById('dice-visual');
+                    const diceMsg = document.getElementById('dice-msg');
+                    const diceDetail = document.getElementById('dice-detail');
+
+                    overlay.style.display = 'flex';
+                    diceVisual.className = 'dice-rolling';
+                    diceVisual.innerText = '';
+                    diceMsg.innerText = "命運檢定中...";
+                    diceMsg.style.color = "#ddd";
+                    diceDetail.innerText = `目標成功率: ${chance}%`;
+
+                    // 0.6秒後顯示結果 (大幅加速)
+                    setTimeout(() => {
+                        const roll = Math.floor(Math.random() * 100) + 1;
+                        const isSuccess = roll <= chance;
+                        
+                        diceVisual.className = '';
+                        diceVisual.innerText = roll;
+                        
+                        if (isSuccess) {
+                            diceVisual.classList.add('dice-success');
+                            diceMsg.innerText = "檢定成功！";
+                            diceMsg.style.color = "#2ecc71";
+                        } else {
+                            diceVisual.classList.add('dice-fail');
+                            diceMsg.innerText = "檢定失敗...";
+                            diceMsg.style.color = "#e74c3c";
+                        }
+
+                        // 0.6秒後關閉 (大幅加速)
+                        setTimeout(() => {
+                            overlay.style.display = 'none';
+                            diceVisual.classList.remove('dice-success', 'dice-fail');
+                            resolve(isSuccess);
+                        }, 600);
+                    }, 600);
+                });
+            },
+
+            triggerEnding: function() {
+                let title, desc, icon;
+                const { san, insight, courage } = this.stats;
+                const hasAmulet = this.hasItem('amulet');
+                const mentorSaved = this.flags.includes('mentor_saved');
+                const ritualStarted = this.flags.includes('ritual_started');
+
+                if (this.finalChoice === 'seal' && hasAmulet && ritualStarted) {
+                    title = "真結局：永恆封印";
+                    desc = "在導師的協助與護符的力量下，你成功封印了古神。這棟屋子坍塌了，掩埋了一切秘密。你是英雄，雖然沒人知道。";
+                    icon = "fa-star";
+                } else if (this.finalChoice === 'boom') {
+                    title = "爆炸結局：毀滅與重生";
+                    desc = "你炸毀了一切。雖然你沒能逃出來，但至少那些怪物也陪葬了。你的犧牲是有價值的。";
+                    icon = "fa-bomb";
+                } else if (this.finalChoice === 'escape' && mentorSaved) {
+                    title = "好結局：師徒倖存";
+                    desc = "你帶著受傷的導師逃出了洋館。雖然古神依然在沉睡，但你們活了下來，並將這段經歷寫成了警告世人的書籍。";
+                    icon = "fa-user-friends";
+                } else if (this.finalChoice === 'escape') {
+                    title = "普通結局：孤獨的倖存者";
+                    desc = "你逃了出來，但這段記憶將永遠折磨你。你經常在半夜驚醒，聽見那些低語。";
+                    icon = "fa-running";
+                } else {
+                    title = "壞結局：儀式失敗";
+                    desc = "你沒能阻止祂。當古神降臨時，你是第一個見證者，也是第一個祭品。";
+                    icon = "fa-eye";
+                }
+
+                this.endGame(title, icon, desc);
+            },
+
+            addItem: function(itemId) {
+                if (this.inventory.includes(itemId)) return;
+                this.inventory.push(itemId);
+                this.log(`獲得道具: ${ITEMS[itemId].name}`, "log-item");
+            },
+            hasItem: function(id) { return this.inventory.includes(id); },
+            removeItem: function(id) { 
+                this.inventory = this.inventory.filter(i => i !== id);
+                this.log(`失去道具: ${ITEMS[id].name}`, "log-negative");
+            },
+            
+            updateUI: function() {
+                document.getElementById('hp-val').innerText = this.stats.hp;
+                document.getElementById('san-val').innerText = this.stats.san;
+                document.getElementById('courage-val').innerText = this.stats.courage;
+                document.getElementById('insight-val').innerText = this.stats.insight;
+                document.getElementById('fuel-val').innerText = this.stats.fuel;
+                document.getElementById('phobia-display').innerText = `(${this.phobia.name})`;
+
+                const invList = document.getElementById('inventory-list');
+                invList.innerHTML = this.inventory.map(id => 
+                    `<div class="inv-item tooltip"><i class="fas ${ITEMS[id].icon}"></i> ${ITEMS[id].name}
+                        <span class="tooltiptext">${ITEMS[id].desc}</span>
+                    </div>`
+                ).join('');
+            },
+
+            checkAtmosphere: function() {
+                const vignette = document.getElementById('vignette');
+                const storyContent = document.getElementById('story-content');
+                
+                vignette.className = '';
+                if (this.stats.hp < 30) vignette.classList.add('pulse-fast');
+                else if (this.stats.hp < 60) vignette.classList.add('pulse-slow');
+
+                if (this.stats.san < 60) storyContent.classList.add('text-distort');
+                else storyContent.classList.remove('text-distort');
+                
+                if (this.stats.san < 30) storyContent.classList.add('hallucination');
+                else storyContent.classList.remove('hallucination');
+            },
+
+            log: function(msg, cls) {
+                const win = document.getElementById('log-content');
+                win.innerHTML = `<div class="log-entry ${cls} log-new">> ${msg}</div>` + win.innerHTML;
+            },
+
+            logStatsChange: function(effect) {
+                let parts = [];
+                if (effect.hp) parts.push(`HP ${effect.hp>0?'+':''}${effect.hp}`);
+                if (effect.san) parts.push(`SAN ${effect.san>0?'+':''}${effect.san}`);
+                if (parts.length) this.log(`[數值] ${parts.join(', ')}`, effect.hp<0||effect.san<0?"log-negative":"log-positive");
+            },
+
+            getScenarioIcon: function(turn) {
+                if (turn <= 5) return "fa-door-open";
+                if (turn <= 12) return "fa-book-dead";
+                if (turn <= 18) return "fa-water";
+                return "fa-star-of-life";
+            },
+
+            getMadnessText: function() {
+                const texts = ["殺了他們...", "只有死是真實的...", "眼睛...好多眼睛...", "你的皮膚下有蟲...", "不要回頭..."];
+                return texts[Math.floor(Math.random() * texts.length)];
+            },
+
+            endGame: function(title, iconClass, desc) {
+                this.isGameOver = true;
+                const screen = document.getElementById('end-screen');
+                document.getElementById('end-title').innerText = title;
+                document.getElementById('end-desc').innerText = desc;
+                document.getElementById('end-icon').innerHTML = `<i class="fas ${iconClass}"></i>`;
+                document.getElementById('end-stats').innerText = `最終狀態: HP:${this.stats.hp} SAN:${this.stats.san}`;
+                setTimeout(() => screen.style.display = 'flex', 1500);
+            }
+        };
+
+        window.onload = () => game.reset();
+    </script>
+</body>
+</html>
