@@ -512,109 +512,109 @@
         /* 完整 25 回合獨立劇本 */
         const SCENARIOS = {
             1: { text: "大門在你身後重重關上，金屬撞擊聲如同野獸低吼。這是一棟維多利亞時代的廢棄洋館。門廳中央有一張積灰的桌子，空氣中瀰漫著霉味與海水的鹹腥。", type: "dark", choices: [
-                { text: "搜索桌子", icon: "fa-search", type: "check", checkType: "insight", chance: 70, success: { item: 'lighter', msg: "你在抽屜找到一個還能用的打火機。" }, fail: { hp: -5, msg: "抽屜裡的毒蜘蛛咬了你一口。" } },
+                { text: "搜索桌子", icon: "fa-search", type: "check", checkType: "insight", chance: 80, success: { item: 'lighter', msg: "你在抽屜找到一個還能用的打火機。" }, fail: { hp: -5, msg: "抽屜裡的毒蜘蛛咬了你一口。" } },
                 { text: "檢查地面痕跡", icon: "fa-eye", effect: { insight: 5, san: -2 }, msg: "你看到了泥土中拖行的痕跡，通往樓梯。" },
                 { text: "強行破壞大門", icon: "fa-door-closed", effect: { hp: -10, san: -10 }, msg: "徒勞無功。你用盡力氣，只是讓手掌流血。", reckless: true }
             ]},
             2: { text: "你來到宴會廳。長桌上擺滿了腐爛的食物，某些肉塊似乎還在輕微跳動。牆上掛著一幅巨大的家族肖像畫，畫中人的眼睛被挖空了。", type: "blood", choices: [
                 { text: "靠近觀察肖像畫", icon: "fa-image", effect: { insight: 10, san: -5 }, msg: "你發現畫框後面藏著紙條，但畫中人流出了血淚。" },
-                { text: "搜索餐具櫃", icon: "fa-box", type: "check", checkType: "insight", chance: 50, success: { item: 'key', msg: "你在銀器堆中發現一把鏽蝕的鑰匙。" }, fail: { hp: -5, san: -5, msg: "櫃子突然倒塌，壓傷了你的腿，聲響巨大。", tag: "noise" } },
+                { text: "搜索餐具櫃", icon: "fa-box", type: "check", checkType: "insight", chance: 70, success: { item: 'key', msg: "你在銀器堆中發現一把鏽蝕的鑰匙。" }, fail: { hp: -5, san: -5, msg: "櫃子突然倒塌，壓傷了你的腿，聲響巨大。", tag: "noise" } },
                 { text: "無視一切快速通過", icon: "fa-running", effect: { courage: -2 }, msg: "你選擇逃避，雖然安全但錯過了可能的線索。" }
             ]},
             3: { text: "走廊深處傳來奇怪的低語聲。你看到一扇厚重的橡木門縫透出詭異的綠光。你的直覺告訴你裡面很危險。", type: "noise", choices: [
                 { text: "貼耳偷聽", icon: "fa-ear-listen", effect: { insight: 15, san: -15 }, msg: "你聽懂了幾個音節，那不屬於人類語言。你的大腦在顫抖。" },
-                { text: "撞開大門", icon: "fa-door-open", type: "check", checkType: "courage", chance: 40, success: { courage: 10, msg: "你撞開了門，打斷了裡面的幻影儀式。" }, fail: { hp: -10, msg: "你撞在門上，門板反彈讓你肩膀脫臼，且驚動了未知的存在。" } },
-                { text: "尋找其他入口", icon: "fa-search", effect: { insight: 5, fuel: -2 }, msg: "你花費時間繞路，發現了牆上的通風口，但燃料減少了。" }
+                { text: "撞開大門", icon: "fa-door-open", type: "check", checkType: "courage", chance: 70, success: { courage: 10, msg: "你撞開了門，打斷了裡面的幻影儀式。" }, fail: { hp: -10, msg: "你撞在門上，門板反彈讓你肩膀脫臼，且驚動了未知的存在。" } },
+                { text: "搜索附近的雜物間", icon: "fa-search", type: "check", checkType: "insight", chance: 80, success: { item: 'crowbar', msg: "你在雜物堆中找到了一把堅固的撬棍。" }, fail: { san: -5, msg: "雜物間裡全是死老鼠，你一無所獲。" } }
             ]},
             4: { text: "【階段二：異變】屋子的結構開始改變。你身處二樓圖書室，這裡的書籍全都飄浮在空中，違背了重力法則。", type: "dark", choices: [
-                { text: "抓取飄浮的日記本", icon: "fa-book", type: "check", checkType: "insight", chance: 60, success: { item: 'journal', msg: "你跳起來抓住了導師的筆記。" }, fail: { san: -10, msg: "書本變成了一張張尖叫的人臉，咬傷了你的手。" } },
+                { text: "抓取飄浮的日記本", icon: "fa-book", type: "check", checkType: "insight", chance: 75, success: { item: 'journal', msg: "你跳起來抓住了導師的筆記。" }, fail: { san: -10, msg: "書本變成了一張張尖叫的人臉，咬傷了你的手。" } },
                 { text: "用撬棍擊落書本", icon: "fa-hammer", req: "crowbar", effect: { courage: 5, san: -5 }, msg: "你暴力地擊落了書本，這種破壞感讓你稍微找回控制權。" },
                 { text: "躲在桌子底下", icon: "fa-shield-alt", effect: { san: 5, hp: 5 }, msg: "你選擇暫時逃避現實，回復了一點狀態。" }
             ]},
             5: { text: "書架後方傳來沉重的腳步聲。一個無頭的影子正在巡邏。你必須決定行動。", type: "noise", choices: [
-                { text: "屏住呼吸不動", icon: "fa-stop", type: "check", checkType: "courage", chance: 50, success: { san: 5, msg: "影子沒有發現你，離開了。" }, fail: { san: -15, msg: "你忍不住發出聲響，影子穿過你的身體，帶走了你的體溫與理智。" } },
+                { text: "屏住呼吸不動", icon: "fa-stop", type: "check", checkType: "courage", chance: 60, success: { san: 5, msg: "影子沒有發現你，離開了。" }, fail: { san: -15, msg: "你忍不住發出聲響，影子穿過你的身體，帶走了你的體溫與理智。" } },
                 { text: "扔出物品引開它", icon: "fa-share", effect: { insight: 5, itemLost: 'lighter' }, msg: "你扔出了打火機（如果有的話），成功引開了它，但失去了光源。" },
                 { text: "與影子戰鬥", icon: "fa-fist-raised", effect: { hp: -20, courage: 20 }, msg: "你瘋狂地揮舞拳頭，影子消散了，但你也受了重傷。", reckless: true }
             ]},
             6: { text: "你在走廊盡頭發現了一間牢房。導師被鐵鍊鎖在裡面，他看起來神智不清，嘴裡唸叨著「眼睛...在看著...」。", type: "blood", choices: [
-                { text: "嘗試喚醒導師", icon: "fa-user-md", type: "check", checkType: "insight", chance: 40, success: { insight: 20, msg: "導師恢復了一絲清醒，告訴了你儀式的弱點！", flag: "mentor_hint" }, fail: { san: -10, msg: "導師對你尖叫，那聲音不像人類。" } },
-                { text: "用撬棍破壞鎖鏈", icon: "fa-hammer", req: "crowbar", type: "check", checkType: "courage", chance: 70, success: { courage: 10, msg: "你救出了導師！他雖然虛弱，但能跟隨你。", flag: "mentor_saved" }, fail: { hp: -10, msg: "鐵鍊反彈擊中了你的頭部。" } },
+                { text: "嘗試喚醒導師", icon: "fa-user-md", type: "check", checkType: "insight", chance: 70, success: { insight: 20, msg: "導師恢復了一絲清醒，告訴了你儀式的弱點！", flag: "mentor_hint" }, fail: { san: -10, msg: "導師對你尖叫，那聲音不像人類。" } },
+                { text: "用撬棍破壞鎖鏈", icon: "fa-hammer", req: "crowbar", type: "check", checkType: "courage", chance: 80, success: { courage: 10, msg: "你救出了導師！他雖然虛弱，但能跟隨你。", flag: "mentor_saved" }, fail: { hp: -10, msg: "鐵鍊反彈擊中了你的頭部。" } },
                 { text: "給他一把槍", icon: "fa-gun", req: "gun", effect: { san: -20, itemLost: 'gun' }, msg: "你把槍留給了他。一聲槍響後，牢房安靜了。你永遠失去了導師和武器。", reckless: true }
             ]},
             7: { text: "你進入了一個充滿腐臭味的廚房。巨大的鍋爐還在沸騰，裡面煮著不可名狀的東西。", type: "blood", choices: [
-                { text: "搜索廚櫃", icon: "fa-box-open", type: "check", checkType: "insight", chance: 60, success: { item: 'medkit', msg: "你找到了一個急救包！" }, fail: { hp: -5, msg: "一隻巨大的蟑螂咬了你的手。" } },
+                { text: "搜索奇怪的香料罐", icon: "fa-box-open", type: "check", checkType: "insight", chance: 75, success: { item: 'amulet', msg: "你在一個密封的罐子裡找到了舊印護符！" }, fail: { hp: -5, msg: "罐子裡藏著毒蠍，你被螫傷了。" } },
                 { text: "打翻鍋爐", icon: "fa-dumpster-fire", effect: { courage: 5, san: -10 }, msg: "湯汁流得滿地都是，裡面全是眼球。噁心，但毀掉了邪惡的晚餐。", reckless: true },
                 { text: "安靜離開", icon: "fa-walking", effect: { fuel: -1 }, msg: "你不想惹麻煩，悄悄離開了。" }
             ]},
             8: { text: "你來到僕人房。這裡的牆壁上寫滿了血書：「不要睡覺」、「它在鏡子裡」。房間角落有一面蒙著布的鏡子。", type: "dark", choices: [
-                { text: "揭開鏡子", icon: "fa-eye", type: "check", checkType: "courage", chance: 50, success: { insight: 15, item: "mirror_shard", msg: "鏡子碎了，你撿起一片碎片，發現它能映照出真實。" }, fail: { san: -20, msg: "你在鏡子裡看到自己正在腐爛。" } },
-                { text: "閱讀桌上的日記", icon: "fa-book-open", type: "check", checkType: "insight", chance: 70, success: { insight: 10, msg: "你了解到宅邸主人試圖召喚古神來復活女兒。" }, fail: { san: -5, msg: "日記裡的文字開始扭動，讓你頭痛。" } },
+                { text: "揭開鏡子", icon: "fa-eye", type: "check", checkType: "courage", chance: 70, success: { insight: 15, item: "mirror_shard", msg: "鏡子碎了，你撿起一片碎片，發現它能映照出真實。" }, fail: { san: -20, msg: "你在鏡子裡看到自己正在腐爛。" } },
+                { text: "閱讀桌上的日記", icon: "fa-book-open", type: "check", checkType: "insight", chance: 80, success: { insight: 10, msg: "你了解到宅邸主人試圖召喚古神來復活女兒。" }, fail: { san: -5, msg: "日記裡的文字開始扭動，讓你頭痛。" } },
                 { text: "燒掉這個房間", icon: "fa-fire", req: "lighter", effect: { fuel: -5, san: 5 }, msg: "火焰淨化了一切，但也消耗了大量燃料。" }
             ]},
             9: { text: "通往地下室的階梯深不見底，黑暗彷彿有實體般纏繞著你。每走一步，溫度就下降幾分。", type: "dark", choices: [
                 { text: "點亮所有光源", icon: "fa-lightbulb", req: "fuel", effect: { fuel: -3, san: 5 }, msg: "光芒讓你稍微安心，但燃料消耗巨大。" },
-                { text: "摸黑前進", icon: "fa-walking", type: "check", checkType: "courage", chance: 40, success: { courage: 15 }, fail: { hp: -10, san: -10, msg: "你踩空了，滾下了幾階，黑暗中似乎有手推了你一把。" } },
+                { text: "摸黑前進", icon: "fa-walking", type: "check", checkType: "courage", chance: 60, success: { courage: 15 }, fail: { hp: -10, san: -10, msg: "你踩空了，滾下了幾階，黑暗中似乎有手推了你一把。" } },
                 { text: "投擲石頭探路", icon: "fa-cube", effect: { insight: 5 }, msg: "回音告訴你下面是一個巨大的空洞空間。" }
             ]},
             10: { text: "【階段三：深淵】你不得不前往地下室。這裡充滿了血肉組成的牆壁，每一次呼吸都帶著血腥味。", type: "blood", choices: [
                 { text: "用火燒出一條路", icon: "fa-fire", req: "lighter", effect: { fuel: -5, san: 5 }, msg: "火焰讓血肉退縮，你聞到了焦臭味，但路通了。" },
-                { text: "直接衝過去", icon: "fa-running", type: "check", checkType: "courage", chance: 50, success: { courage: 10, hp: -5 }, fail: { hp: -15, san: -10, msg: "你被觸手絆倒，甚至吞下了一些不明組織液。" } },
-                { text: "仔細解剖牆壁", icon: "fa-scalpel", type: "check", checkType: "insight", chance: 30, success: { insight: 20, item: "medkit" }, fail: { san: -20, msg: "你發現這些血肉...是你認識的人的組織。", reckless: true } }
+                { text: "直接衝過去", icon: "fa-running", type: "check", checkType: "courage", chance: 60, success: { courage: 10, hp: -5 }, fail: { hp: -15, san: -10, msg: "你被觸手絆倒，甚至吞下了一些不明組織液。" } },
+                { text: "仔細解剖牆壁", icon: "fa-scalpel", type: "check", checkType: "insight", chance: 50, success: { insight: 20, item: "medkit" }, fail: { san: -20, msg: "你發現這些血肉...是你認識的人的組織。", reckless: true } }
             ]},
-            11: { text: "地下走廊淹水了。汙濁的水深及腰部，水面上漂浮著傢俱殘骸...和屍體。", type: "water", choices: [
-                { text: "涉水而過", icon: "fa-water", type: "check", checkType: "courage", chance: 60, success: { courage: 5 }, fail: { hp: -10, msg: "水下的尖銳物劃破了你的腿，傷口刺痛。" } },
-                { text: "在屍體上尋找物資", icon: "fa-search", effect: { san: -10, item: "medkit" }, msg: "你忍著噁心搜身，找到了一個還能用的急救包。", reckless: true },
-                { text: "爬上管線移動", icon: "fa-grip-lines", type: "check", checkType: "courage", chance: 40, success: { hp: 0 }, fail: { hp: -15, msg: "管線斷裂，你重重摔進水裡，嗆了一大口汙水。" } }
+            11: { text: "地下走廊淹水了。汙濁的水深及腰部，水面上漂浮著傢俱殘骸...和一具保全的屍體。", type: "water", choices: [
+                { text: "涉水而過", icon: "fa-water", type: "check", checkType: "courage", chance: 70, success: { courage: 5 }, fail: { hp: -10, msg: "水下的尖銳物劃破了你的腿，傷口刺痛。" } },
+                { text: "檢查保全屍體", icon: "fa-search", effect: { san: -5, item: "gun" }, msg: "你忍著噁心搜身，發現他的槍套裡還有一把左輪手槍！", reckless: true },
+                { text: "爬上管線移動", icon: "fa-grip-lines", type: "check", checkType: "courage", chance: 60, success: { hp: 0 }, fail: { hp: -15, msg: "管線斷裂，你重重摔進水裡，嗆了一大口汙水。" } }
             ]},
             12: { text: "幫浦室。巨大的活塞發出震耳欲聾的轟鳴聲，彷彿巨獸的心跳。這裡似乎控制著水流。", type: "noise", choices: [
                 { text: "破壞控制面板", icon: "fa-hammer", req: "crowbar", effect: { courage: 10, san: 5 }, msg: "機械停止了運轉，噪音消失了，世界清靜了。" },
-                { text: "研究操作手冊", icon: "fa-book-reader", type: "check", checkType: "insight", chance: 70, success: { insight: 15, msg: "你學會了如何排空下一個房間的水。" }, fail: { san: -5, msg: "手冊上的文字變成了爬蟲，你看不懂。" } },
+                { text: "研究操作手冊", icon: "fa-book-reader", type: "check", checkType: "insight", chance: 80, success: { insight: 15, msg: "你學會了如何排空下一個房間的水。" }, fail: { san: -5, msg: "手冊上的文字變成了爬蟲，你看不懂。" } },
                 { text: "躲在角落休息", icon: "fa-bed", effect: { hp: 10, fuel: -2 }, msg: "在噪音中你反而感到一種奇異的安全感，稍作休息。" }
             ]},
             13: { text: "你需要通過一條完全被水淹沒的隧道。如果你在幫浦室沒有排水，這將是一場賭博。", type: "water", choices: [
-                { text: "閉氣潛游", icon: "fa-swimmer", type: "check", checkType: "courage", chance: 50, success: { courage: 15 }, fail: { hp: -20, san: -10, msg: "你差點溺死，水中的黑影抓住了你的腳踝。" } },
+                { text: "閉氣潛游", icon: "fa-swimmer", type: "check", checkType: "courage", chance: 70, success: { courage: 15 }, fail: { hp: -20, san: -10, msg: "你差點溺死，水中的黑影抓住了你的腳踝。" } },
                 { text: "使用鏡之碎片觀察水下", icon: "fa-search", req: "mirror_shard", effect: { insight: 10 }, msg: "鏡子讓你看清了水下的陷阱，你安全繞過了它們。" },
                 { text: "喝下不知名的藥水", icon: "fa-flask", effect: { hp: 20, san: -20 }, msg: "你喝下了在實驗室找到的藥水，身體充滿力量，但腦袋變得混亂。", reckless: true }
             ]},
             14: { text: "你闖入了一個充滿蛋的巢穴。這些蛋半透明，裡面蜷縮著人形的胚胎。如果不小心，就會驚動母體。", type: "dark", choices: [
-                { text: "悄悄通過", icon: "fa-shoe-prints", type: "check", checkType: "insight", chance: 60, success: { insight: 10 }, fail: { hp: -15, msg: "你踩碎了一顆蛋，酸液濺射，母體發出了尖嘯。" } },
+                { text: "悄悄通過", icon: "fa-shoe-prints", type: "check", checkType: "insight", chance: 75, success: { insight: 10 }, fail: { hp: -15, msg: "你踩碎了一顆蛋，酸液濺射，母體發出了尖嘯。" } },
                 { text: "火燒巢穴", icon: "fa-fire", req: "fuel", effect: { fuel: -10, courage: 20, san: -10 }, msg: "你燒光了一切。胚胎的慘叫聲將伴隨你一生，但威脅解除了。", reckless: true },
                 { text: "偷走一顆蛋", icon: "fa-egg", effect: { san: -30, insight: 30 }, msg: "你瘋了嗎？你把怪物裝進了背包。你感覺它在背包裡跳動。", reckless: true }
             ]},
             15: { text: "巨大的蓄水池。水面平靜得可怕，深處似乎有巨大的黑影在游動。", type: "dark", choices: [
-                { text: "快速游過去", icon: "fa-swimmer", type: "check", checkType: "courage", chance: 40, success: { courage: 20 }, fail: { hp: -30, msg: "水下的東西咬掉了你一塊肉！", tag: "blood" } },
+                { text: "快速游過去", icon: "fa-swimmer", type: "check", checkType: "courage", chance: 70, success: { courage: 20 }, fail: { hp: -30, msg: "水下的東西咬掉了你一塊肉！", tag: "blood" } },
                 { text: "投擲肉塊引開怪物", icon: "fa-drumstick-bite", effect: { san: -5, insight: 5 }, msg: "你割下自己的一點皮膚扔進水裡...這很瘋狂，但有效。", reckless: true },
                 { text: "用槍射擊水面", icon: "fa-gun", req: "gun", effect: { itemLost: "gun", courage: 10 }, msg: "槍聲在地下迴盪。怪物被激怒了，但你趁亂逃脫。槍掉進了水裡。" }
             ]},
             16: { text: "【階段四：異界】你穿過了一扇門，卻發現自己倒立在天花板上。這裡的幾何結構完全錯誤，看久了會讓人想吐。", type: "noise", choices: [
-                { text: "閉眼憑感覺走", icon: "fa-blind", type: "check", checkType: "insight", chance: 50, success: { insight: 10, san: 5 }, fail: { hp: -10, msg: "你撞到了看不見的牆角，頭破血流。" } },
+                { text: "閉眼憑感覺走", icon: "fa-blind", type: "check", checkType: "insight", chance: 60, success: { insight: 10, san: 5 }, fail: { hp: -10, msg: "你撞到了看不見的牆角，頭破血流。" } },
                 { text: "強迫自己理解結構", icon: "fa-brain", effect: { insight: 30, san: -20 }, msg: "你理解了非歐幾里得幾何，但你的大腦結構似乎也被改變了。" },
                 { text: "服用急救包中的鎮定劑", icon: "fa-pills", req: "medkit", effect: { san: 20, hp: 5 }, msg: "藥物讓你冷靜下來，世界看起來稍微正常了一點。" }
             ]},
             17: { text: "時間似乎在這裡停滯。你看到前方的走廊上，有一個和你穿著一模一樣的人背對著你。", type: "dark", choices: [
                 { text: "拍他的肩膀", icon: "fa-hand-point-right", effect: { san: -30 }, msg: "他轉過頭，那是一具腐爛已久的骷髏。那是未來的你。", reckless: true },
                 { text: "開槍射擊", icon: "fa-gun", req: "gun", effect: { san: -10, itemLost: "gun" }, msg: "你殺了他。如果那是未來的你，那你剛剛自殺了嗎？槍支卡殼損壞。" },
-                { text: "繞道而行", icon: "fa-route", type: "check", checkType: "insight", chance: 60, success: { san: 5 }, fail: { san: -10, msg: "你聽到他在背後叫你的名字，聲音淒厲。" } }
+                { text: "繞道而行", icon: "fa-route", type: "check", checkType: "insight", chance: 75, success: { san: 5 }, fail: { san: -10, msg: "你聽到他在背後叫你的名字，聲音淒厲。" } }
             ]},
             18: { text: "你進入了一個充滿鐘錶的房間。所有的鐘錶都指向不同的時間，滴答聲匯聚成巨大的噪音。", type: "noise", choices: [
                 { text: "打破最大的鐘", icon: "fa-hammer", req: "crowbar", effect: { courage: 10, san: -5 }, msg: "鐘聲停止了，但時間似乎開始倒流。" },
-                { text: "調整自己的手錶", icon: "fa-clock", type: "check", checkType: "insight", chance: 70, success: { insight: 15, msg: "你找到了正確的時間頻率，擺脫了時間迷宮。" }, fail: { fuel: -5, msg: "你迷失了時間感，感覺過了好幾天，燃料耗盡。" } },
+                { text: "調整自己的手錶", icon: "fa-clock", type: "check", checkType: "insight", chance: 80, success: { insight: 15, msg: "你找到了正確的時間頻率，擺脫了時間迷宮。" }, fail: { fuel: -5, msg: "你迷失了時間感，感覺過了好幾天，燃料耗盡。" } },
                 { text: "摀住耳朵尖叫", icon: "fa-deaf", effect: { san: -15 }, msg: "你試圖用自己的聲音蓋過鐘聲，這讓你顯得更加瘋狂。", reckless: true }
             ]},
             19: { text: "星空虛空。地板消失了，你漂浮在宇宙中。巨大的古神觸手在星辰間緩慢蠕動。", type: "dark", choices: [
-                { text: "直視古神", icon: "fa-eye", type: "check", checkType: "insight", chance: 30, success: { insight: 50, san: -40 }, fail: { san: -100, msg: "你的大腦瞬間被燒毀。即死判定。" } },
-                { text: "抓住漂浮的殘骸", icon: "fa-hand-rock", type: "check", checkType: "courage", chance: 60, success: { courage: 10 }, fail: { hp: -20, msg: "殘骸上有尖刺，你受了傷。" } },
+                { text: "直視古神", icon: "fa-eye", type: "check", checkType: "insight", chance: 60, success: { insight: 50, san: -40 }, fail: { san: -100, msg: "你的大腦瞬間被燒毀。即死判定。" } },
+                { text: "抓住漂浮的殘骸", icon: "fa-hand-rock", type: "check", checkType: "courage", chance: 80, success: { courage: 10 }, fail: { hp: -20, msg: "殘骸上有尖刺，你受了傷。" } },
                 { text: "使用護符保護自己", icon: "fa-shield-alt", req: "amulet", effect: { san: 10 }, msg: "護符張開了一道微弱的屏障，隔絕了虛空的寒冷。" }
             ]},
             20: { text: "【階段五：儀式】你終於重摔在祭壇前。現實與虛幻重疊。古神即將降臨。如果你救了導師，他現在正倒在血泊中畫著法陣。", type: "blood", choices: [
-                { text: "誦讀筆記上的反咒", icon: "fa-book", req: "journal", type: "check", checkType: "insight", chance: 70, success: { insight: 30, san: -10, msg: "咒語生效了！古神的動作變慢了。", flag: "ritual_started" }, fail: { san: -20, msg: "你唸錯了一個音節，腦袋像是要炸開一樣。" } },
-                { text: "物理破壞祭壇", icon: "fa-hammer", req: "crowbar", type: "check", checkType: "courage", chance: 60, success: { courage: 20, hp: -10, msg: "你砸碎了祭壇一角，能量亂流劃傷了你。", flag: "altar_damaged" }, fail: { hp: -30, msg: "反衝力將你擊飛，肋骨斷了幾根。" } },
+                { text: "誦讀筆記上的反咒", icon: "fa-book", req: "journal", type: "check", checkType: "insight", chance: 85, success: { insight: 30, san: -10, msg: "咒語生效了！古神的動作變慢了。", flag: "ritual_started" }, fail: { san: -20, msg: "你唸錯了一個音節，腦袋像是要炸開一樣。" } },
+                { text: "物理破壞祭壇", icon: "fa-hammer", req: "crowbar", type: "check", checkType: "courage", chance: 80, success: { courage: 20, hp: -10, msg: "你砸碎了祭壇一角，能量亂流劃傷了你。", flag: "altar_damaged" }, fail: { hp: -30, msg: "反衝力將你擊飛，肋骨斷了幾根。" } },
                 { text: "獻祭自己", icon: "fa-skull", effect: { hp: -99, san: 0 }, msg: "你走上了祭壇，成為了祭品...", reckless: true }
             ]},
             21: { text: "祭壇的守護者出現了——一隻由無數人手組成的怪物。它擋在核心前。", type: "blood", choices: [
                 { text: "用槍射擊核心", icon: "fa-gun", req: "gun", effect: { itemLost: "gun", courage: 20 }, msg: "最後一顆子彈命中了！怪物發出哀嚎。槍膛炸裂。" },
                 { text: "用火攻", icon: "fa-fire", req: "fuel", effect: { fuel: -10, hp: -10 }, msg: "你將最後的燃料潑灑出去並點燃。你也被燒傷了。" },
-                { text: "靈活閃避", icon: "fa-running", type: "check", checkType: "courage", chance: 50, success: { hp: -5 }, fail: { hp: -40, msg: "你被數十隻手同時抓住，骨頭碎裂。" } }
+                { text: "靈活閃避", icon: "fa-running", type: "check", checkType: "courage", chance: 70, success: { hp: -5 }, fail: { hp: -40, msg: "你被數十隻手同時抓住，骨頭碎裂。" } }
             ]},
             22: { text: "古神的低語直接鑽入你的腦海。祂許諾給你無盡的知識與力量，只要你放棄抵抗。", type: "noise", choices: [
                 { text: "拒絕誘惑，咬破舌頭", icon: "fa-user-slash", effect: { hp: -10, san: 10, courage: 20 }, msg: "疼痛讓你保持清醒。你吐出一口血水，嘲笑神祇。" },
@@ -622,7 +622,7 @@
                 { text: "使用鏡之碎片反射", icon: "fa-gem", req: "mirror_shard", effect: { san: 10 }, msg: "你將鏡子對準虛空，古神似乎對自己的醜陋感到厭惡。" }
             ]},
             23: { text: "儀式到了最後階段。天空裂開，巨大的眼睛注視著你。你需要最後的準備。", type: "dark", choices: [
-                { text: "檢查所有裝備", icon: "fa-toolbox", type: "check", checkType: "insight", chance: 80, success: { insight: 10 }, fail: { san: -5, msg: "你發現大部分裝備都壞了，絕望感襲來。" } },
+                { text: "檢查所有裝備", icon: "fa-toolbox", type: "check", checkType: "insight", chance: 90, success: { insight: 10 }, fail: { san: -5, msg: "你發現大部分裝備都壞了，絕望感襲來。" } },
                 { text: "祈禱", icon: "fa-praying-hands", effect: { san: 20, courage: -10 }, msg: "你向任何可能聆聽的神祈禱。內心獲得了平靜，但鬥志消退。" },
                 { text: "注射急救包裡所有的藥", icon: "fa-syringe", req: "medkit", effect: { hp: 50, san: -20 }, msg: "你感覺不到疼痛了，你現在是個戰鬥機器，也是個瘋子。", reckless: true }
             ]},
