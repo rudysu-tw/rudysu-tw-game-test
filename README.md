@@ -1,2 +1,3 @@
 # rudysu-tw-game-test
-Game Test
+
+For Game Created by AI
