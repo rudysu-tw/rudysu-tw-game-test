@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>鳴神村異聞：黃泉之際</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -100,6 +100,25 @@
         @keyframes roll { 0% { transform: rotate(0deg) scale(1); } 25% { transform: rotate(8deg) scale(1.02); } 50% { transform: rotate(0deg) scale(1); } 75% { transform: rotate(-8deg) scale(1.02); } 100% { transform: rotate(0deg) scale(1); } }
         .dice-success { border-color: var(--success-color) !important; color: var(--success-color) !important; box-shadow: 0 0 50px var(--success-color) !important; transform: scale(1.1); }
         .dice-fail { border-color: var(--fail-color) !important; color: var(--fail-color) !important; box-shadow: 0 0 50px var(--fail-color) !important; transform: scale(0.9); }
+
+		/* 針對小螢幕（手機）的調整 */
+		@media (max-width: 768px) {
+			#app {
+				height: 100dvh; /* 使用 d.v.h. (Dynamic Viewport Height) 以獲得更準確的手機高度 */
+				padding-bottom: 0; /* 移除可能的底部填充 */
+			}
+			
+			/* 讓遊戲日誌或內容區塊可以滾動，確保即使被切到也能看到 */
+			#history-log { /* 假設這是您的日誌區域 */
+				flex-grow: 1; /* 讓日誌區塊佔滿剩餘空間 */
+				overflow-y: auto; /* 允許垂直滾動 */
+			}
+
+			/* 如果底部有固定的 UI (例如按鈕/狀態列)，確保它緊貼底部 */
+			#controls { /* 假設這是您的操作按鈕區域 */
+				flex-shrink: 0; /* 防止按鈕區域被壓縮 */
+			}
+		}
 
         ::-webkit-scrollbar { width: 5px; }
         ::-webkit-scrollbar-track { background: #1a1510; }
