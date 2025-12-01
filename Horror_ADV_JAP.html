@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>鳴神村異聞：黃泉之際</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -25,9 +25,38 @@
         }
 
         * { box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; }
-        body { margin: 0; padding: 0; background-color: var(--bg-color); color: var(--text-color); font-family: "Yu Mincho", "Hiragino Mincho ProN", "serif"; /* 改為襯線體增加日式感 */ height: 100vh; overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        
+        /* FIX: 使用 100dvh 解決手機瀏覽器下方工具列遮擋問題 
+           同時設定 overflow: hidden 防止整體頁面捲動，只讓內部區域捲動
+        */
+        body { 
+            margin: 0; 
+            padding: 0; 
+            background-color: var(--bg-color); 
+            color: var(--text-color); 
+            font-family: "Yu Mincho", "Hiragino Mincho ProN", "Microsoft JhengHei", "serif"; 
+            height: 100vh; /* Fallback for old browsers */
+            height: 100dvh; /* Mobile fix */
+            overflow: hidden; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center; 
+        }
 
-        #app-container { width: 100%; max-width: 900px; height: 100%; display: flex; flex-direction: column; background: var(--ui-bg); border-left: 1px solid var(--border-color); border-right: 1px solid var(--border-color); position: relative; z-index: 5; box-shadow: 0 0 40px rgba(0,0,0,0.95); }
+        #app-container { 
+            width: 100%; 
+            max-width: 900px; 
+            height: 100%; 
+            display: flex; 
+            flex-direction: column; 
+            background: var(--ui-bg); 
+            border-left: 1px solid var(--border-color); 
+            border-right: 1px solid var(--border-color); 
+            position: relative; 
+            z-index: 5; 
+            box-shadow: 0 0 40px rgba(0,0,0,0.95); 
+        }
         
         #vignette { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; box-shadow: inset 0 0 100px rgba(0,0,0,0.9); z-index: 10; transition: box-shadow 0.5s ease; }
         .pulse-fast { animation: heartbeat 0.8s infinite; }
@@ -64,13 +93,38 @@
         #inventory-bar { padding: 5px 15px; background: #1a120a; border-bottom: 1px solid var(--border-color); display: flex; gap: 10px; min-height: 35px; align-items: center; overflow-x: auto; flex-shrink: 0; }
         .inv-item { background: #33281d; border: 1px solid #544a3d; padding: 2px 8px; font-size: 0.75rem; border-radius: 2px; color: var(--item-color); display: flex; align-items: center; gap: 6px; white-space: nowrap; box-shadow: 0 1px 3px rgba(0,0,0,0.5); }
 
-        #story-area { flex: 2 1 auto; padding: 25px 30px; overflow-y: auto; line-height: 2; font-size: 1.15rem; color: #d0c0a8; border-bottom: 1px solid var(--border-color); background-image: radial-gradient(circle at center, #2e241a 0%, #241c14 100%); position: relative; min-height: 280px; }
+        #story-area { 
+            flex: 2 1 auto; /* 讓故事區域自動伸縮 */
+            padding: 25px 30px; 
+            overflow-y: auto; 
+            line-height: 2; 
+            font-size: 1.15rem; 
+            color: #d0c0a8; 
+            border-bottom: 1px solid var(--border-color); 
+            background-image: radial-gradient(circle at center, #2e241a 0%, #241c14 100%); 
+            position: relative; 
+            /* FIX: 電腦版保持 280px，手機版透過 Media Query 調整，避免擠掉下方元素 */
+            min-height: 280px; 
+        }
         .story-text { margin-bottom: 15px; opacity: 0; animation: fadeIn 1s forwards; text-align: justify; word-wrap: break-word; text-shadow: 0 2px 4px rgba(0,0,0,0.6); }
         .story-icon { color: var(--accent-color); margin-right: 10px; font-size: 1.3rem; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
 
         #choice-area { padding: 10px 15px; display: grid; grid-template-columns: 1fr; gap: 8px; background: #2a2218; flex-shrink: 0; }
         @media (min-width: 700px) { #choice-area { grid-template-columns: 1fr 1fr; gap: 12px; } }
+
+        /* FIX: 手機版調整 */
+        @media (max-width: 700px) {
+            #story-area {
+                padding: 15px 20px;
+                /* 關鍵：手機上允許故事區縮得更小，把空間讓給 Log 視窗 */
+                min-height: 0; 
+                flex-basis: 0;
+                flex-grow: 1;
+            }
+            h1 { font-size: 2rem; }
+            #log-window { height: 120px; } /* 手機版稍微縮小 Log 高度 */
+        }
 
         .choice-btn { background: linear-gradient(145deg, #362c22, #2e241a); border: 1px solid #4a3f33; color: #c0b098; padding: 10px 12px; cursor: pointer; font-family: inherit; font-size: 0.9rem; text-align: left; transition: all 0.2s; display: flex; flex-direction: column; justify-content: center; border-radius: 2px; position: relative; min-height: 55px; }
         .choice-title { font-weight: bold; margin-bottom: 2px; display: flex; align-items: center; gap: 6px; color: #e0d0b8; font-size: 1rem; }
@@ -101,25 +155,6 @@
         .dice-success { border-color: var(--success-color) !important; color: var(--success-color) !important; box-shadow: 0 0 50px var(--success-color) !important; transform: scale(1.1); }
         .dice-fail { border-color: var(--fail-color) !important; color: var(--fail-color) !important; box-shadow: 0 0 50px var(--fail-color) !important; transform: scale(0.9); }
 
-		/* 針對小螢幕（手機）的調整 */
-		@media (max-width: 768px) {
-			#app {
-				height: 100dvh; /* 使用 d.v.h. (Dynamic Viewport Height) 以獲得更準確的手機高度 */
-				padding-bottom: 0; /* 移除可能的底部填充 */
-			}
-			
-			/* 讓遊戲日誌或內容區塊可以滾動，確保即使被切到也能看到 */
-			#history-log { /* 假設這是您的日誌區域 */
-				flex-grow: 1; /* 讓日誌區塊佔滿剩餘空間 */
-				overflow-y: auto; /* 允許垂直滾動 */
-			}
-
-			/* 如果底部有固定的 UI (例如按鈕/狀態列)，確保它緊貼底部 */
-			#controls { /* 假設這是您的操作按鈕區域 */
-				flex-shrink: 0; /* 防止按鈕區域被壓縮 */
-			}
-		}
-
         ::-webkit-scrollbar { width: 5px; }
         ::-webkit-scrollbar-track { background: #1a1510; }
         ::-webkit-scrollbar-thumb { background: #3a2f24; border-radius: 2px; }
@@ -128,27 +163,27 @@
 </head>
 <body>
     <div id="vignette"></div>
-    <div id="dice-overlay"><div id="dice-visual">?</div><div id="dice-msg" style="font-size: 1.5rem; color: #d0c0a8; margin-bottom: 10px; font-weight: bold; letter-spacing: 3px; font-family: 'Yu Mincho', serif;">運命の判定...</div><div id="dice-detail" style="font-size: 1rem; color: #887;"></div></div>
+    <div id="dice-overlay"><div id="dice-visual">?</div><div id="dice-msg" style="font-size: 1.5rem; color: #d0c0a8; margin-bottom: 10px; font-weight: bold; letter-spacing: 3px; font-family: 'Yu Mincho', serif;">命運判定...</div><div id="dice-detail" style="font-size: 1rem; color: #887;"></div></div>
 
     <div id="app-container">
         <div id="start-screen">
             <h1><i class="fas fa-torii-gate"></i> 鳴神村異聞</h1>
-            <p style="color: #887; margin-bottom: 25px; font-size: 1.1rem; letter-spacing: 5px; font-family: 'Yu Mincho', serif;">黄泉の際 - 没入怪談版</p>
+            <p style="color: #887; margin-bottom: 25px; font-size: 1.1rem; letter-spacing: 5px; font-family: 'Yu Mincho', serif;">黃泉之際 - 沉浸怪談版</p>
             <div style="max-width: 500px; line-height: 2; text-align: left; background: #241c14; padding: 25px; border: 1px solid #3a2f24; border-radius: 2px; font-size: 1rem; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
-                <p style="color: var(--item-color); font-weight: bold; font-size: 1.1rem; margin-bottom: 15px; font-family: 'Yu Mincho', serif;"><i class="fas fa-scroll"></i> 探索の手引き</p>
+                <p style="color: var(--item-color); font-weight: bold; font-size: 1.1rem; margin-bottom: 15px; font-family: 'Yu Mincho', serif;"><i class="fas fa-scroll"></i> 探索手冊</p>
                 <ul style="padding-left: 20px; list-style-type: circle; color: #c0b098;">
-                    <li><b>怪異譚</b>：霧に包まれた廃村「鳴神村」で起きた惨劇の真相を追う、和風ホラーテキストアドベンチャー。</li>
-                    <li><b>心魂と膽量</b>：「心魂」は霊的な耐性、「膽量」は物理的な恐怖への耐性を表します。どちらが尽きても破滅が待っています。</li>
-                    <li><b>灯りを絶やすな</b>：暗闇は精神を蝕みます。貴重な「灯油」を管理し、手元の明かりを維持してください。</li>
-                    <li><b>民俗の知恵</b>：村に残された伝承や記録が、あなたを助けるでしょう。</li>
+                    <li><b>怪異談</b>：這是一款日式恐怖文字冒險遊戲，你將追查被迷霧籠罩的廢村「鳴神村」中發生的慘劇真相。</li>
+                    <li><b>心魂與膽量</b>：「心魂」代表對靈異現象的耐性，「膽量」代表對物理恐怖的耐性。任一項耗盡都將迎來毀滅。</li>
+                    <li><b>勿熄燈火</b>：黑暗會侵蝕精神。請管理珍貴的「燈油」，維持手邊的光源。</li>
+                    <li><b>民俗智慧</b>：村中殘留的傳承與記錄，將會成為你的助力。</li>
                 </ul>
             </div>
-            <button class="start-btn" onclick="game.start()"><i class="fas fa-walking"></i> 廃村へ足を踏み入れる</button>
+            <button class="start-btn" onclick="game.start()"><i class="fas fa-walking"></i> 踏入廢村</button>
         </div>
 
         <header>
-            <div><i class="fas fa-user-ninja"></i> 探索者：民俗学者 <span id="phobia-display" class="phobia-tag"></span></div>
-            <div class="turn-indicator"><i class="far fa-clock"></i> 刻(とき): <span id="turn-display">1</span>/18</div>
+            <div><i class="fas fa-user-ninja"></i> 探索者：民俗學者 <span id="phobia-display" class="phobia-tag"></span></div>
+            <div class="turn-indicator"><i class="far fa-clock"></i> 時刻: <span id="turn-display">1</span>/18</div>
         </header>
 
         <section id="status-bar">
@@ -160,7 +195,7 @@
         </section>
 
         <section id="inventory-bar">
-            <span style="color:#887; font-size:0.8rem; margin-right: 10px;"><i class="fas fa-briefcase"></i> 所持品:</span>
+            <span style="color:#887; font-size:0.8rem; margin-right: 10px;"><i class="fas fa-briefcase"></i> 持有物:</span>
             <div id="inventory-list" style="display:flex; gap:10px;"></div>
         </section>
 
@@ -175,163 +210,163 @@
         </section>
 
         <div id="end-screen" style="display: none;">
-            <h1 id="end-title" style="font-family: 'Yu Mincho', serif; letter-spacing: 5px;">結末</h1>
+            <h1 id="end-title" style="font-family: 'Yu Mincho', serif; letter-spacing: 5px;">結局</h1>
             <div id="end-icon" style="font-size: 5rem; margin: 30px 0; color: #554;"></div>
             <p id="end-desc" style="max-width: 600px; margin: 10px 0; line-height: 2; font-size: 1.1rem; color: #c0b098; font-family: 'Yu Mincho', serif;"></p>
             <div id="end-stats" style="color: #887; font-size: 1rem; margin-bottom: 20px; font-family: monospace;"></div>
             
             <div style="display:flex; gap:10px;">
-                <button class="start-btn" style="padding:10px 20px; font-size:1rem; margin-top:0;" onclick="game.copyHistory()"><i class="fas fa-copy"></i> 記録を複写</button>
-                <button class="start-btn reset-btn" style="padding:10px 20px; font-size:1rem; margin-top:0;" onclick="game.reset()"><i class="fas fa-redo"></i> 再挑戦</button>
+                <button class="start-btn" style="padding:10px 20px; font-size:1rem; margin-top:0;" onclick="game.copyHistory()"><i class="fas fa-copy"></i> 複製記錄</button>
+                <button class="start-btn reset-btn" style="padding:10px 20px; font-size:1rem; margin-top:0;" onclick="game.reset()"><i class="fas fa-redo"></i> 再次挑戰</button>
             </div>
         </div>
     </div>
 
     <script>
-        /* --- 日式恐怖設定改寫 --- */
+        /* --- 繁體中文化設定 --- */
         // 重新定義恐懼症 (Phobias)
         const PHOBIAS = [
-            { id: 'dark', name: '闇への恐怖', desc: '暗闇での心魂減少が倍増', icon: 'fa-moon' },
-            { id: 'blood', name: '穢れへの恐怖', desc: '不浄な場での心魂減少が倍増', icon: 'fa-biohazard' },
-            { id: 'noise', name: '物音への恐怖', desc: '突然の音で心魂減少が倍増', icon: 'fa-bell-slash' }
+            { id: 'dark', name: '黑暗恐懼', desc: '在黑暗中心魂減少量加倍', icon: 'fa-moon' },
+            { id: 'blood', name: '穢物恐懼', desc: '在不潔場所心魂減少量加倍', icon: 'fa-biohazard' },
+            { id: 'noise', name: '聲響恐懼', desc: '突發聲響造成的心魂減少量加倍', icon: 'fa-bell-slash' }
         ];
 
-        // 重新定義物品 (Items) - 保持原有ID但改變名稱與描述
+        // 重新定義物品 (Items)
         const ITEMS = {
-            key: { name: "古びた蔵の鍵", icon: "fa-key", desc: "村外れの蔵を開けるための錆びた鍵。" },
-            crowbar: { name: "鉈 (ナタ)", icon: "fa-hammer", desc: "錆びているが鋭い。物理的な障害を破壊できる。膽量判定+10%。" }, // 使用 hammer 圖示代替
-            amulet: { name: "清めの塩", icon: "fa-seedling", desc: "不浄を払う強力なアイテム。最後の儀式に必要。" }, // 使用 seedling 代替米/鹽
-            lighter: { name: "和ろうそく", icon: "fa-fire", desc: "手持ちの光源。暗闇の恐怖を和らげる。" },
-            journal: { name: "祖父の手帳", icon: "fa-book", desc: "民俗学者だった祖父の調査記録。民俗判定+10%。" },
-            gun: { name: "古びた種子島", icon: "fa-gun", desc: "火縄銃。弾は一発のみ。強力な霊障を物理的に退ける。" },
-            medkit: { name: "薬草包み", icon: "fa-leaf", desc: "傷を癒やす伝統的な薬草。" }, // 使用 leaf 代替急救包
-            mirror_shard: { name: "手鏡", icon: "fa-mirror", desc: "真実の姿を映し出すと言われる古い鏡。" }
+            key: { name: "老舊倉庫鑰匙", icon: "fa-key", desc: "用來打開村外倉庫的生鏽鑰匙。" },
+            crowbar: { name: "柴刀 (Nata)", icon: "fa-hammer", desc: "雖然生鏽但依然鋒利。可以破壞物理障礙。膽量判定+10%。" }, 
+            amulet: { name: "淨化之鹽", icon: "fa-seedling", desc: "驅除不潔的強力物品。最後的儀式需要它。" }, 
+            lighter: { name: "和蠟燭", icon: "fa-fire", desc: "手持光源。能緩和對黑暗的恐懼。" },
+            journal: { name: "祖父的手記", icon: "fa-book", desc: "身為民俗學者的祖父留下的調查記錄。民俗判定+10%。" },
+            gun: { name: "古舊火繩槍", icon: "fa-gun", desc: "火繩槍。只有一發子彈。能物理性地擊退強大的靈障。" },
+            medkit: { name: "藥草包", icon: "fa-leaf", desc: "治療傷口的傳統藥草。" }, 
+            mirror_shard: { name: "手鏡", icon: "fa-mirror", desc: "據說能映照出真實姿態的古鏡。" }
         };
 
-        // 重新定義突發事件 (Forced Events) - 日式風味
+        // 重新定義突發事件 (Forced Events)
         const FORCED_EVENTS = [
-            { msg: "【怪異】背後で「カラコロ」と下駄の音がした気がした...", effect: { san: -5 } },
-            { msg: "【怪異】突然、生温かい風と共に線香の匂いが鼻をついた。", effect: { courage: -5 } },
-            { msg: "【発見】崩れた石垣の隙間に、古い寛永通宝を見つけた。", effect: { insight: 5 } },
-            { msg: "【怪異】天井から黒い髪の毛の束が垂れ下がってきた。", effect: { san: -3, hp: -2 } },
-            { msg: "【想起】祖父が語っていた村の奇妙な風習を思い出した。", effect: { insight: 10, san: 2 } },
-            { msg: "【発見】倒れた灯籠のそばに、まだ使える灯油缶が落ちていた。", effect: { fuel: 5 } },
-            { msg: "【怪異】視界の隅を、白い着物を着た何かが横切った。", effect: { san: -8 } },
-            { msg: "【食事】保存食の干し飯をかじった。味がしない。", effect: { hp: 5, san: -2 } }
+            { msg: "【怪異】感覺背後傳來了「喀啦喀啦」的木屐聲...", effect: { san: -5 } },
+            { msg: "【怪異】突然，一股生溫的風伴隨著線香的味道撲鼻而來。", effect: { courage: -5 } },
+            { msg: "【發現】在崩塌的石牆縫隙中，發現了一枚古老的寬永通寶。", effect: { insight: 5 } },
+            { msg: "【怪異】天花板垂下了一束黑色的頭髮。", effect: { san: -3, hp: -2 } },
+            { msg: "【想起】想起了祖父曾說過的關於這村子的奇妙習俗。", effect: { insight: 10, san: 2 } },
+            { msg: "【發現】倒塌的燈籠旁，掉落著還能使用的燈油罐。", effect: { fuel: 5 } },
+            { msg: "【怪異】視野角落似乎有穿著白衣的東西一閃而過。", effect: { san: -8 } },
+            { msg: "【進食】啃了一口保存食用的乾飯。沒有任何味道。", effect: { hp: 5, san: -2 } }
         ];
 
-        /* --- 模組化場景資料庫 (Japanese Horror Text) --- */
-        // A: 導入 - 村の入り口
-        // B: 探索 - 廃屋群 (穢れ theme)
-        // C: 探索 - 神社への道 (物音 theme)
-        // D: 探索 - 地下祭壇 (闇 theme)
+        /* --- 模組化場景資料庫 (繁體中文) --- */
+        // A: 導入 - 村子入口
+        // B: 探索 - 廢屋群 (穢物 theme)
+        // C: 探索 - 通往神社的道路 (聲響 theme)
+        // D: 探索 - 地下祭壇 (黑暗 theme)
         // E: 終局 - 本殿
         const MODULES = {
             A: [
-                { text: "霧が立ち込める山道を抜け、あなたは「鳴神村」の入り口に辿り着いた。目の前には朽ち果てた巨大な鳥居がそびえ立ち、その先は濃い霧で視界が遮られている。湿った空気にはカビと、微かに血の混じった土の匂いが漂う。ここが、あなたの祖父が最後に目撃された場所だ。完全な静寂が、耳を圧迫する。", type: "dark", choices: [
-                    { text: "鳥居を調べる", desc: "注連縄（しめなわ）が切れかかっている。柱の根元に何か挟まっているかもしれない。", icon: "fa-search", type: "check", checkType: "insight", chance: 80, success: { item: 'lighter', msg: "鳥居の陰に、誰かが隠したような桐箱を見つけた。中には未使用の和ろうそくが入っていた。" }, fail: { hp: -5, msg: "柱の裏に手を回した瞬間、大量のムカデが這い出してきた！思わず手を引っ込め、転倒して擦りむいた。" } },
-                    { text: "足跡を探す", desc: "最近誰かが村に入った形跡はないか、湿った地面を観察する。", icon: "fa-eye", effect: { insight: 5 }, msg: "ぬかるんだ地面に、裸足の小さな足跡が無数についているのを見つけた...村の中へと続いている。" },
-                    { text: "強行突破", desc: "不気味な雰囲気に耐えられない。一刻も早く祖父の手がかりを見つけるため、霧の中へ走り出す。", icon: "fa-running", effect: { hp: -10, san: -10 }, msg: "視界が効かず、隠れていた石碑に激突した。肩を強く打ち、言い知れぬ不安が心を蝕む。", reckless: true }
+                { text: "穿過霧氣瀰漫的山路，你抵達了「鳴神村」的入口。眼前矗立著腐朽巨大的鳥居，前方被濃霧遮蔽了視野。潮濕的空氣中混雜著霉味，以及微弱的泥土與血腥味。這裡是你的祖父最後被目擊的地點。完全的死寂壓迫著你的耳膜。", type: "dark", choices: [
+                    { text: "調查鳥居", desc: "注連繩似乎快斷了。柱子的根部可能夾著什麼東西。", icon: "fa-search", type: "check", checkType: "insight", chance: 80, success: { item: 'lighter', msg: "在鳥居的陰影處，發現了一個像是有人藏起來的桐木盒。裡面放著未使用的和蠟燭。" }, fail: { hp: -5, msg: "手伸到柱子後面的瞬間，大量的蜈蚣爬了出來！你嚇得縮手，不慎跌倒擦傷。" } },
+                    { text: "尋找足跡", desc: "觀察潮濕的地面，確認最近是否有人進入村子。", icon: "fa-eye", effect: { insight: 5 }, msg: "在泥濘的地面上，發現了無數赤腳的小腳印...一直延伸到村子裡。" },
+                    { text: "強行突破", desc: "無法忍受這詭異的氣氛。為了盡快找到祖父的線索，你衝進霧中。", icon: "fa-running", effect: { hp: -10, san: -10 }, msg: "視野不清，你撞上了隱藏在霧中的石碑。肩膀受到重擊，難以言喻的不安侵蝕著內心。", reckless: true }
                 ]},
-                { text: "村の大通りに出た。両脇にはかつて人が住んでいた木造の家屋が並んでいるが、どれも障子は破れ、壁は崩れかけている。異様なのは、どの家の軒先にも、顔の部分が黒く塗りつぶされた藁人形が吊るされていることだ。風が吹くと、人形たちが一斉に揺れ、乾いた音を立てる。", type: "noise", choices: [
-                    { text: "人形を観察", desc: "気味は悪いが、この奇妙な風習に何か意味があるはずだ。近づいて観察する。", icon: "fa-image", effect: { insight: 10, san: -5 }, msg: "人形の背中に、墨で「身代わり」と書かれているのを見つけた。これは呪いではなく、何かから逃れるための魔除けだったのか？" },
-                    { text: "廃屋を捜索", desc: "手近な廃屋に入り、使えそうな道具がないか探す。", icon: "fa-home", type: "check", checkType: "insight", chance: 70, success: { item: 'key', msg: "崩れた仏壇の引き出しから、古びた蔵の鍵を見つけた。どこかの鍵だろう。" }, fail: { hp: -5, san: -5, msg: "腐った床板を踏み抜いた！足が抜けなくなり、焦りで心臓が早鐘を打つ。" }, tag: "noise" },
-                    { text: "早足で通り過ぎる", desc: "人形たちの視線を感じる（顔はないのに）。ここには長居したくない。", icon: "fa-walking", effect: { courage: -2 }, msg: "あなたは視線を逸らし、足早に通りを抜けた。背後で人形が落ちる音がした気がしたが、振り返らなかった。" }
+                { text: "來到了村子的大道。兩旁排列著曾經有人居住的木造房屋，但紙門破損，牆壁也快崩塌。異常的是，每戶人家的屋簷下都掛著臉部被塗黑的稻草人。風一吹，人偶們便齊刷刷地搖晃，發出乾枯的聲響。", type: "noise", choices: [
+                    { text: "觀察人偶", desc: "雖然令人不舒服，但這奇妙的習俗應該有其意義。走近觀察。", icon: "fa-image", effect: { insight: 10, san: -5 }, msg: "發現人偶的背後用墨水寫著「替身」。這不是詛咒，而是為了逃避某種東西的護身符嗎？" },
+                    { text: "搜索廢屋", desc: "進入附近的廢屋，尋找是否有可用的工具。", icon: "fa-home", type: "check", checkType: "insight", chance: 70, success: { item: 'key', msg: "在崩壞的佛壇抽屜裡，發現了一把舊倉庫的鑰匙。大概是哪裡的鑰匙吧。" }, fail: { hp: -5, san: -5, msg: "踩穿了腐爛的地板！腳拔不出來，焦慮讓心跳加速。" }, tag: "noise" },
+                    { text: "快步通過", desc: "感覺到了人偶們的視線（明明沒有臉）。不想在這裡久留。", icon: "fa-walking", effect: { courage: -2 }, msg: "你移開視線，快步穿過街道。雖然感覺背後傳來了人偶掉落的聲音，但你沒有回頭。" }
                 ]},
-                { text: "村の中央にある集会所の跡地に来た。ここだけ霧が薄く、月明かりが差し込んでいる。中央には焚き火の跡があり、その周囲を囲むように、数十体の地蔵菩薩像が並んでいる。だが、すべての地蔵の首が、物理的に叩き割られて無い。", type: "blood", choices: [
-                    { text: "焚き火跡を調べる", desc: "まだ新しい灰のように見える。誰かが最近ここにいたのだろうか。", icon: "fa-search", type: "check", checkType: "insight", chance: 80, success: { item: 'crowbar', msg: "灰の中から、錆びついた鉈（ナタ）を見つけた。護身用になりそうだ。" }, fail: { san: -5, msg: "灰をかき混ぜると、中から焼け焦げた動物の骨...いや、人の指の骨のようなものが出てきた。" } },
-                    { text: "地蔵に手を合わせる", desc: "首のない地蔵たちに哀れみを感じ、供養のために手を合わせる。", icon: "fa-praying-hands", effect: { san: 5 }, msg: "静かに祈りを捧げると、心が少し落ち着いた気がした。風が止んだ。" },
-                    { text: "耳を澄ます", desc: "静寂の中に、何か不自然な音が混じっていないか確認する。", icon: "fa-ear-listen", effect: { insight: 15, san: -15 }, msg: "風の音に混じって、複数の人間が念仏を唱えるような低い声が聞こえた...この世のものではない。" }
+                { text: "來到了位於村子中央的集會所遺跡。只有這裡霧氣較薄，月光灑落。中央有焚火的痕跡，周圍圍繞著數十尊地藏菩薩像。但是，所有地藏的頭都被物理性地敲碎而不見了。", type: "blood", choices: [
+                    { text: "調查焚火遺跡", desc: "看起來像是新的灰燼。最近有人在這裡嗎？", icon: "fa-search", type: "check", checkType: "insight", chance: 80, success: { item: 'crowbar', msg: "在灰燼中發現了一把生鏽的柴刀（Nata）。可以用來防身。" }, fail: { san: -5, msg: "撥弄灰燼時，裡面露出了燒焦的動物骨頭...不，那是人的手指骨。" } },
+                    { text: "雙手合十", desc: "對無頭的地藏們感到憐憫，雙手合十供養。", icon: "fa-praying-hands", effect: { san: 5 }, msg: "靜靜祈禱後，感覺心情稍微平靜了一些。風停了。" },
+                    { text: "側耳傾聽", desc: "確認寂靜中是否混雜著不自然的聲音。", icon: "fa-ear-listen", effect: { insight: 15, san: -15 }, msg: "混雜在風聲中，聽到了像是複數人類在唸經的低沉聲音...那不是這個世界的聲音。" }
                 ]},
-                { text: "村長の家と思われる大きな屋敷に入った。カビ臭い玄関の先、広間には埃を被った豪華な雛人形が七段飾りで置かれている。だが、最上段の男雛と女雛の位置が逆で、しかも両方とも目がくり抜かれ、赤い涙のようなものが頬を伝っている。", type: "dark", choices: [
-                    { text: "人形に触れる", desc: "ただの古い人形だと言い聞かせ、その質感を確認しようと手を伸ばす。", icon: "fa-hand-paper", type: "check", checkType: "courage", chance: 70, success: { insight: 15, item: "mirror_shard", msg: "女雛の懐に隠されていた手鏡を見つけた。鏡面は曇っているが、何かを映し出しそうだ。" }, fail: { san: -20, msg: "触れた瞬間、人形の首がゴロリと落ちた！断面から大量の黒い髪の毛が溢れ出し、あなたの腕にまとわりつく！" } },
-                    { text: "書物を探す", desc: "部屋の隅に文机がある。村の記録が残っているかもしれない。", icon: "fa-book-open", type: "check", checkType: "insight", chance: 80, success: { insight: 10, msg: "「鳴神様」という存在を鎮めるための、人身御供の記録を見つけてしまった。" }, fail: { san: -5, msg: "書物の文字が、まるで生きているミミズのようにのたうち回り、読むことができない。" } },
-                    { text: "火をつける", desc: "この不浄な空間を浄化すべきだ。和ろうそくの火で雛飾りを燃やす。", icon: "fa-fire", req: "lighter", effect: { fuel: -5, san: 5 }, msg: "乾燥した人形は瞬く間に燃え上がった。炎が踊る中、人形の断末魔のような音が聞こえた気がした。" }
+                { text: "進入了看似村長家的大宅。穿過充滿霉味的玄關，大廳裡擺放著積滿灰塵的豪華七段女兒節人偶。但是，最上層的男雛和女雛位置顛倒，而且雙眼的部位都被挖空，臉頰上流著像是紅色眼淚的東西。", type: "dark", choices: [
+                    { text: "觸摸人偶", desc: "告訴自己這只是舊人偶，伸手確認其質感。", icon: "fa-hand-paper", type: "check", checkType: "courage", chance: 70, success: { insight: 15, item: "mirror_shard", msg: "在女雛的懷中發現了藏起來的手鏡。鏡面雖然模糊，但似乎能映照出什麼。" }, fail: { san: -20, msg: "觸碰的瞬間，人偶的頭顱滾落下來！斷面湧出大量的黑髮，纏繞在你的手臂上！" } },
+                    { text: "尋找書籍", desc: "房間角落有張文桌。可能留有村子的記錄。", icon: "fa-book-open", type: "check", checkType: "insight", chance: 80, success: { insight: 10, msg: "發現了為了鎮壓名為「鳴神大人」的存在，而進行活人獻祭的記錄。" }, fail: { san: -5, msg: "書上的文字像活著的蚯蚓般蠕動，無法閱讀。" } },
+                    { text: "點火", desc: "應該淨化這個不潔的空間。用和蠟燭的火燒掉人偶。", icon: "fa-fire", req: "lighter", effect: { fuel: -5, san: 5 }, msg: "乾燥的人偶瞬間燃燒起來。在火焰舞動中，彷彿聽見了人偶臨死前的慘叫聲。" }
                 ]},
-                { text: "屋敷の裏手、竹林へと続く小道に出た。ここから先は「入ラズの森」と呼ばれ、村人さえも恐れていた場所だ。竹が風に揺れて「ザワザワ」と音を立て、その奥は完全な闇に包まれている。", type: "dark", choices: [
-                    { text: "明かりを灯す", desc: "この闇の中を進むには明かりが必要だ。灯油を消費して周囲を照らす。", icon: "fa-lightbulb", req: "fuel", effect: { fuel: -3, san: 5 }, msg: "和ろうそくの揺らめく光が、竹林の狭い道を照らし出した。視界が確保でき、少し安心する。" },
-                    { text: "闇の中を進む", desc: "灯油は貴重だ。月明かりと勘を頼りに、慎重に進むことにする。", icon: "fa-walking", type: "check", checkType: "courage", chance: 60, success: { courage: 15 }, fail: { hp: -10, san: -10, msg: "暗闇で竹の根に足を取られ、斜面を転がり落ちた。泥だらけになり、何かが足を掴んだような感触が残る。" } },
-                    { text: "石を投げる", desc: "森の奥に何かが潜んでいないか、石を投げて反応を伺う。", icon: "fa-cube", effect: { insight: 5 }, msg: "石は竹に当たってカコンと乾いた音を立てた。その後、少し遅れて「ヒヒッ」という小さな笑い声が聞こえた。" }
+                { text: "來到宅邸後方，通往竹林的石板路。前方被稱為「不入之森」，是連村民都畏懼的地方。竹子隨風搖曳發出「沙沙」聲，深處被完全的黑暗包圍。", type: "dark", choices: [
+                    { text: "點亮燈火", desc: "在黑暗中前進需要光亮。消耗燈油照亮周圍。", icon: "fa-lightbulb", req: "fuel", effect: { fuel: -3, san: 5 }, msg: "和蠟燭搖曳的光芒照亮了竹林的狹窄小徑。確保了視野，稍微安心了一些。" },
+                    { text: "在黑暗中前進", desc: "燈油很珍貴。依靠月光和直覺，慎重地前進。", icon: "fa-walking", type: "check", checkType: "courage", chance: 60, success: { courage: 15 }, fail: { hp: -10, san: -10, msg: "在黑暗中被竹根絆倒，滾落斜坡。滿身泥濘，而且感覺腳上留有被什麼東西抓住的觸感。" } },
+                    { text: "投石問路", desc: "為了確認森林深處是否潛藏著什麼，丟石頭試探反應。", icon: "fa-cube", effect: { insight: 5 }, msg: "石頭打在竹子上發出乾枯的聲響。隨後，稍遲傳來了「嘻嘻」的微小笑聲。" }
                 ]}
             ],
-            B: [ // 穢れ Theme: 廃屋、生活の痕跡
-                { text: "【探索：廃屋群】あなたは崩れかけた民家の一軒に足を踏み入れた。床には破れた布団が散乱し、壁には茶色く変色した手形が無数に付着している。奥の部屋から、誰かが畳を爪で引っ掻くような「カリカリ」という音が聞こえる。", type: "blood", choices: [
-                    { text: "音の源を確かめる", desc: "恐怖を押し殺し、鉈を構えて奥の部屋を覗き込む。", icon: "fa-search", req: "crowbar", type: "check", checkType: "courage", chance: 75, success: { item: 'journal', msg: "畳の下に隠されていた祖父の手帳を発見した！音の正体はネズミだったようだ...。" }, fail: { san: -15, msg: "部屋の隅で、髪の長い女が四つん這いで畳を引っ掻いていた。彼女がゆっくりと振り向く...顔がない！" } },
-                    { text: "押し入れを調べる", desc: "音のしない押し入れの方を調べる。何か隠されているかもしれない。", icon: "fa-box-open", type: "check", checkType: "insight", chance: 70, success: { item: 'medkit', msg: "埃まみれの柳行李の中から、保存状態の良い薬草包みを見つけた。" }, fail: { san: -10, msg: "襖を開けると、中には大量の日本人形がぎっしりと詰め込まれており、全ての目があなたを見つめていた。" } },
-                    { text: "家から逃げ出す", desc: "ここは危険だ。本能がそう告げている。", icon: "fa-door-open", effect: { courage: -5 }, msg: "あなたは慌てて家を飛び出した。背後で、襖が激しく閉まる音がした。" }
+            B: [ // 穢物 Theme: 廢屋、生活痕跡
+                { text: "【探索：廢屋群】你踏入了一間快要崩塌的民宅。地上散亂著破爛的棉被，牆上附著無數變成茶色的手印。從裡面的房間，傳來像是有人用指甲抓榻榻米的「喀哩喀哩」聲。", type: "blood", choices: [
+                    { text: "確認聲音來源", desc: "壓抑恐懼，架起柴刀窺視裡面的房間。", icon: "fa-search", req: "crowbar", type: "check", checkType: "courage", chance: 75, success: { item: 'journal', msg: "發現榻榻米下藏著祖父的手記！聲音的真面目似乎只是老鼠...。" }, fail: { san: -15, msg: "房間角落裡，一名長髮女子正趴在地上抓著榻榻米。她緩緩回頭...沒有臉！" } },
+                    { text: "調查壁櫥", desc: "調查沒有聲音的壁櫥。可能藏著什麼。", icon: "fa-box-open", type: "check", checkType: "insight", chance: 70, success: { item: 'medkit', msg: "在滿是灰塵的柳條箱中，發現了保存狀態良好的藥草包。" }, fail: { san: -10, msg: "拉開拉門，裡面塞滿了大量的日本人偶，所有的眼睛都盯著你看。" } },
+                    { text: "逃離屋子", desc: "這裡很危險。本能如此警告著。", icon: "fa-door-open", effect: { courage: -5 }, msg: "你慌張地衝出屋子。背後傳來拉門被用力關上的聲音。" }
                 ]},
-                { text: "縁側に出ると、庭の池が濁った水で満たされている。水面には白い着物が浮かんでおり、その周囲を黒い魚のようなものが泳ぎ回っている。着物がゆっくりとこちらに近づいてくる。", type: "blood", choices: [
-                    { text: "じっと動かない", desc: "気配を消してやり過ごす。動けば気づかれる。", icon: "fa-stop", type: "check", checkType: "courage", chance: 60, success: { san: 5, msg: "着物はあなたの目の前で止まり、しばらく漂った後、再び池の中央へと戻っていった。息を吐く。" }, fail: { san: -15, msg: "恐怖で足が震え、小石を蹴ってしまった。水面から真っ白な手が飛び出し、あなたの足首を掴もうとした！" } },
-                    { text: "物を投げ込む", desc: "手近な石を池の遠くに投げ込み、注意をそちらに向ける。", icon: "fa-share", effect: { insight: 5 }, msg: "石が水音を立てると、着物と黒い魚たちは一斉にそちらへ向かっていった。今のうちに離れる。" },
-                    { text: "鉈で攻撃する", desc: "近づいてくるなら、やるしかない。鉈を振りかざす。", icon: "fa-hammer", req: "crowbar", effect: { hp: -15, courage: 20 }, msg: "あなたは水面の着物に鉈を叩きつけた。水しぶきと共に悲鳴のような音が上がり、着物は沈んでいったが、反動で腕を負傷した。", reckless: true }
+                { text: "來到緣側，庭院的池塘裡積滿了混濁的水。水面漂浮著白色的和服，周圍有像黑色魚類的東西游動著。那件和服正緩緩向這裡靠近。", type: "blood", choices: [
+                    { text: "屏息不動", desc: "消除氣息等待它過去。動的話會被發現。", icon: "fa-stop", type: "check", checkType: "courage", chance: 60, success: { san: 5, msg: "和服在你面前停下，漂浮了一會兒後，又回到了池塘中央。你鬆了一口氣。" }, fail: { san: -15, msg: "恐懼使雙腳顫抖，踢到了小石子。水面衝出一隻蒼白的手，試圖抓住你的腳踝！" } },
+                    { text: "丟東西", desc: "將手邊的石頭丟向池塘遠處，轉移注意。", icon: "fa-share", effect: { insight: 5 }, msg: "石頭發出水聲，和服與黑魚們一齊游向了那邊。趁現在離開。" },
+                    { text: "用柴刀攻擊", desc: "既然靠近了，就只能動手。揮舞柴刀。", icon: "fa-hammer", req: "crowbar", effect: { hp: -15, courage: 20 }, msg: "你將柴刀劈向水面的和服。隨著水花濺起，發出了類似悲鳴的聲音，和服沉了下去，但反作用力讓你手臂受傷。", reckless: true }
                 ]},
-                { text: "土間を通過中、梁から吊るされた巨大な蜂の巣のような物体を見つけた。よく見ると、それは泥と藁、そして人間の髪の毛で固められた何かだ。中から微かに赤子の泣き声のようなものが聞こえる。", type: "blood", choices: [
-                    { text: "中を確かめる", desc: "民俗学的な好奇心が恐怖を上回る。慎重に中を覗き込む。", icon: "fa-eye", type: "check", checkType: "insight", chance: 60, success: { insight: 15, msg: "中には、村の土着信仰に使われたと思われる奇妙な形の依代（よりしろ）が入っていた。貴重な資料だ。" }, fail: { san: -20, msg: "中から腐敗した小さな手が飛び出し、あなたの顔を掴もうとした！" } },
-                    { text: "焼き払う", desc: "これは穢れている。和ろうそくの火で浄化する。", icon: "fa-fire", req: "lighter", effect: { fuel: -5, san: 5 }, msg: "髪の毛が焦げる嫌な臭いと共に、それは燃え上がった。泣き声は断末魔の叫びに変わった。" },
-                    { text: "無視して進む", desc: "関わってはいけない。見なかったことにして先を急ぐ。", icon: "fa-walking", effect: { san: -5 }, msg: "背後から泣き声が大きくなり、耳元で囁くような声に変わったが、あなたは足を止めなかった。" }
+                { text: "經過土間時，發現樑上掛著一個像是巨大蜂巢的物體。仔細一看，那是由泥土、稻草以及人類頭髮凝固而成的某種東西。裡面微弱地傳來像是嬰兒的哭聲。", type: "blood", choices: [
+                    { text: "確認內容物", desc: "民俗學的好奇心戰勝了恐懼。慎重地窺視內部。", icon: "fa-eye", type: "check", checkType: "insight", chance: 60, success: { insight: 15, msg: "裡面放著形狀奇特、似乎是用於村子土著信仰的依代。是貴重的資料。" }, fail: { san: -20, msg: "裡面衝出一隻腐爛的小手，試圖抓住你的臉！" } },
+                    { text: "燒毀", desc: "這是不潔之物。用和蠟燭的火淨化它。", icon: "fa-fire", req: "lighter", effect: { fuel: -5, san: 5 }, msg: "伴隨著燒焦頭髮的臭味，那東西燃燒起來。哭聲變成了臨死前的慘叫。" },
+                    { text: "無視並前進", desc: "不能與之扯上關係。當作沒看到趕緊趕路。", icon: "fa-walking", effect: { san: -5 }, msg: "背後的哭聲變大，變成了在耳邊竊竊私語的聲音，但你沒有停下腳步。" }
                 ]}
             ],
-            C: [ // 物音 Theme: 神社への道、自然の脅威
-                { text: "【探索：山道】神社へと続く苔むした石段を登っている。両脇には首のない地蔵が延々と並び、雨がシトシトと降り始めた。遠くで「ゴーン...」と、誰もいないはずの鐘楼から鐘の音が響く。", type: "noise", choices: [
-                    { text: "先を急ぐ", desc: "鐘の音が近づいてくる前に、この不気味な石段を登り切る。", icon: "fa-running", type: "check", checkType: "courage", chance: 70, success: { courage: 5 }, fail: { hp: -10, msg: "濡れた苔に足を滑らせ、数段落ちてしまった。膝を強く打ち、痛みが走る。" } },
-                    { text: "脇道を探す", desc: "石段は危険だ。獣道のような脇道がないか探す。", icon: "fa-route", type: "check", checkType: "insight", chance: 60, success: { insight: 10, item: "gun" }, fail: { hp: -15, san: -5, msg: "藪の中に入り込んだが、鋭い茨に囲まれ、脱出するのに体力を消耗した。何かの視線を感じた。" } },
-                    { text: "その場で待機", desc: "音の正体がわかるまで、石灯籠の陰に隠れて様子を伺う。", icon: "fa-hide", effect: { fuel: -2, san: 5 }, msg: "しばらく息を潜めていると、鐘の音は止んだ。だが、貴重な時間と灯油を浪費してしまった。" }
+            C: [ // 聲響 Theme: 通往神社的道路、自然威脅
+                { text: "【探索：山路】正在攀登通往神社、長滿青苔的石階。兩側延綿排列著無頭地藏，雨開始淅淅瀝瀝地下了起來。遠處傳來「咚...」的鐘聲，明明鐘樓應該沒有人才對。", type: "noise", choices: [
+                    { text: "趕路", desc: "在鐘聲逼近前，爬完這詭異的石階。", icon: "fa-running", type: "check", checkType: "courage", chance: 70, success: { courage: 5 }, fail: { hp: -10, msg: "在濕滑的青苔上滑倒，跌落了好幾階。膝蓋受到重擊，劇痛傳遍全身。" } },
+                    { text: "尋找小路", desc: "石階太危險了。尋找像獸徑一樣的小路。", icon: "fa-route", type: "check", checkType: "insight", chance: 60, success: { insight: 10, item: "gun" }, fail: { hp: -15, san: -5, msg: "雖然進入了灌木叢，但被銳利的荊棘包圍，為了脫身消耗了體力。感覺到了某種視線。" } },
+                    { text: "原地待命", desc: "在弄清聲音的真面目前，躲在石燈籠陰影處觀察。", icon: "fa-hide", effect: { fuel: -2, san: 5 }, msg: "屏氣凝神一會兒後，鐘聲停止了。但是浪費了寶貴的時間與燈油。" }
                 ]},
-                { text: "石段の途中、小さな祠（ほこら）の前を通りかかった。扉は少し開いており、中から錆びた鉄の臭いが漂ってくる。風が吹くたびに、扉が「ギィ...ギィ...」と軋む音を立てる。", type: "noise", choices: [
-                    { text: "祠を開ける", desc: "中に何が祀られているのか確かめる。重要な手がかりかもしれない。", icon: "fa-door-open", type: "check", checkType: "insight", chance: 70, success: { item: 'amulet', msg: "祠の中には、大量の錆びた釘が突き刺さった人形と、その下に隠された「清めの塩」があった。" }, fail: { san: -15, msg: "扉を開けると、中には自分の名前が朱色で書かれた位牌（いはい）が置かれていた。心臓が凍りつく。" } },
-                    { text: "塩を撒く", desc: "不浄な気配を感じる。手持ちの清めの塩を撒いて清める。", icon: "fa-seedling", req: "amulet", effect: { san: 15, itemLost: "amulet" }, msg: "塩を撒くと、祠の中から黒い煙が上がり、軋む音が止んだ。空気が清浄になった気がする。" },
-                    { text: "手を合わせて去る", desc: "触らぬ神に祟りなし。軽く拝んで、そのまま通り過ぎる。", icon: "fa-praying-hands", effect: { courage: -2 }, msg: "あなたは祠を刺激しないよう、静かにその場を離れた。" }
+                { text: "在石階途中，經過了一座小祠堂。門稍微開著，裡面飄出鐵鏽味。每當風吹過，門就會發出「吱...吱...」的摩擦聲。", type: "noise", choices: [
+                    { text: "打開祠堂", desc: "確認裡面供奉著什麼。可能是重要的線索。", icon: "fa-door-open", type: "check", checkType: "insight", chance: 70, success: { item: 'amulet', msg: "祠堂裡有一個被刺滿生鏽釘子的人偶，以及藏在下面的「淨化之鹽」。" }, fail: { san: -15, msg: "打開門，裡面放著寫有你名字的紅色牌位。心臟彷彿結凍了。" } },
+                    { text: "撒鹽", desc: "感覺到不潔的氣息。撒出手邊的淨化之鹽來清淨。", icon: "fa-seedling", req: "amulet", effect: { san: 15, itemLost: "amulet" }, msg: "撒鹽後，祠堂裡冒出了黑煙，摩擦聲也停止了。感覺空氣變得清淨了。" },
+                    { text: "雙手合十離開", desc: "敬鬼神而遠之。稍微拜一下，就那樣通過。", icon: "fa-praying-hands", effect: { courage: -2 }, msg: "為了不刺激祠堂，你靜靜地離開了現場。" }
                 ]},
-                { text: "突然、周囲の木々が激しく揺れ始め、山全体が鳴動した。土砂崩れの前兆か、それとも山の神の怒りか。足元の地面に亀裂が走り始めた。", type: "noise", choices: [
-                    { text: "高台へ走る", desc: "崩れる地面を避け、近くの岩場へ全力で走る。", icon: "fa-running", type: "check", checkType: "courage", chance: 65, success: { courage: 10 }, fail: { hp: -20, msg: "間に合わなかった！崩れた土砂に巻き込まれ、身体中を打撲した。" } },
-                    { text: "木の根に掴まる", desc: "近くの太い木の根にしがみつき、揺れが収まるのを待つ。", icon: "fa-tree", type: "check", checkType: "courage", chance: 80, success: { hp: -5, san: -5, msg: "激しい揺れに耐えたが、落ちてきた枝で擦り傷を負った。揺れが収まると、周囲の景色が変わっていた。" }, fail: { hp: -25, msg: "掴んでいた根が千切れ、あなたは斜面を滑落した。" } },
-                    { text: "鏡を見る", desc: "これは現実ではないかもしれない。手鏡で真実を映そうと試みる。", icon: "fa-mirror", req: "mirror_shard", effect: { insight: 20, san: -10 }, msg: "鏡に映ったのは、揺れる山ではなく、巨大な黒い影が山を揺さぶっている姿だった。幻覚だと理解した瞬間、揺れは収まった。" }
+                { text: "突然，周圍的樹木劇烈搖晃，整座山都在鳴動。是土石流的前兆，還是山神的憤怒？腳下的地面開始出現裂痕。", type: "noise", choices: [
+                    { text: "往高處跑", desc: "避開崩塌的地面，全力跑向附近的岩場。", icon: "fa-running", type: "check", checkType: "courage", chance: 65, success: { courage: 10 }, fail: { hp: -20, msg: "來不及了！被捲入崩塌的土石中，全身挫傷。" } },
+                    { text: "抓住樹根", desc: "緊緊抓住附近粗壯的樹根，等待搖晃停止。", icon: "fa-tree", type: "check", checkType: "courage", chance: 80, success: { hp: -5, san: -5, msg: "承受住了劇烈的搖晃，但被掉落的樹枝擦傷。搖晃停止後，周圍的景色改變了。" }, fail: { hp: -25, msg: "抓住的樹根斷裂，你滑落了斜坡。" } },
+                    { text: "照鏡子", desc: "這可能不是現實。試著用手鏡映照出真實。", icon: "fa-mirror", req: "mirror_shard", effect: { insight: 20, san: -10 }, msg: "鏡中映出的並非搖晃的山，而是巨大的黑影正在搖晃山體的模樣。理解那是幻覺的瞬間，搖晃停止了。" }
                 ]}
             ],
-            D: [ // 闇 Theme: 地下、儀式の場
-                { text: "【探索：神社の地下】本殿の床下に隠された階段を見つけ、地下へと降りた。そこは完全な闇と、鼻を突く腐臭が支配する洞窟だった。壁は湿った土ではなく、何か柔らかい肉のような質感がある。", type: "dark", choices: [
-                    { text: "明かりを強める", desc: "この闇は危険だ。灯油を多めに使い、視界を確保する。", icon: "fa-fire", req: "fuel", effect: { fuel: -5, san: 5 }, msg: "炎が強まると、壁だと思っていたものが、無数の古い着物や布団が幾重にも押し固められたものだと分かった。" },
-                    { text: "手探りで進む", desc: "灯油を節約するため、壁伝いに慎重に進む。", icon: "fa-walking", type: "check", checkType: "courage", chance: 50, success: { courage: 15, insight: 5 }, fail: { hp: -15, san: -15, msg: "壁に手を触れた瞬間、その「肉」が脈打ち、あなたを飲み込もうとした！必死で振りほどいた。" } },
-                    { text: "鉈で壁を刻む", desc: "この気味の悪い壁を鉈で切り裂きながら進む。", icon: "fa-hammer", req: "crowbar", type: "check", checkType: "courage", chance: 70, success: { courage: 10, msg: "鉈を振るうたびに、壁から黒い液体が染み出したが、道は開けた。" }, fail: { san: -20, msg: "壁を切り裂くと、中から大量の人間の髪の毛が溢れ出し、足元に絡みついた。" } }
+            D: [ // 黑暗 Theme: 地下、儀式場所
+                { text: "【探索：神社地下】發現了隱藏在本殿地板下的樓梯，下到了地下。那是被完全的黑暗與撲鼻腐臭支配的洞窟。牆壁不是濕潤的泥土，而是有著某種柔軟肉塊般的質感。", type: "dark", choices: [
+                    { text: "增強照明", desc: "這片黑暗很危險。多用點燈油，確保視野。", icon: "fa-fire", req: "fuel", effect: { fuel: -5, san: 5 }, msg: "火焰增強後，看清了原本以為是牆壁的東西，其實是無數破舊的和服與棉被層層堆疊壓實而成的。" },
+                    { text: "摸索前進", desc: "為了節省燈油，沿著牆壁慎重前進。", icon: "fa-walking", type: "check", checkType: "courage", chance: 50, success: { courage: 15, insight: 5 }, fail: { hp: -15, san: -15, msg: "摸到牆壁的瞬間，那塊「肉」脈動了一下，試圖吞噬你！你拚命掙脫了。" } },
+                    { text: "用柴刀刻牆", desc: "一邊用柴刀劈開這噁心的牆壁一邊前進。", icon: "fa-hammer", req: "crowbar", type: "check", checkType: "courage", chance: 70, success: { courage: 10, msg: "每當揮舞柴刀，牆壁就會滲出黑色液體，但道路打開了。" }, fail: { san: -20, msg: "切開牆壁，裡面湧出大量人類頭髮，纏住了你的腳。" } }
                 ]},
-                { text: "洞窟の奥で、巨大な祭壇を見つけた。そこには、村人たちが「鳴神様」と呼んでいた存在——身長八尺（約2.4m）はある、白い着物を着たのっぺらぼうの巨女が、あなたに背を向けて立っていた。「...ぽぽ、ぽぽぽ...」と、機械的な奇妙な音を発している。", type: "dark", choices: [
-                    { text: "息を殺す", desc: "気づかれないように、岩陰に隠れて息を潜める。", icon: "fa-hide", type: "check", checkType: "courage", chance: 60, success: { insight: 20, msg: "巨女はしばらく奇妙な音を発していたが、やがて闇の中へと消えていった。祭壇を調べるチャンスだ。", flag: "saw_ritual" }, fail: { san: -30, msg: "心臓の音が大きすぎた。「ぽぽぽ...」という音が止まり、巨女の首が真後ろに180度回転してあなたを見た！" } },
-                    { text: "火縄銃を撃つ", desc: "最大の脅威だ。ここで仕留めるしかない。貴重な一発を撃ち込む。", icon: "fa-gun", req: "gun", effect: { courage: 20, itemLost: "gun", flag: "entity_damaged" }, msg: "轟音と共に弾丸が巨女の背中に命中した！巨女は凄まじい悲鳴を上げ、黒い霧となって四散した。だが、これで終わりだろうか？", reckless: true },
-                    { text: "鏡で照らす", desc: "手鏡を使い、巨女の真の姿を映し出す。", icon: "fa-mirror", req: "mirror_shard", effect: { san: -25, insight: 25 }, msg: "鏡に映ったのは、女の姿ではなく、無数の呪詛が渦巻く黒い穴そのものだった。その深淵を覗き見てしまい、精神が削られる。" }
+                { text: "在洞窟深處，發現了巨大的祭壇。那裡站著村民們稱為「鳴神大人」的存在——身高八尺（約2.4公尺），穿著白衣的無臉巨女，正背對著你。「...波波、波波波...」發出機械般奇妙的聲音。", type: "dark", choices: [
+                    { text: "屏住氣息", desc: "為了不被發現，躲在岩石陰影處屏息以待。", icon: "fa-hide", type: "check", checkType: "courage", chance: 60, success: { insight: 20, msg: "巨女發出了一陣奇妙的聲音後，消失在黑暗中。這是調查祭壇的機會。", flag: "saw_ritual" }, fail: { san: -30, msg: "心跳聲太大了。「波波波...」的聲音停止，巨女的頭向正後方旋轉180度看向了你！" } },
+                    { text: "開火繩槍", desc: "這是最大的威脅。只能在這裡解決它。射出珍貴的一發。", icon: "fa-gun", req: "gun", effect: { courage: 20, itemLost: "gun", flag: "entity_damaged" }, msg: "伴隨著轟鳴聲，子彈擊中了巨女的背部！巨女發出淒厲的慘叫，化為黑霧四散。但，這樣就結束了嗎？", reckless: true },
+                    { text: "用鏡子照", desc: "使用手鏡，映照出巨女的真面目。", icon: "fa-mirror", req: "mirror_shard", effect: { san: -25, insight: 25 }, msg: "鏡中映出的不是女人的姿態，而是無數詛咒漩渦的黑洞本身。窺視了那深淵，精神被削弱。" }
                 ]},
-                { text: "祭壇の横に、祖父が倒れているのを見つけた！まだ息はあるようだが、意識は朦朧としており、うわ言のように「塩を...塩で清めねば...」と繰り返している。", type: "blood", choices: [
-                    { text: "祖父を介抱する", desc: "薬草を使い、祖父の意識を回復させる。", icon: "fa-leaf", req: "medkit", type: "check", checkType: "insight", chance: 80, success: { insight: 20, msg: "祖父の意識が戻った！彼は震える手で、鳴神様を封じるための「神楽」の手順を教えてくれた。", flag: "mentor_hint" }, fail: { san: -15, msg: "祖父は突然目を見開き、「お前も連れていかれる！」と叫んで暴れ出した。" } },
-                    { text: "塩を探す", desc: "祖父の言葉を信じ、周囲で清めの塩を探す。", icon: "fa-search", type: "check", checkType: "insight", chance: 70, success: { item: 'amulet', msg: "祭壇の隅に、まだ封が開けられていない清めの塩の袋を見つけた！" }, fail: { hp: -10, msg: "塩の壺に手を伸ばしたが、中に潜んでいた毒蛇に噛まれた。" } },
-                    { text: "担いで逃げる", desc: "ここにいては危険だ。祖父を担いで地上へ脱出を試みる。", icon: "fa-running", type: "check", checkType: "courage", chance: 50, success: { courage: 10, msg: "重い祖父を担ぎ、必死で来た道を戻る。なんとか地下から脱出できた。", flag: "mentor_saved" }, fail: { hp: -20, msg: "足元が崩れ、祖父と共に転落した。全身を強打し、祖父の意識は再び遠のいた。" } }
+                { text: "在祭壇旁，發現倒在地上的祖父！雖然還有氣息，但意識朦朧，像是在說夢話般重複著「鹽...必須用鹽淨化...」。", type: "blood", choices: [
+                    { text: "照顧祖父", desc: "使用藥草，讓祖父恢復意識。", icon: "fa-leaf", req: "medkit", type: "check", checkType: "insight", chance: 80, success: { insight: 20, msg: "祖父恢復意識了！他用顫抖的手，教導了封印鳴神大人的「神樂」步驟。", flag: "mentor_hint" }, fail: { san: -15, msg: "祖父突然睜大眼睛，大叫「你也會被帶走的！」，並開始發狂。" } },
+                    { text: "尋找鹽", desc: "相信祖父的話，在周圍尋找淨化之鹽。", icon: "fa-search", type: "check", checkType: "insight", chance: 70, success: { item: 'amulet', msg: "在祭壇角落，發現了還沒開封的淨化之鹽袋子！" }, fail: { hp: -10, msg: "伸手去拿鹽罐，卻被潛藏在裡面的毒蛇咬了一口。" } },
+                    { text: "揹起逃跑", desc: "這裡太危險了。揹起祖父嘗試逃到地上。", icon: "fa-running", type: "check", checkType: "courage", chance: 50, success: { courage: 10, msg: "揹著沉重的祖父，拚命地沿原路折返。總算逃出了地下。", flag: "mentor_saved" }, fail: { hp: -20, msg: "立足點崩塌，與祖父一起跌落。全身受到重擊，祖父的意識再次遠去。" } }
                 ]}
             ],
-            // 終局 (21-25) - 本殿での決戦
+            // 終局 (21-25) - 本殿決戰
             E: [
-                { text: "【終局：神楽殿】あなたは祖父（またはその遺志）と共に、神社の神楽殿に辿り着いた。暴風雨が吹き荒れ、稲妻が空を裂く。ここが「鳴神様」を封じる最後の場所だ。儀式を始めなければならない。", type: "noise", choices: [
+                { text: "【終局：神樂殿】你與祖父（或繼承其遺志）抵達了神社的神樂殿。暴風雨肆虐，雷電撕裂天空。這裡是封印「鳴神大人」的最後場所。必須開始儀式。", type: "noise", choices: [
                     // 修復：100% 成功率
-                    { text: "奉納神楽を舞う", desc: "祖父の手帳（または教え）に従い、封印のための神楽を舞う。", icon: "fa-fan", req: "journal", type: "check", checkType: "insight", chance: 100, success: { insight: 30, san: -10, msg: "あなたが舞い始めると、暴風雨がさらに激しさを増し、雷鳴が轟いた。儀式が始まった合図だ。", flag: "kagura_performed" }, fail: { san: -20, msg: "（此選項不應失敗）" } },
-                    { text: "注連縄を張る", desc: "結界を強化するため、神楽殿の周囲に新しい注連縄を張り巡らせる。", icon: "fa-rope", type: "check", checkType: "courage", chance: 80, success: { courage: 20, hp: -10, msg: "強風に煽られながらも、なんとか注連縄を張り終えた。結界が一時的に強化された。", flag: "barrier_strengthened" }, fail: { hp: -30, msg: "突風で飛ばされた屋根瓦が直撃し、あなたは地面に叩きつけられた。" } },
-                    { text: "身代わりとなる", desc: "儀式を完成させるため、自らを最後の「依代」として差し出す。", icon: "fa-skull", effect: { hp: -99, san: 0 }, msg: "あなたは祭壇の中央に座り、短刀を喉元に突き立てた。意識が遠のく中、村が静けさを取り戻していくのを感じた..." }
+                    { text: "奉納神樂之舞", desc: "依照祖父的手記（或教導），跳起封印的神樂。", icon: "fa-fan", req: "journal", type: "check", checkType: "insight", chance: 100, success: { insight: 30, san: -10, msg: "當你開始舞動，暴風雨變得更加劇烈，雷聲轟鳴。這是儀式開始的信號。", flag: "kagura_performed" }, fail: { san: -20, msg: "（此選項不應失敗）" } },
+                    { text: "張掛注連繩", desc: "為了強化結界，在神樂殿周圍張掛新的注連繩。", icon: "fa-rope", type: "check", checkType: "courage", chance: 80, success: { courage: 20, hp: -10, msg: "雖然被強風吹襲，但總算掛好了注連繩。結界暫時強化了。", flag: "barrier_strengthened" }, fail: { hp: -30, msg: "被突風吹飛的屋瓦直擊，你被摔在地上。" } },
+                    { text: "成為替身", desc: "為了完成儀式，自願成為最後的「依代」。", icon: "fa-skull", effect: { hp: -99, san: 0 }, msg: "你坐在祭壇中央，將短刀刺向喉嚨。在意識遠去之中，感覺到村子恢復了平靜..." }
                 ]},
-                { text: "儀式の最中、ついに「鳴神様」がその真の姿を現した。それは黒い霧の塊であり、その中から無数の白い腕が伸び、赤い目玉がギョロギョロとあなたを見つめている。", type: "dark", choices: [
-                    { text: "火縄銃で撃つ", desc: "残された最後の一発を、その中心にある目玉に撃ち込む。", icon: "fa-gun", req: "gun", effect: { itemLost: "gun", courage: 20 }, msg: "轟音一閃！弾丸は目玉を貫き、怪物は苦悶の声を上げて霧散した。だが、完全に消滅したわけではないようだ。" },
-                    { text: "灯油を浴びせ火を放つ", desc: "残りの灯油を全て投げつけ、和ろうそくで点火する。", icon: "fa-fire", req: "fuel", effect: { fuel: -10, hp: -15 }, msg: "怪物は火だるまとなり、絶叫を上げながらのたうち回る。あなたも火の粉を浴びて火傷を負った。" },
-                    { text: "神楽を続ける", desc: "何が起きても、舞を止めてはならない。恐怖に耐え、舞い続ける。", icon: "fa-fan", type: "check", checkType: "courage", chance: 70, success: { san: -10, msg: "無数の腕があなたを掴もうとするが、神楽の結界がそれを弾く。儀式は佳境に入った。" }, fail: { hp: -40, msg: "恐怖で足が止まってしまった瞬間、白い腕があなたの体にまとわりつき、締め上げた。骨が砕ける音がする。" } }
+                { text: "儀式途中，「鳴神大人」終於現出了真身。那是黑色的霧塊，從中伸出無數蒼白的手臂，紅色的眼珠骨碌碌地盯著你。", type: "dark", choices: [
+                    { text: "用火繩槍射擊", desc: "將剩下最後的一發，射向位於中心的眼珠。", icon: "fa-gun", req: "gun", effect: { itemLost: "gun", courage: 20 }, msg: "轟音一閃！子彈貫穿了眼珠，怪物發出苦悶的聲音並霧散。但，這樣就完全消滅了嗎？" },
+                    { text: "潑油放火", desc: "將剩下的燈油全部潑上去，用和蠟燭點火。", icon: "fa-fire", req: "fuel", effect: { fuel: -10, hp: -15 }, msg: "怪物渾身是火，發出絕叫並痛苦翻滾。你也沐浴在火星中受了燒傷。" },
+                    { text: "繼續神樂", desc: "無論發生什麼，都不能停止舞動。忍耐恐懼，繼續跳下去。", icon: "fa-fan", type: "check", checkType: "courage", chance: 70, success: { san: -10, msg: "無數的手臂試圖抓住你，但神樂的結界將其彈開。儀式進入佳境。" }, fail: { hp: -40, msg: "因恐懼停下腳步的瞬間，蒼白的手臂纏上你的身體，勒緊。聽見了骨頭碎裂的聲音。" } }
                 ]},
-                { text: "怪物の精神攻撃が始まった。あなたの脳内に、直接語りかけてくる。「...オイデ...コッチヘオイデ...マゼテアゲル...」それは、失った家族や友人の声色を使っていた。", type: "noise", choices: [
-                    { text: "舌を噛み意識を保つ", desc: "肉体の痛みで精神への干渉を振り払う。", icon: "fa-tooth", effect: { hp: -10, san: 10, courage: 20 }, msg: "口の中に鉄の味が広がる。痛みで意識が鮮明になり、幻聴が遠のいた。" },
-                    { text: "声に耳を傾ける", desc: "懐かしい声だ...そちらに行けば、楽になれるのだろうか？", icon: "fa-question", effect: { san: -30, insight: 20 }, msg: "あなたは取り込まれることを受け入れた。境界線が曖昧になり、自我が崩壊していく。" },
-                    { text: "鏡で跳ね返す", desc: "手鏡を使い、精神攻撃をそのまま怪物に反射する。", icon: "fa-mirror", req: "mirror_shard", effect: { san: 15 }, msg: "鏡を向けると、怪物は自分の呪詛を浴びて怯んだ。その隙に体勢を立て直す。" }
+                { text: "怪物的精神攻擊開始了。直接對你的腦內說話。「...過來...來這邊...混合在一起吧...」那是使用了失去的家人或朋友的聲音。", type: "noise", choices: [
+                    { text: "咬舌保持意識", desc: "用肉體的疼痛甩開對精神的干涉。", icon: "fa-tooth", effect: { hp: -10, san: 10, courage: 20 }, msg: "口中擴散著鐵鏽味。疼痛讓意識變得鮮明，幻聽遠去了。" },
+                    { text: "傾聽聲音", desc: "懷念的聲音...去那邊的話，會變得輕鬆嗎？", icon: "fa-question", effect: { san: -30, insight: 20 }, msg: "你接受了被同化。界線變得曖昧，自我開始崩壞。" },
+                    { text: "用鏡子反射", desc: "使用手鏡，將精神攻擊原樣反射給怪物。", icon: "fa-mirror", req: "mirror_shard", effect: { san: 15 }, msg: "將鏡子轉向它，怪物沐浴在自己的詛咒中畏縮了。趁機重整態勢。" }
                 ]},
-                { text: "儀式は最終段階に入った。天から雷が落ち、神楽殿が炎に包まれる。封印を完成させるか、それとも全てを終わらせるか。", type: "dark", choices: [
-                    { text: "封印 (要：塩と神楽)", desc: "神楽を舞い終え、最後に清めの塩で「鳴神様」を封じる。", icon: "fa-seedling", req: "amulet", effect: { final: "seal" }, msg: "あなたは塩を高く掲げ、最後の祝詞（のりと）を叫んだ！稲妻が祭壇を直撃する！" },
-                    { text: "村ごと焼き払う", desc: "灯油樽を倒し、この呪われた村を炎で浄化する。", icon: "fa-bomb", req: "fuel", effect: { final: "boom" }, msg: "あなたは火のついたろうそくを灯油樽に投げ込んだ。爆炎が上がり、全てが灰になっていく。" },
-                    { text: "村から逃走する", desc: "もう限界だ。儀式を放棄し、山を降りて逃げ出す。", icon: "fa-running", effect: { final: "escape" }, msg: "あなたは全てを投げ出し、嵐の中を転がるようにして村から逃げ出した。背後で絶望的な咆哮が聞こえた。" }
+                { text: "儀式進入最終階段。雷電從天而降，神樂殿被火焰包圍。要完成封印，還是結束這一切。", type: "dark", choices: [
+                    { text: "封印 (需：鹽與神樂)", desc: "跳完神樂，最後用淨化之鹽封印「鳴神大人」。", icon: "fa-seedling", req: "amulet", effect: { final: "seal" }, msg: "你高舉鹽巴，大喊最後的祝詞！閃電直擊祭壇！" },
+                    { text: "燒毀村子", desc: "推倒燈油桶，用火焰淨化這個被詛咒的村子。", icon: "fa-bomb", req: "fuel", effect: { final: "boom" }, msg: "你將點燃的蠟燭丟進燈油桶。爆炸的火焰升起，一切都將化為灰燼。" },
+                    { text: "逃離村子", desc: "已經極限了。放棄儀式，下山逃跑。", icon: "fa-running", effect: { final: "escape" }, msg: "你拋下一切，在暴風雨中連滾帶爬地逃出了村子。背後傳來了絕望的咆哮。" }
                 ]}
             ]
         };
 
-        /* --- ゲームロジック (Core Game Logic - Do not modify structurally) --- */
+        /* --- 遊戲邏輯 (核心邏輯保持不變) --- */
         const game = {
             turn: 1,
             maxTurns: 25,
@@ -346,7 +381,7 @@
 
             start: function() {
                 this.turn = 1;
-                // 初期ステータス
+                // 初期狀態
                 this.stats = { hp: 100, san: 80, courage: 50, insight: 10, fuel: 25 };
                 this.inventory = [];
                 this.flags = [];
@@ -368,7 +403,7 @@
                 document.getElementById('end-screen').style.display = 'none';
                 document.getElementById('log-content').innerHTML = '';
                 this.updateUI();
-                this.log(`鳴神村へ足を踏み入れた。あなたの弱点：${this.phobia.name} (${this.phobia.desc})`, "log-info");
+                this.log(`踏入鳴神村。你的弱點：${this.phobia.name} (${this.phobia.desc})`, "log-info");
                 this.loadScenario();
                 this.checkAtmosphere();
             },
@@ -385,36 +420,36 @@
                 }
 
                 let data = this.scenarioTimeline[this.turn - 1];
-                // 刻表示に変更
+                // 刻表示變更
                 let text = `[${this.turn}刻] ${data.text}`;
                 let choices = [...data.choices];
 
                 this.historyLog.push(`${this.turn}刻: ${data.text}`);
 
-                // 幻覚イベント（日本語化）
+                // 幻覺事件（繁中化）
                 if (this.turn < 24 && this.stats.san < 70 && Math.random() < 0.3) {
-                    const phantomText = ["誰かの声がした気がする", "足元に小銭が落ちている", "物陰に人影が見える", "壁のシミが顔に見える", "水音が聞こえる"];
+                    const phantomText = ["感覺聽到了誰的聲音", "腳邊掉落著零錢", "陰影處看見人影", "牆上的汙漬看著像人臉", "聽見了水聲"];
                     const randomText = phantomText[Math.floor(Math.random() * phantomText.length)];
                     const randomIcon = ["fa-ear-listen", "fa-coins", "fa-user-ninja", "fa-face-dizzy", "fa-water"][Math.floor(Math.random() * 5)];
                     const insertIndex = Math.floor(Math.random() * (choices.length + 1));
                     choices.splice(insertIndex, 0, {
-                        text: randomText, desc: "これは現実なのだろうか...", icon: randomIcon, isPhantom: true, chance: 80, type: 'check'
+                        text: randomText, desc: "這是現實嗎...", icon: randomIcon, isPhantom: true, chance: 80, type: 'check'
                     });
                 }
 
-                // 発狂モード（日本語化）
+                // 發狂模式（繁中化）
                 if (this.stats.san < 30) {
-                    text += " <span class='text-distort' style='display:block; margin-top:10px; color:#c0392b;'>[幻聴] " + this.getMadnessText() + "</span>";
+                    text += " <span class='text-distort' style='display:block; margin-top:10px; color:#c0392b;'>[幻聽] " + this.getMadnessText() + "</span>";
                     if (Math.random() < 0.4) {
                         choices.push({ 
-                            text: "幻聴に従う：目を潰す", desc: "見えなければ、怖くない...", icon: "fa-eye-slash", 
-                            effect: { hp: -50, san: -50 }, msg: "あなたは狂気に陥った。視界が闇に包まれる。", reckless: true, isMadness: true 
+                            text: "聽從幻聽：戳瞎雙眼", desc: "看不見的話，就不害怕了...", icon: "fa-eye-slash", 
+                            effect: { hp: -50, san: -50 }, msg: "你陷入了瘋狂。視野被黑暗包圍。", reckless: true, isMadness: true 
                         });
                     }
                 }
 
                 const storyContent = document.getElementById('story-content');
-                // アイコンを鳥居などに変更
+                // 圖示變更
                 storyContent.innerHTML = `<i class="fas ${this.getScenarioIcon(this.turn)} story-icon"></i>` + text;
                 storyContent.className = 'story-text';
                 void storyContent.offsetWidth; 
@@ -424,12 +459,11 @@
                 choiceArea.innerHTML = '';
 
                 choices.forEach(choice => {
-                    // 終局条件チェック（日本語化対応）
+                    // 終局條件檢查（繁中化對應）
                     if (choice.effect && choice.effect.final === 'seal') {
-                        // amulet は塩、ritual_started は kagura_performed に対応
                         const canSeal = this.hasItem('amulet') && this.flags.includes('kagura_performed');
-                        if (!canSeal) choice.desc += " <span style='color:#c0392b'>(条件未達成：清めの塩と神楽が必要)</span>";
-                        else choice.desc = "<span style='color:#27ae60; font-weight:bold;'>(条件達成 - 封印可能)</span> " + choice.desc;
+                        if (!canSeal) choice.desc += " <span style='color:#c0392b'>(條件未達成：需淨化之鹽與神樂)</span>";
+                        else choice.desc = "<span style='color:#27ae60; font-weight:bold;'>(條件達成 - 可封印)</span> " + choice.desc;
                     }
 
                     if (choice.req && !this.hasItem(choice.req)) return;
@@ -462,7 +496,7 @@
                 setTimeout(() => { btnElement.style.opacity = "0"; setTimeout(() => { btnElement.style.display = "none"; }, 200); }, 100);
                 document.getElementById('app-container').classList.add('shake');
                 setTimeout(() => document.getElementById('app-container').classList.remove('shake'), 200);
-                this.log("手を伸ばしたが、そこには何もなかった。幻覚だ！", "log-phantom");
+                this.log("伸手去抓，那裡卻什麼也沒有。是幻覺！", "log-phantom");
                 this.stats.san -= 2;
                 this.updateUI();
             },
@@ -480,7 +514,7 @@
                 document.getElementById('app-container').classList.add('shake');
                 setTimeout(() => document.getElementById('app-container').classList.remove('shake'), 500);
 
-                this.historyLog.push(`選択: ${choice.text}`);
+                this.historyLog.push(`選擇: ${choice.text}`);
 
                 if (choice.effect && choice.effect.final) this.finalChoice = choice.effect.final;
 
@@ -491,7 +525,7 @@
                 } else {
                     this.applyEffect(choice.effect || choice);
 					
-					// 如果是最終選擇，直接結束（防止進到 turn 19）
+					// 如果是最終選擇，直接結束
 					if (choice.effect && choice.effect.final) {
 						setTimeout(() => this.triggerEnding(), 800);
 						return;
@@ -500,12 +534,12 @@
                     if (choice.msg) this.log(choice.msg, "log-info");
                 }
 
-                if (choice.reckless) { this.stats.san -= 30; this.log("【無謀な行動】心魂 -30", "log-negative"); }
+                if (choice.reckless) { this.stats.san -= 30; this.log("【魯莽行動】心魂 -30", "log-negative"); }
                 
                 const currentData = this.scenarioTimeline[this.turn - 1];
                 if (currentData && currentData.type === this.phobia.id && this.stats.san < 60) {
                     this.stats.san -= 10;
-                    this.log(`【恐怖症発作】${this.phobia.name}！ 心魂 -10`, "log-negative");
+                    this.log(`【恐懼症發作】${this.phobia.name}！ 心魂 -10`, "log-negative");
                 }
                 this.postTurnProcess();
             },
@@ -531,13 +565,13 @@
                 this.stats.hp = Math.min(100, Math.max(0, this.stats.hp));
                 this.stats.san = Math.min(100, Math.max(0, this.stats.san));
                 this.stats.fuel = Math.min(50, Math.max(0, this.stats.fuel));
-                // ライター（和ろうそく）を持っていると燃料消費
-                if (this.hasItem('lighter')) { this.stats.fuel -= 1; if (this.stats.fuel <= 0) this.log("和ろうそくが燃え尽きた！", "log-negative"); }
+                // 持有和蠟燭則消耗燃料
+                if (this.hasItem('lighter')) { this.stats.fuel -= 1; if (this.stats.fuel <= 0) this.log("和蠟燭燃燒殆盡了！", "log-negative"); }
                 this.updateUI();
                 this.checkAtmosphere();
 
-                if (this.stats.hp <= 0) { this.endGame("死亡END：土塊", "fa-skull", "肉体は限界を迎えた。あなたの体は村の土となり、苔生していくだろう。"); return; }
-                if (this.stats.san <= 0) { this.endGame("発狂END：神隠し", "fa-face-dizzy", "心魂は砕け散った。あなたは人であることをやめ、鳴神様の眷属として永遠に村を彷徨うことになった。"); return; }
+                if (this.stats.hp <= 0) { this.endGame("死亡END：土塊", "fa-skull", "肉體迎來了極限。你的身體化為村子的泥土，長滿青苔。"); return; }
+                if (this.stats.san <= 0) { this.endGame("發狂END：神隱", "fa-face-dizzy", "心魂破碎四散。你不再是人，成為了鳴神大人的眷屬，永遠在村中徘徊。"); return; }
 
                 if (Math.random() < 0.20 && this.turn < 24) {
                     const evt = FORCED_EVENTS[Math.floor(Math.random() * FORCED_EVENTS.length)];
@@ -558,7 +592,7 @@
                     overlay.style.display = 'flex';
                     diceVisual.className = 'dice-rolling';
                     diceVisual.innerText = '';
-                    diceMsg.innerText = "運命の判定...";
+                    diceMsg.innerText = "命運判定...";
                     diceMsg.style.color = "#d0c0a8";
                     diceDetail.innerText = `目標成功率: ${chance}%`;
                     setTimeout(() => {
@@ -574,32 +608,31 @@
 
             triggerEnding: function() {
                 let title, desc, icon;
-                // フラグ名を新しいシナリオに合わせて調整
                 const { hasAmulet, mentorSaved, ritualStarted } = { 
-                    hasAmulet: this.hasItem('amulet'), // 塩
-                    mentorSaved: this.flags.includes('mentor_saved'), // 祖父救出
-                    ritualStarted: this.flags.includes('kagura_performed') // 神楽奉納
+                    hasAmulet: this.hasItem('amulet'), // 鹽
+                    mentorSaved: this.flags.includes('mentor_saved'), // 救出祖父
+                    ritualStarted: this.flags.includes('kagura_performed') // 奉納神樂
                 };
                 
                 console.log("Ending Check:", { finalChoice: this.finalChoice, hasAmulet, ritualStarted });
 
                 if (this.finalChoice === 'seal') {
                     if (hasAmulet && ritualStarted) {
-                        title = "真END：鳴神封印"; desc = "祖父の知識と清めの塩により、奉納神楽は成った。鳴神様は再び深い眠りにつき、村を覆っていた霧が晴れていく。あなたは生き延び、この真実を後世に伝える使命を得た。"; icon = "fa-sun";
+                        title = "真END：鳴神封印"; desc = "依靠祖父的知識與淨化之鹽，奉納神樂完成了。鳴神大人再次陷入沉睡，籠罩村子的霧氣消散。你活了下來，並獲得了將此真相傳達給後世的使命。"; icon = "fa-sun";
                     } else {
-                        title = "バッドEND：儀式失敗"; desc = "塩か神楽が不足していたため、封印は不完全に終わった。激怒した鳴神様の依代となり、あなたの意識は永遠の闇に飲まれた。"; icon = "fa-cloud-bolt";
+                        title = "壞END：儀式失敗"; desc = "因為缺少鹽或神樂，封印不完全。成為了震怒的鳴神大人的依代，你的意識被永遠的黑暗吞噬。"; icon = "fa-cloud-bolt";
                     }
                 }
-                else if (this.finalChoice === 'boom') { title = "業火END：浄化"; desc = "あなたが放った火は、瞬く間に村全体を包み込んだ。鳴神様もろとも、全ての穢れが焼き払われた。あなたの犠牲により、呪いの連鎖は断ち切られた...かもしれない。"; icon = "fa-fire"; }
-                else if (this.finalChoice === 'escape' && mentorSaved) { title = "生還END：継承者"; desc = "傷ついた祖父を連れ、命からがら村を脱出した。村の謎は残されたままだが、二人で生きて帰れたことが何よりの救いだ。祖父の研究は、あなたが引き継ぐことになるだろう。"; icon = "fa-user-group"; }
-                else if (this.finalChoice === 'escape') { title = "通常END：唯一の生存者"; desc = "あなた一人が村から逃げ延びた。体は無事だが、村で見た光景が瞼の裏に焼き付いて離れない。夜になると、遠くからあの「ぽぽぽ...」という音が聞こえる気がする。"; icon = "fa-person-running"; }
-                else { title = "バッドEND：行方不明"; desc = "あなたの消息は途絶えた。霧深い村のどこかで、新たな地蔵が一体増えたのかもしれない。"; icon = "fa-question"; }
+                else if (this.finalChoice === 'boom') { title = "業火END：淨化"; desc = "你放出的火瞬間包圍了整個村子。連同鳴神大人，所有的污穢都被燒盡。因為你的犧牲，詛咒的連鎖或許被斬斷了...。"; icon = "fa-fire"; }
+                else if (this.finalChoice === 'escape' && mentorSaved) { title = "生還END：繼承者"; desc = "帶著受傷的祖父，九死一生逃出了村子。雖然村子的謎團依舊，但兩人能活著回來比什麼都重要。祖父的研究，將由你來繼承吧。"; icon = "fa-user-group"; }
+                else if (this.finalChoice === 'escape') { title = "通常END：唯一倖存者"; desc = "只有你一人逃離了村子。雖然身體無恙，但在村中看見的光景烙印在眼瞼深處無法離去。到了夜晚，彷彿能從遠處聽見那個「波波波...」的聲音。"; icon = "fa-person-running"; }
+                else { title = "壞END：行蹤不明"; desc = "你從此斷了音訊。霧氣濃厚的村子某處，地藏或許又增加了一尊。"; icon = "fa-question"; }
                 this.endGame(title, icon, desc);
             },
 
             addItem: function(itemId) { if (!this.inventory.includes(itemId)) { this.inventory.push(itemId); this.log(`入手: ${ITEMS[itemId].name}`, "log-item"); } },
             hasItem: function(id) { return this.inventory.includes(id); },
-            removeItem: function(id) { this.inventory = this.inventory.filter(i => i !== id); this.log(`喪失: ${ITEMS[id].name}`, "log-negative"); },
+            removeItem: function(id) { this.inventory = this.inventory.filter(i => i !== id); this.log(`遺失: ${ITEMS[id].name}`, "log-negative"); },
             
             updateUI: function() {
                 document.getElementById('hp-val').innerText = this.stats.hp;
@@ -630,10 +663,10 @@
                 if (win.children.length > 20) win.lastElementChild.remove();
             },
             logStatsChange: function(effect) { let parts = []; if (effect.hp) parts.push(`生命${effect.hp}`); if (effect.san) parts.push(`心魂${effect.san}`); if (effect.courage) parts.push(`膽量${effect.courage}`); if (effect.insight) parts.push(`民俗${effect.insight}`); if (parts.length) this.log(`[${parts.join(' ')}]`, effect.hp<0||effect.san<0?"log-negative":"log-positive"); },
-            // シナリオ進行度に応じたアイコン変更（日式）
+            // 場景圖示變更
             getScenarioIcon: function(turn) { if(turn<=5)return"fa-torii-gate"; if(turn<=15)return"fa-house-chimney-crack"; if(turn<=20)return"fa-dungeon"; return"fa-cloud-bolt"; },
-            // 発狂時の幻聴（日式）
-            getMadnessText: function() { const t=["後ろにいる...","オイデ...","見ツケタ...","逃ゲラレナイ...","ソッチハ駄目..."]; return t[Math.floor(Math.random()*t.length)]; },
+            // 發狂時的幻聽（繁中化）
+            getMadnessText: function() { const t=["在後面...","過來...","找到了...","逃不掉的...","那邊不行..."]; return t[Math.floor(Math.random()*t.length)]; },
 
             endGame: function(title, iconClass, desc) {
                 this.isGameOver = true;
@@ -641,7 +674,7 @@
                 document.getElementById('end-title').innerText = title;
                 document.getElementById('end-desc').innerText = desc;
                 document.getElementById('end-icon').innerHTML = `<i class="fas ${iconClass}"></i>`;
-                document.getElementById('end-stats').innerText = `最終状態: 生命:${this.stats.hp} 心魂:${this.stats.san}`;
+                document.getElementById('end-stats').innerText = `最終狀態: 生命:${this.stats.hp} 心魂:${this.stats.san}`;
                 setTimeout(() => screen.style.display = 'flex', 1500);
             },
 
@@ -653,7 +686,7 @@
                 textArea.select();
                 try {
                     document.execCommand('copy');
-                    alert("記録をクリップボードにコピーしました。");
+                    alert("記錄已複製到剪貼簿。");
                 } catch (err) {
                     console.error('Copy failed', err);
                 }
