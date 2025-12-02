@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>迷霧鎮：古神低語 (完整版)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;700&family=Space+Mono&display=swap');
+
+        body {
+            background-color: #050505;
+            color: #c0c0c0;
+            font-family: 'Noto Serif TC', serif;
+        }
+
+        /* 滾動條樣式 */
+        .game-log::-webkit-scrollbar { width: 8px; }
+        .game-log::-webkit-scrollbar-track { background: #1a1a1a; }
+        .game-log::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        .game-log::-webkit-scrollbar-thumb:hover { background: #475569; }
+
+        /* 文字特效 */
+        .text-sanity-high { color: #4ade80; }
+        .text-sanity-med { color: #facc15; }
+        .text-sanity-low { color: #ef4444; animation: pulse 1s infinite; }
+        
+        .text-highlight { color: #2dd4bf; font-weight: bold; }
+        .text-item { color: #f472b6; font-weight: bold; }
+        .text-clue { color: #fbbf24; font-weight: bold; border-bottom: 1px dashed #fbbf24; }
+        .text-horror { color: #dc2626; font-family: 'Space Mono', monospace; }
+        .text-system { color: #64748b; font-style: italic; }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; text-shadow: 0 0 5px #ef4444; }
+            50% { opacity: 0.5; }
+        }
+
+        /* CRT 效果 */
+        .crt::before {
+            content: " ";
+            display: block;
+            position: absolute;
+            top: 0; left: 0; bottom: 0; right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            z-index: 2;
+            background-size: 100% 2px, 3px 100%;
+            pointer-events: none;
+        }
+
+        .btn-action {
+            transition: all 0.2s;
+            border: 1px solid #334155;
+            position: relative;
+            overflow: hidden;
+        }
+        .btn-action:active { transform: scale(0.95); }
+        .btn-action:disabled { opacity: 0.3; cursor: not-allowed; border-color: #1e293b; }
+
+        /* 進度條 */
+        .progress-bar-container {
+            width: 100%;
+            background-color: #1e293b;
+            height: 6px;
+            border-radius: 3px;
+            overflow: hidden;
+        }
+        .progress-bar-fill {
+            height: 100%;
+            background-color: #fbbf24;
+            transition: width 0.5s ease;
+        }
+
+        /* Modal */
+        .modal-overlay { backdrop-filter: blur(8px); background-color: rgba(0,0,0,0.85); }
+    </style>
+</head>
+<body class="h-screen w-screen flex flex-col items-center justify-center overflow-hidden crt selection:bg-teal-900 selection:text-white">
+
+    <div class="w-full max-w-4xl h-full md:h-[95vh] flex flex-col border-x border-slate-800 bg-neutral-900 shadow-2xl relative">
+        
+        <!-- 頂部資訊欄 -->
+        <header class="p-3 border-b border-slate-700 bg-neutral-950 z-10 grid grid-cols-3 gap-2 items-center">
+            <!-- 左側：標題 -->
+            <div>
+                <h1 class="text-lg font-bold text-teal-500 tracking-widest">迷霧鎮</h1>
+                <div class="text-[10px] text-slate-500">MIST TOWN: RPG</div>
+            </div>
+
+            <!-- 中間：調查度 -->
+            <div class="flex flex-col items-center w-full px-2">
+                <div class="flex justify-between w-full text-xs text-yellow-500 mb-1">
+                    <span>調查進度</span>
+                    <span id="progress-text">0%</span>
+                </div>
+                <div class="progress-bar-container">
+                    <div id="progress-bar" class="progress-bar-fill" style="width: 0%"></div>
+                </div>
+            </div>
+
+            <!-- 右側：狀態 -->
+            <div class="flex flex-col items-end text-sm font-mono">
+                <div class="flex items-center gap-2">
+                    <span class="text-xs text-slate-400">SAN</span>
+                    <span id="san-display" class="text-xl font-bold text-sanity-high">100</span>
+                </div>
+                <div id="location-display" class="text-slate-200 text-xs truncate max-w-[120px]">迷霧入口</div>
+            </div>
+        </header>
+
+        <!-- 遊戲日誌 -->
+        <main id="game-log" class="flex-1 overflow-y-auto p-4 md:p-6 space-y-3 bg-neutral-900 game-log font-mono text-sm md:text-base">
+            <div class="text-system mb-6 border-b border-slate-800 pb-4">
+                > 載入擴充地圖模組... 完成<br>
+                > 載入調查任務主線... 完成<br>
+                > <span class="text-clue">任務目標：收集關於這個小鎮的真相 (調查度 100%)，然後活著回到起點逃離。</span><br>
+                ------------------------------------------------
+            </div>
+        </main>
+
+        <!-- 底部控制區 -->
+        <footer class="p-3 bg-neutral-950 border-t border-slate-800 z-10 select-none">
+            
+            <!-- 功能按鈕 -->
+            <div class="grid grid-cols-4 gap-2 mb-3">
+                <button onclick="game.handleAction('investigate')" class="btn-action bg-slate-900 hover:bg-slate-800 text-amber-100 py-3 rounded flex flex-col items-center justify-center">
+                    <span class="text-lg">👁️</span>
+                    <span class="text-[10px] md:text-xs mt-1">調查區域</span>
+                </button>
+                <button onclick="game.handleAction('inventory')" class="btn-action bg-slate-900 hover:bg-slate-800 text-slate-200 py-3 rounded flex flex-col items-center justify-center">
+                    <span class="text-lg">🎒</span>
+                    <span class="text-[10px] md:text-xs mt-1">背包物品</span>
+                </button>
+                <button onclick="game.handleAction('status')" class="btn-action bg-slate-900 hover:bg-slate-800 text-slate-200 py-3 rounded flex flex-col items-center justify-center">
+                    <span class="text-lg">📊</span>
+                    <span class="text-[10px] md:text-xs mt-1">狀態/線索</span>
+                </button>
+                <button onclick="game.handleAction('rest')" class="btn-action bg-slate-900 hover:bg-slate-800 text-slate-200 py-3 rounded flex flex-col items-center justify-center">
+                    <span class="text-lg">🕯️</span>
+                    <span class="text-[10px] md:text-xs mt-1">休息</span>
+                </button>
+            </div>
+
+            <!-- 移動面板 -->
+            <div class="flex items-center justify-center gap-4 bg-slate-900/50 p-2 rounded-lg border border-slate-800">
+                <div class="grid grid-cols-3 gap-2 w-full max-w-xs">
+                    <div class="col-start-2">
+                        <button onclick="game.move('north')" id="btn-north" class="btn-action w-full bg-teal-900/20 hover:bg-teal-900/40 border-teal-800/50 text-teal-400 py-2 rounded font-mono text-sm">▲ 北</button>
+                    </div>
+                    <div class="col-start-1 row-start-2">
+                        <button onclick="game.move('west')" id="btn-west" class="btn-action w-full bg-teal-900/20 hover:bg-teal-900/40 border-teal-800/50 text-teal-400 py-2 rounded font-mono text-sm">◀ 西</button>
+                    </div>
+                    <div class="col-start-2 row-start-2 flex items-center justify-center">
+                        <span class="text-slate-600 text-[10px] font-mono">MOVE</span>
+                    </div>
+                    <div class="col-start-3 row-start-2">
+                        <button onclick="game.move('east')" id="btn-east" class="btn-action w-full bg-teal-900/20 hover:bg-teal-900/40 border-teal-800/50 text-teal-400 py-2 rounded font-mono text-sm">東 ▶</button>
+                    </div>
+                    <div class="col-start-2 row-start-3">
+                        <button onclick="game.move('south')" id="btn-south" class="btn-action w-full bg-teal-900/20 hover:bg-teal-900/40 border-teal-800/50 text-teal-400 py-2 rounded font-mono text-sm">▼ 南</button>
+                    </div>
+                </div>
+            </div>
+        </footer>
+
+        <!-- 結局/死亡 Modal -->
+        <div id="modal-endgame" class="hidden absolute inset-0 z-50 flex items-center justify-center modal-overlay p-4">
+            <div class="bg-neutral-900 border border-slate-600 p-6 md:p-8 rounded-lg shadow-2xl max-w-md w-full text-center relative overflow-hidden">
+                <div id="endgame-content">
+                    <!-- 動態內容 -->
+                </div>
+                <button onclick="location.reload()" class="mt-6 bg-slate-800 hover:bg-slate-700 text-white px-6 py-2 rounded border border-slate-600 w-full transition-colors">
+                    重新開始輪迴
+                </button>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // --- 1. 遊戲數據配置 (地圖擴充至 19 個點) ---
+
+        const LOCATIONS = {
+            // 起點與中心區
+            'start': {
+                id: 'start',
+                name: '迷霧入口 (停車處)',
+                desc: '你的車拋錨在小鎮邊緣。引擎蓋冒著煙。這裡是你唯一的逃生路徑。木牌上寫著「歡迎來到印斯茅...」後面的字被刮掉了。',
+                exits: { north: 'square', east: 'forest', west: 'old_house' },
+                events: ['intro_whisper'],
+                isExitPoint: true
+            },
+            'square': {
+                id: 'square',
+                name: '荒廢廣場',
+                desc: '迷霧鎮的中心。中央有一座覆蓋著防水布的扭曲雕像。四周死一般的寂靜。',
+                exits: { south: 'start', north: 'church', east: 'dock', west: 'hotel', ne: 'library', se: 'store' },
+                events: ['statue_move']
+            },
+            
+            // 西區：住宿與醫療
+            'hotel': {
+                id: 'hotel',
+                name: '黑水旅館',
+                desc: '大廳掛滿了褪色的黑白照片，照片裡的人似乎都在瞪著你。櫃檯上有一本佈滿灰塵的登記簿。',
+                exits: { east: 'square', west: 'bar' },
+                events: ['creepy_clerk'],
+                canRest: true,
+                clue: { id: 'guest_book', name: '旅館名冊', desc: '上面全是失蹤人口的名字，你看到了你親人的名字。', progress: 15 }
+            },
+            'bar': {
+                id: 'bar',
+                name: '醉鬼酒館',
+                desc: '充滿了霉味和酒精味。地上散落著破碎的酒瓶。角落裡似乎坐著什麼東西。',
+                exits: { east: 'hotel', north: 'hospital' },
+                events: ['drunk_monster']
+            },
+            'hospital': {
+                id: 'hospital',
+                name: '聖瑪麗醫院',
+                desc: '醫院的大門半掩著，裡面傳來儀器運作的電流聲，但這裡明明斷電很久了。消毒水味混雜著腐臭。',
+                exits: { south: 'bar', down: 'morgue', east: 'asylum' },
+                events: ['nurse_shadow']
+            },
+            'morgue': {
+                id: 'morgue',
+                name: '地下停屍間',
+                desc: '溫度驟降。兩排停屍櫃，其中一個櫃門正在緩緩打開...這裡的空氣令人窒息。',
+                exits: { up: 'hospital' },
+                events: ['moving_body'],
+                clue: { id: 'autopsy_report', name: '驗屍報告', desc: '報告寫著：死者體內充滿了墨綠色的海水，器官變異為鰓狀。', progress: 20 }
+            },
+            'asylum': {
+                id: 'asylum',
+                name: '廢棄療養院',
+                desc: '牆壁上寫滿了「不要看」、「它們在牆裡」。這裡是用來關押看到真相的人的地方。',
+                exits: { west: 'hospital' },
+                events: ['crazy_scream'],
+                item: 'straitjacket' // 束縛衣
+            },
+
+            // 東區：港口與燈塔
+            'dock': {
+                id: 'dock',
+                name: '腐朽碼頭',
+                desc: '海水呈現不自然的黑色油膩感。你可以看到水下有巨大的陰影游過。',
+                exits: { west: 'square', north: 'lighthouse', east: 'sea_cave' },
+                events: ['deep_one_watch']
+            },
+            'lighthouse': {
+                id: 'lighthouse',
+                name: '古老燈塔',
+                desc: '燈塔的樓梯呈現螺旋狀無限向上延伸。牆壁上刻滿了褻瀆的符號。',
+                exits: { south: 'dock', up: 'lighthouse_top' },
+                events: ['dizziness']
+            },
+            'lighthouse_top': {
+                id: 'lighthouse_top',
+                name: '燈塔頂層',
+                desc: '巨大的透鏡對準了海面下的某個點。這裡可以俯瞰全鎮，你發現小鎮的佈局像一個召喚陣。',
+                exits: { down: 'lighthouse' },
+                clue: { id: 'ritual_map', name: '星象圖', desc: '標記了今晚是群星歸位之時。', progress: 20 }
+            },
+            'sea_cave': {
+                id: 'sea_cave',
+                name: '海蝕洞',
+                desc: '只有退潮時才能進入。洞穴深處有微弱的綠光和咀嚼聲。',
+                exits: { west: 'dock' },
+                events: ['shoggoth_slime'],
+                item: 'gold_coin' // 古金幣
+            },
+
+            // 北區：宗教與死亡
+            'church': {
+                id: 'church',
+                name: '達貢集會所',
+                desc: '原本的十字架被倒置並扭曲成章魚的形狀。講道台上放著一本厚重的書。',
+                exits: { south: 'square', north: 'graveyard' },
+                clue: { id: 'cult_book', name: '教團經文', desc: '記載了如何喚醒沉睡者的咒語。', progress: 15 }
+            },
+            'graveyard': {
+                id: 'graveyard',
+                name: '無名墓園',
+                desc: '墓碑大多歪斜或破碎。很多墳墓是空的，像是從裡面被挖開一樣。',
+                exits: { south: 'church', down: 'crypt' },
+                events: ['ghoul_sound']
+            },
+            'crypt': {
+                id: 'crypt',
+                name: '地下祭壇',
+                desc: '空氣中充滿硫磺味。地上畫著巨大的法陣，中間有一塊發光的石頭。',
+                exits: { up: 'graveyard' },
+                clue: { id: 'star_stone', name: '星之石', desc: '這是封印或召喚的關鍵觸媒。', progress: 20 },
+                dangerLevel: 'high'
+            },
+
+            // 周邊區域
+            'library': {
+                id: 'library',
+                name: '鎮立圖書館',
+                desc: '書架倒塌，滿地狼籍。只有關於神秘學的區域一塵不染。',
+                exits: { sw: 'square', secret: 'hidden_room' },
+                events: ['book_fall'],
+                clue: { id: 'diary_fragment', name: '館長日記', desc: '提到「不要相信任何人，尤其是旅館老闆」。', progress: 10 }
+            },
+            'store': {
+                id: 'store',
+                name: '雜貨店',
+                desc: '貨架上剩下的只有發霉的罐頭。收銀機被砸爛了。',
+                exits: { nw: 'square' },
+                item: 'medkit' // 必有補給
+            },
+            'forest': {
+                id: 'forest',
+                name: '迷霧森林',
+                desc: '樹木長得像扭曲的人體。指南針在這裡瘋狂旋轉。',
+                exits: { west: 'start', east: 'swamp' },
+                events: ['tree_catch']
+            },
+            'swamp': {
+                id: 'swamp',
+                name: '黑泥沼澤',
+                desc: '每走一步都會陷入泥濘。泥潭裡冒著氣泡。',
+                exits: { west: 'forest' },
+                item: 'whiskey'
+            },
+            'old_house': {
+                id: 'old_house',
+                name: '林中小屋',
+                desc: '像是獵人的小屋，牆上掛著奇怪的獸骨標本。',
+                exits: { east: 'start' },
+                item: 'shotgun_shell'
+            }
+        };
+
+        // --- 2. 物品與事件庫 ---
+
+        // 消耗品 (Consumable) 與 關鍵道具 (Key)
+        const ITEMS_DB = {
+            'medkit': { name: '急救包', type: 'consumable', effect: 20, desc: '舊式軍用急救包，含嗎啡。 (+20 SAN)' },
+            'whiskey': { name: '陳年威士忌', type: 'consumable', effect: 10, desc: '烈酒能麻痺神經，暫時忘卻恐懼。 (+10 SAN)' },
+            'sedative': { name: '強力鎮靜劑', type: 'consumable', effect: 30, desc: '醫院找到的藥物，效果顯著。 (+30 SAN)' },
+            'shotgun_shell': { name: '獵槍子彈', type: 'key', desc: '或許能用來對付那些東西...如果你有槍的話。' },
+            'gold_coin': { name: '深海金幣', type: 'key', desc: '形狀奇異的金幣，觸感冰涼滑膩。' },
+            'straitjacket': { name: '束縛衣殘片', type: 'key', desc: '上面繡著某個病人的編號。' }
+        };
+
+        const RANDOM_EVENTS = [
+            { text: '一陣帶有腥味的濕風吹過，你聽到有人在耳邊低語你的名字...', san: -5 },
+            { text: '你感覺有視線死死盯著你的後頸，猛然回頭卻空無一人。', san: -3 },
+            { text: '地面上的影子似乎有了自己的意識，向你的腳邊延伸。', san: -4 },
+            { text: '遠處傳來非人類的嚎叫聲，那聲音不屬於地球上的任何生物。', san: -8 },
+            { text: '你突然感到一陣強烈的暈眩，眼前的景物變成了扭曲的幾何圖形。', san: -5 },
+            { text: '一隻死烏鴉從天而降，掉在你的腳邊，它的內臟被掏空了。', san: -2 },
+            { text: '你看到一個長著魚鰓的人影在霧中一閃而過。', san: -6 }
+        ];
+
+        // --- 3. 遊戲核心類別 ---
+
+        class Game {
+            constructor() {
+                this.san = 100;
+                this.investigationProgress = 0;
+                this.currentLocationId = 'start';
+                this.inventory = []; // 存儲 {id, name, type...}
+                this.cluesFound = []; // 存儲已發現的線索 ID
+                this.turnCount = 0;
+                this.isGameOver = false;
+
+                // DOM 元素緩存
+                this.logEl = document.getElementById('game-log');
+                this.sanEl = document.getElementById('san-display');
+                this.locEl = document.getElementById('location-display');
+                this.progTextEl = document.getElementById('progress-text');
+                this.progBarEl = document.getElementById('progress-bar');
+                
+                this.init();
+            }
+
+            init() {
+                this.print('你醒來時發現車子拋錨在迷霧中。', 'system');
+                this.print('直覺告訴你，必須盡快收集足夠的線索了解這裡發生了什麼，然後逃離。', 'system');
+                this.enterLocation('start');
+            }
+
+            // 更新 UI
+            updateUI() {
+                // SAN
+                this.sanEl.innerText = this.san;
+                this.sanEl.className = 'text-xl font-bold transition-colors ' + 
+                    (this.san > 70 ? 'text-sanity-high' : 
+                     this.san > 30 ? 'text-sanity-med' : 'text-sanity-low');
+
+                // 地點
+                this.locEl.innerText = LOCATIONS[this.currentLocationId].name;
+
+                // 進度條
+                this.progTextEl.innerText = this.investigationProgress + '%';
+                this.progBarEl.style.width = this.investigationProgress + '%';
+
+                // 按鈕狀態 (處理方向鍵)
+                const currentExits = LOCATIONS[this.currentLocationId].exits;
+                
+                // 簡易映射：將方向按鈕綁定到常見出口
+                this.updateDirBtn('btn-north', currentExits.north || currentExits.up);
+                this.updateDirBtn('btn-south', currentExits.south || currentExits.down);
+                this.updateDirBtn('btn-east', currentExits.east || currentExits.ne || currentExits.se);
+                this.updateDirBtn('btn-west', currentExits.west || currentExits.nw || currentExits.sw);
+            }
+
+            updateDirBtn(btnId, target) {
+                const btn = document.getElementById(btnId);
+                if (target) {
+                    btn.disabled = false;
+                    btn.style.opacity = '1';
+                } else {
+                    btn.disabled = true;
+                    btn.style.opacity = '0.2';
+                }
+            }
+
+            // 輸出日誌
+            print(text, type = 'normal') {
+                const div = document.createElement('div');
+                div.className = 'leading-relaxed animate-fade-in';
+                
+                let icon = '';
+                if (type === 'system') { div.className += ' text-system border-l-2 border-slate-700 pl-2'; icon = ''; }
+                else if (type === 'horror') { div.className += ' text-horror bg-red-950/20 p-2 border-l-2 border-red-800'; icon = '⚠ '; }
+                else if (type === 'success') { div.className += ' text-teal-400'; icon = '✓ '; }
+                else if (type === 'item') { div.className += ' text-item'; icon = '🎁 '; }
+                else if (type === 'clue') { div.className += ' text-clue'; icon = '🔍 '; }
+                else if (type === 'action') { div.className += ' text-slate-400 italic text-xs'; icon = '> '; }
+
+                div.innerHTML = icon + text;
+                this.logEl.appendChild(div);
+                this.logEl.scrollTop = this.logEl.scrollHeight;
+            }
+
+            // 處理按鈕動作 (修復：新增缺失的 handleAction 函式)
+            handleAction(actionType) {
+                if (this.isGameOver) return;
+                switch(actionType) {
+                    case 'investigate':
+                        this.investigate();
+                        break;
+                    case 'inventory':
+                        this.showInventory();
+                        break;
+                    case 'status':
+                        this.showStatus();
+                        break;
+                    case 'rest':
+                        this.rest();
+                        break;
+                }
+            }
+
+            // 移動邏輯
+            move(dirKey) {
+                if (this.isGameOver) return;
+                
+                const loc = LOCATIONS[this.currentLocationId];
+                // 根據按鈕點擊，模糊匹配出口
+                let targetId = null;
+                
+                if (dirKey === 'north') targetId = loc.exits.north || loc.exits.up;
+                if (dirKey === 'south') targetId = loc.exits.south || loc.exits.down;
+                if (dirKey === 'east') targetId = loc.exits.east || loc.exits.ne || loc.exits.se;
+                if (dirKey === 'west') targetId = loc.exits.west || loc.exits.nw || loc.exits.sw || loc.exits.secret;
+
+                if (targetId) {
+                    this.print(`前往 ${LOCATIONS[targetId].name}...`, 'action');
+                    setTimeout(() => this.enterLocation(targetId), 400);
+                }
+            }
+
+            enterLocation(locId) {
+                this.currentLocationId = locId;
+                const loc = LOCATIONS[locId];
+                
+                this.print(`<br><strong class="text-teal-500 text-lg">📍 抵達：${loc.name}</strong>`, 'normal');
+                this.print(loc.desc, 'normal');
+                
+                this.updateUI();
+
+                // 檢查是否通關
+                if (loc.isExitPoint && this.investigationProgress >= 100) {
+                    this.triggerGoodEnd();
+                    return;
+                }
+
+                // 危險區域強制扣 SAN
+                if (loc.dangerLevel === 'high') {
+                    this.changeSan(-5, '這個區域的邪惡氣息讓你感到窒息！');
+                }
+
+                // 30% 機率觸發隨機恐怖事件
+                if (Math.random() < 0.3) {
+                    this.triggerRandomEvent(loc);
+                }
+            }
+
+            // 調查邏輯
+            investigate() {
+                if (this.isGameOver) return;
+                this.print('你開始仔細搜查周圍...', 'action');
+                const loc = LOCATIONS[this.currentLocationId];
+                let foundSomething = false;
+
+                // 1. 檢查是否有劇情線索 (只觸發一次)
+                if (loc.clue && !this.cluesFound.includes(loc.clue.id)) {
+                    // 50% 機率發現線索 (如果還沒發現)
+                    if (Math.random() < 0.8) { // 提高機率讓遊戲流暢點
+                        this.foundClue(loc.clue);
+                        foundSomething = true;
+                    }
+                }
+
+                // 2. 檢查是否有物品 (只拿一次，簡單處理)
+                if (!foundSomething && loc.item) {
+                    // 檢查是否已經拿過 (簡單防刷：這裡暫時每次都能拿藥有點太簡單，改為各點只有一次機會)
+                    if (!loc.itemTaken) {
+                        const itemKey = loc.item;
+                        // 如果是固定物品配置
+                        let item = ITEMS_DB[itemKey]; 
+                        // 如果沒有配置，隨機給藥
+                        if (!item) item = ITEMS_DB['medkit'];
+
+                        this.inventory.push(item);
+                        loc.itemTaken = true; // 標記已拿取
+                        this.print(`你在角落發現了：${item.name}`, 'item');
+                        foundSomething = true;
+                    }
+                }
+
+                // 3. 什麼都沒發現 / 隨機事件
+                if (!foundSomething) {
+                    if (Math.random() < 0.4) {
+                        this.print('這裡除了一些令人不安的痕跡外，什麼都沒有。', 'normal');
+                    } else {
+                        this.triggerRandomEvent(loc);
+                    }
+                }
+            }
+
+            foundClue(clueObj) {
+                this.cluesFound.push(clueObj.id);
+                this.investigationProgress += clueObj.progress;
+                if (this.investigationProgress > 100) this.investigationProgress = 100;
+                
+                this.print(`發現關鍵線索：${clueObj.name}`, 'clue');
+                this.print(`${clueObj.desc}`, 'system');
+                this.print(`調查度提升！ (目前: ${this.investigationProgress}%)`, 'success');
+                this.updateUI();
+            }
+
+            // 物品欄邏輯
+            showInventory() {
+                if (this.inventory.length === 0) {
+                    this.print('你的背包裡什麼都沒有。', 'system');
+                    return;
+                }
+
+                let content = '<div class="bg-slate-800 p-3 rounded text-sm">';
+                content += '<h3 class="text-teal-400 font-bold border-b border-slate-600 mb-2">📦 背包物品</h3>';
+                
+                this.inventory.forEach((item, idx) => {
+                    content += `<div class="flex justify-between items-center mb-2">
+                        <span>${idx + 1}. <span class="${item.type === 'key' ? 'text-yellow-400' : 'text-pink-300'}">${item.name}</span></span>
+                        ${item.type === 'consumable' 
+                            ? `<button onclick="game.useItem(${idx})" class="text-xs border border-slate-500 px-2 py-1 rounded hover:bg-slate-600">使用</button>` 
+                            : `<span class="text-xs text-slate-500">[劇情]</span>`}
+                    </div>`;
+                });
+                content += '</div>';
+                this.print(content);
+            }
+
+            useItem(index) {
+                const item = this.inventory[index];
+                if (item.type === 'consumable') {
+                    this.changeSan(item.effect);
+                    this.print(`你使用了 ${item.name}。`, 'success');
+                    this.inventory.splice(index, 1); // 移除
+                    // 重新顯示背包會有技術困難(因為日誌流動)，這裡簡單提示即可
+                }
+            }
+
+            // 狀態邏輯
+            showStatus() {
+                let statusHtml = `<div class="bg-slate-900 border border-slate-700 p-4 rounded text-sm font-mono">
+                    <h3 class="text-lg text-teal-500 font-bold mb-2">調查員狀態</h3>
+                    <p>❤️ 理智 (SAN): <span class="${this.san > 50 ? 'text-green-400' : 'text-red-500'}">${this.san}/100</span></p>
+                    <p>📍 當前位置: ${LOCATIONS[this.currentLocationId].name}</p>
+                    <p>🕵️ 調查進度: ${this.investigationProgress}%</p>
+                    <div class="mt-3 border-t border-slate-700 pt-2">
+                        <p class="text-yellow-500 mb-1">已收集關鍵線索/道具:</p>
+                        <ul class="list-disc list-inside text-slate-400 text-xs">`;
+                
+                // 列出已發現的線索道具
+                let hasKeyItems = false;
+                
+                // 1. 來自 clue
+                this.cluesFound.forEach(cid => {
+                    // 這裡簡化，直接反查所有地點找名字 (效能不佳但資料量小無所謂)
+                    for(let k in LOCATIONS) {
+                        if(LOCATIONS[k].clue && LOCATIONS[k].clue.id === cid) {
+                            statusHtml += `<li>${LOCATIONS[k].clue.name}</li>`;
+                            hasKeyItems = true;
+                        }
+                    }
+                });
+                
+                // 2. 來自 inventory 的 key items
+                this.inventory.filter(i => i.type === 'key').forEach(i => {
+                    statusHtml += `<li>${i.name}</li>`;
+                    hasKeyItems = true;
+                });
+
+                if(!hasKeyItems) statusHtml += '<li>(暫無)</li>';
+
+                statusHtml += `</ul></div></div>`;
+                this.print(statusHtml);
+            }
+
+            rest() {
+                if (LOCATIONS[this.currentLocationId].canRest) {
+                    this.print('你鎖好門窗，在不安中睡去...', 'action');
+                    setTimeout(() => {
+                         this.changeSan(15);
+                         this.print('體力恢復了一些，但惡夢揮之不去。 (+15 SAN)', 'success');
+                    }, 1000);
+                } else {
+                    this.print('這裡太危險了，無法休息。', 'system');
+                }
+            }
+
+            changeSan(amount, msg) {
+                this.san += amount;
+                if (this.san > 100) this.san = 100;
+                
+                if (msg) this.print(msg, amount < 0 ? 'horror' : 'success');
+                else if (amount < 0) this.print(`理智受到衝擊！ ${amount} SAN`, 'horror');
+                
+                this.updateUI();
+                if (this.san <= 0) this.triggerBadEnd();
+            }
+
+            triggerRandomEvent(loc) {
+                // 優先觸發地點專屬事件
+                if (loc.events && loc.events.length > 0 && Math.random() < 0.6) {
+                    // 這裡簡化，不實作複雜的事件庫映射，直接用通用的，或可以在 LOCATIONS 裡寫死文本
+                    // 為了擴充性，這裡演示使用通用隨機事件 + 少量專屬邏輯
+                    const evt = RANDOM_EVENTS[Math.floor(Math.random() * RANDOM_EVENTS.length)];
+                    this.print(evt.text, 'horror');
+                    this.changeSan(evt.san);
+                } else {
+                    const evt = RANDOM_EVENTS[Math.floor(Math.random() * RANDOM_EVENTS.length)];
+                    this.print(evt.text, 'horror');
+                    this.changeSan(evt.san);
+                }
+            }
+
+            triggerBadEnd() {
+                this.isGameOver = true;
+                const modal = document.getElementById('modal-endgame');
+                const content = document.getElementById('endgame-content');
+                content.innerHTML = `
+                    <h2 class="text-3xl font-bold text-red-600 mb-4 font-mono tracking-widest">理智崩壞</h2>
+                    <p class="text-slate-300 mb-6">你眼中的世界扭曲成了無法理解的幾何圖形，低語聲變成了尖叫...你永遠留在了迷霧鎮。</p>
+                    <div class="text-sm text-slate-500">調查進度: ${this.investigationProgress}%</div>
+                `;
+                modal.classList.remove('hidden');
+            }
+
+            triggerGoodEnd() {
+                this.isGameOver = true;
+                const modal = document.getElementById('modal-endgame');
+                const content = document.getElementById('endgame-content');
+                content.innerHTML = `
+                    <h2 class="text-3xl font-bold text-teal-500 mb-4 font-mono tracking-widest">成功逃脫</h2>
+                    <p class="text-slate-300 mb-6">你拼湊出了真相，用顫抖的手發動了引擎。後照鏡裡，小鎮被湧起的黑色海水淹沒。你活下來了，但那些記憶將永遠伴隨著你。</p>
+                    <div class="text-xl text-yellow-500 font-bold">完美達成 (調查度 100%)</div>
+                `;
+                modal.classList.remove('hidden');
+            }
+        }
+
+        const game = new Game();
+
+    </script>
+</body>
+</html>
