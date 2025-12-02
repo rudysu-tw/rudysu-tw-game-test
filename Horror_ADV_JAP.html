@@ -2,40 +2,39 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
+    <!-- 關鍵：viewport 設定，禁止縮放，適配安全區域 -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>鳴神村異聞：黃泉之際</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        /* 配色調整：日式鄉野恐怖風格 - 深色、木質、血與靈火 */
+        /* --- 配色與基礎設定 --- */
         :root {
-            --bg-color: #1a1510; /* 深棕黑色背景 */
-            --text-color: #d0c0a8; /* 米灰色文字 */
-            --accent-color: #a83232; /* 鳥居/血紅色強調 */
-            --san-color: #aed6f1; /* 心魂（靈力）- 幽藍色 */
-            --hp-color: #c0392b; /* 生命 - 深紅色 */
-            --courage-color: #d35400; /* 膽量 - 土橘色 */
-            --insight-color: #8e44ad; /* 民俗 - 深紫色 */
-            --item-color: #f7dc6f; /* 物品 - 金黃色 */
-            --ui-bg: #241c14; /* UI背景 - 深木色 */
-            --border-color: #544a3d; /* 邊框 - 舊木色 */
-            --success-color: #27ae60; /* 成功 - 深綠色 */
-            --fail-color: #c0392b; /* 失敗 - 深紅色 */
-            --fuel-color: #e67e22; /* 燈油 - 火橙色 */
-            --event-color: #e74c3c; /* 突發事件 - 紅色 */
+            --bg-color: #1a1510;
+            --text-color: #d0c0a8;
+            --accent-color: #a83232;
+            --san-color: #aed6f1;
+            --hp-color: #c0392b;
+            --courage-color: #d35400;
+            --insight-color: #8e44ad;
+            --item-color: #f7dc6f;
+            --ui-bg: #241c14;
+            --border-color: #544a3d;
+            --success-color: #27ae60;
+            --fail-color: #c0392b;
+            --fuel-color: #e67e22;
+            --event-color: #e74c3c;
         }
 
         * { box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; }
         
-        /* FIX: 使用 100dvh 解決手機瀏覽器下方工具列遮擋問題 
-           同時設定 overflow: hidden 防止整體頁面捲動，只讓內部區域捲動
-        */
+        /* 全螢幕鎖定，防止捲動 */
         body { 
             margin: 0; 
             padding: 0; 
             background-color: var(--bg-color); 
             color: var(--text-color); 
             font-family: "Yu Mincho", "Hiragino Mincho ProN", "Microsoft JhengHei", "serif"; 
-            height: 100vh; /* Fallback for old browsers */
+            height: 100vh; 
             height: 100dvh; /* Mobile fix */
             overflow: hidden; 
             display: flex; 
@@ -51,13 +50,15 @@
             display: flex; 
             flex-direction: column; 
             background: var(--ui-bg); 
-            border-left: 1px solid var(--border-color); 
-            border-right: 1px solid var(--border-color); 
             position: relative; 
             z-index: 5; 
-            box-shadow: 0 0 40px rgba(0,0,0,0.95); 
+            box-shadow: 0 0 40px rgba(0,0,0,0.95);
+            /* 電腦版加邊框，手機版滿版 */
+            border-left: 1px solid var(--border-color); 
+            border-right: 1px solid var(--border-color); 
         }
         
+        /* 視覺特效層 */
         #vignette { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; box-shadow: inset 0 0 100px rgba(0,0,0,0.9); z-index: 10; transition: box-shadow 0.5s ease; }
         .pulse-fast { animation: heartbeat 0.8s infinite; }
         .pulse-slow { animation: heartbeat 2s infinite; }
@@ -68,79 +69,181 @@
 
         .text-distort { text-shadow: 2px 0 var(--hp-color), -2px 0 var(--san-color); animation: glitch-text 0.2s infinite; }
         @keyframes glitch-text { 0% { transform: translate(0); opacity: 1; } 20% { transform: translate(-1px, 1px); opacity: 0.8; } 40% { transform: translate(1px, -1px); } 60% { transform: translate(-1px, -1px); opacity: 0.9; } 80% { transform: translate(1px, 1px); } 100% { transform: translate(0); opacity: 1; } }
-        .hallucination { filter: blur(1px) sepia(0.4) hue-rotate(-10deg) contrast(1.1); transition: filter 1s; } /* 調整為泛黃舊照片感 */
+        .hallucination { filter: blur(1px) sepia(0.4) hue-rotate(-10deg) contrast(1.1); transition: filter 1s; }
 
         @keyframes item-glow { 0% { box-shadow: 0 0 5px var(--item-color); background: #332; } 50% { box-shadow: 0 0 30px var(--item-color), inset 0 0 20px var(--item-color); background: #553; } 100% { box-shadow: 0 0 5px var(--item-color); background: #221; } }
         .item-get-anim { animation: item-glow 0.8s ease-out; }
 
-        #start-screen, #end-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(20, 15, 10, 0.98); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 30; text-align: center; padding: 30px; }
-        h1 { color: var(--accent-color); font-size: 2.5rem; text-shadow: 0 0 15px rgba(168, 50, 50, 0.8); margin-bottom: 10px; letter-spacing: 5px; font-weight: bold; font-family: "Yu Mincho", serif; }
-        .start-btn { background: rgba(40, 30, 20, 0.9); color: #d0c0a8; border: 1px solid var(--accent-color); padding: 12px 40px; font-size: 1.2rem; cursor: pointer; margin-top: 20px; transition: all 0.3s; font-family: inherit; letter-spacing: 3px; box-shadow: 0 0 15px rgba(168, 50, 50, 0.3); border-radius: 2px; }
+        /* --- 封面/結束畫面優化 --- */
+        #start-screen, #end-screen { 
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
+            background: rgba(20, 15, 10, 0.98); 
+            display: flex; flex-direction: column; 
+            justify-content: center; align-items: center; 
+            z-index: 30; text-align: center; 
+            padding: 20px; 
+            /* 確保內容不會溢出，使用 Flex 分配空間 */
+        }
+
+        h1 { 
+            color: var(--accent-color); 
+            font-size: 2.2rem; 
+            text-shadow: 0 0 15px rgba(168, 50, 50, 0.8); 
+            margin: 0 0 10px 0; 
+            letter-spacing: 5px; 
+            font-weight: bold; 
+            flex-shrink: 0; /* 標題不壓縮 */
+        }
+        
+        .subtitle {
+            color: #887; 
+            margin-bottom: 20px; 
+            font-size: 1rem; 
+            letter-spacing: 3px; 
+            flex-shrink: 0;
+        }
+
+        .manual-box {
+            width: 100%;
+            max-width: 500px;
+            background: #241c14; 
+            padding: 20px; 
+            border: 1px solid #3a2f24; 
+            border-radius: 2px; 
+            font-size: 0.95rem; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            text-align: left;
+            overflow-y: auto; /* 如果內容真的太多，只讓盒子內部捲動 */
+            max-height: 60vh; /* 限制最大高度 */
+            flex-shrink: 1; /* 允許壓縮 */
+        }
+
+        .manual-box ul {
+            padding-left: 18px; 
+            margin: 5px 0;
+            color: #c0b098;
+        }
+        
+        .manual-box li {
+            margin-bottom: 6px;
+            line-height: 1.5; /* 手機版行高縮小 */
+        }
+
+        .start-btn { 
+            background: rgba(40, 30, 20, 0.9); 
+            color: #d0c0a8; 
+            border: 1px solid var(--accent-color); 
+            padding: 12px 30px; 
+            font-size: 1.1rem; 
+            cursor: pointer; 
+            margin-top: 25px; 
+            flex-shrink: 0;
+            transition: all 0.3s; 
+            letter-spacing: 3px; 
+            box-shadow: 0 0 15px rgba(168, 50, 50, 0.3); 
+            border-radius: 2px; 
+        }
         .start-btn:hover { background: var(--accent-color); color: #fff; box-shadow: 0 0 30px var(--accent-color); transform: scale(1.05); }
 
-        header { padding: 8px 15px; border-bottom: 1px solid var(--border-color); background: #1e1610; display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem; letter-spacing: 1px; flex-shrink: 0; }
+        /* --- 遊戲介面配置 --- */
+        header { 
+            padding: 8px 12px; 
+            border-bottom: 1px solid var(--border-color); 
+            background: #1e1610; 
+            display: flex; justify-content: space-between; align-items: center; 
+            font-size: 0.85rem; 
+            letter-spacing: 1px; 
+            flex-shrink: 0; /* 絕不壓縮 */
+        }
         
-        #status-bar { display: grid; grid-template-columns: repeat(5, 1fr); gap: 1px; background: var(--border-color); padding-bottom: 1px; flex-shrink: 0; }
-        .stat-box { display: flex; flex-direction: column; align-items: center; padding: 6px 2px; background: #2a2218; transition: background 0.3s; }
-        .stat-label { font-size: 0.7rem; color: #887; margin-bottom: 2px; letter-spacing: 1px; font-family: "Yu Mincho", serif; }
-        .stat-value { font-weight: bold; font-size: 1rem; font-family: monospace; }
+        #status-bar { 
+            display: grid; grid-template-columns: repeat(5, 1fr); gap: 1px; 
+            background: var(--border-color); padding-bottom: 1px; 
+            flex-shrink: 0; 
+        }
+        .stat-box { display: flex; flex-direction: column; align-items: center; padding: 4px 2px; background: #2a2218; }
+        .stat-label { font-size: 0.65rem; color: #887; margin-bottom: 1px; }
+        .stat-value { font-weight: bold; font-size: 0.95rem; font-family: monospace; }
         .hp-val { color: var(--hp-color); }
         .san-val { color: var(--san-color); }
         .courage-val { color: var(--courage-color); }
         .ins-val { color: var(--insight-color); }
         .fuel-val { color: var(--fuel-color); }
 
-        #inventory-bar { padding: 5px 15px; background: #1a120a; border-bottom: 1px solid var(--border-color); display: flex; gap: 10px; min-height: 35px; align-items: center; overflow-x: auto; flex-shrink: 0; }
-        .inv-item { background: #33281d; border: 1px solid #544a3d; padding: 2px 8px; font-size: 0.75rem; border-radius: 2px; color: var(--item-color); display: flex; align-items: center; gap: 6px; white-space: nowrap; box-shadow: 0 1px 3px rgba(0,0,0,0.5); }
+        #inventory-bar { 
+            padding: 4px 10px; 
+            background: #1a120a; 
+            border-bottom: 1px solid var(--border-color); 
+            display: flex; gap: 8px; 
+            min-height: 32px; 
+            align-items: center; 
+            overflow-x: auto; 
+            flex-shrink: 0; 
+        }
+        .inv-item { background: #33281d; border: 1px solid #544a3d; padding: 2px 6px; font-size: 0.7rem; border-radius: 2px; color: var(--item-color); display: flex; align-items: center; gap: 5px; white-space: nowrap; }
 
+        /* 核心調整：故事區域 */
         #story-area { 
-            flex: 2 1 auto; /* 讓故事區域自動伸縮 */
-            padding: 25px 30px; 
+            flex: 1 1 auto; /* 佔據所有剩餘空間，是畫面最大的部分 */
+            padding: 20px 25px; 
             overflow-y: auto; 
-            line-height: 2; 
-            font-size: 1.15rem; 
+            line-height: 1.8; 
+            font-size: 1.1rem; 
             color: #d0c0a8; 
             border-bottom: 1px solid var(--border-color); 
             background-image: radial-gradient(circle at center, #2e241a 0%, #241c14 100%); 
-            position: relative; 
-            /* FIX: 電腦版保持 280px，手機版透過 Media Query 調整，避免擠掉下方元素 */
-            min-height: 280px; 
+            min-height: 0; /* 允許壓縮，避免撐開容器 */
         }
-        .story-text { margin-bottom: 15px; opacity: 0; animation: fadeIn 1s forwards; text-align: justify; word-wrap: break-word; text-shadow: 0 2px 4px rgba(0,0,0,0.6); }
-        .story-icon { color: var(--accent-color); margin-right: 10px; font-size: 1.3rem; }
+        .story-text { margin-bottom: 10px; opacity: 0; animation: fadeIn 1s forwards; text-align: justify; word-wrap: break-word; text-shadow: 0 2px 4px rgba(0,0,0,0.6); }
+        .story-icon { color: var(--accent-color); margin-right: 8px; font-size: 1.2rem; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
 
-        #choice-area { padding: 10px 15px; display: grid; grid-template-columns: 1fr; gap: 8px; background: #2a2218; flex-shrink: 0; }
+        /* 選項區域調整 */
+        #choice-area { 
+            padding: 8px 12px; 
+            display: grid; 
+            grid-template-columns: 1fr; /* 手機單列 */
+            gap: 8px; 
+            background: #2a2218; 
+            flex-shrink: 0; /* 盡量不壓縮選項，因為需要點擊 */
+            max-height: 40vh; /* 防止選項太多蓋過故事 */
+            overflow-y: auto;
+        }
         @media (min-width: 700px) { #choice-area { grid-template-columns: 1fr 1fr; gap: 12px; } }
 
-        /* FIX: 手機版調整 */
-        @media (max-width: 700px) {
-            #story-area {
-                padding: 15px 20px;
-                /* 關鍵：手機上允許故事區縮得更小，把空間讓給 Log 視窗 */
-                min-height: 0; 
-                flex-basis: 0;
-                flex-grow: 1;
-            }
-            h1 { font-size: 2rem; }
-            #log-window { height: 120px; } /* 手機版稍微縮小 Log 高度 */
+        .choice-btn { 
+            background: linear-gradient(145deg, #362c22, #2e241a); 
+            border: 1px solid #4a3f33; 
+            color: #c0b098; 
+            padding: 10px 10px; /* 緊湊一點 */
+            cursor: pointer; 
+            font-family: inherit; font-size: 0.9rem; text-align: left; 
+            display: flex; flex-direction: column; justify-content: center; 
+            border-radius: 2px; position: relative; 
+            min-height: 50px; /* 稍微降低最小高度 */
         }
-
-        .choice-btn { background: linear-gradient(145deg, #362c22, #2e241a); border: 1px solid #4a3f33; color: #c0b098; padding: 10px 12px; cursor: pointer; font-family: inherit; font-size: 0.9rem; text-align: left; transition: all 0.2s; display: flex; flex-direction: column; justify-content: center; border-radius: 2px; position: relative; min-height: 55px; }
-        .choice-title { font-weight: bold; margin-bottom: 2px; display: flex; align-items: center; gap: 6px; color: #e0d0b8; font-size: 1rem; }
-        .choice-desc { font-size: 0.75rem; color: #998; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-        .choice-btn i { font-size: 0.9rem; color: #776; width: 18px; text-align: center; }
-        .choice-btn:hover { background: #43362a; color: #fff; border-color: #776; transform: translateY(-1px); box-shadow: 0 2px 8px rgba(0,0,0,0.4); }
-        .choice-btn:hover i { color: var(--item-color); }
-        .choice-btn:hover .choice-desc { color: #bba; }
+        .choice-title { font-weight: bold; margin-bottom: 2px; display: flex; align-items: center; gap: 6px; color: #e0d0b8; font-size: 0.95rem; }
+        .choice-desc { font-size: 0.7rem; color: #998; line-height: 1.25; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .choice-btn:hover { background: #43362a; color: #fff; transform: translateY(-1px); }
         .chance-tag { position: absolute; top: 6px; right: 6px; font-size: 0.65rem; background: #3a2f24; padding: 1px 4px; border-radius: 2px; color: #aaa; border: 1px solid #4a3f33; }
         
-        .madness-choice { border-color: var(--accent-color) !important; color: var(--hp-color) !important; font-family: "Yu Mincho", monospace; letter-spacing: 1px; animation: shake 2s infinite; background: #2a0f0f; }
+        .madness-choice { border-color: var(--accent-color) !important; color: var(--hp-color) !important; animation: shake 2s infinite; background: #2a0f0f; }
         .phantom-choice { border: 1px dashed #544a3d; opacity: 0.9; font-style: italic; }
 
-        #log-window { height: 140px; background: #100c08; border-top: 2px solid var(--border-color); padding: 10px 12px; font-size: 0.85rem; font-family: monospace; color: #a8a090; overflow-y: scroll; display: flex; flex-direction: column; flex-shrink: 0; }
-        .log-entry { margin-bottom: 4px; border-bottom: 1px dashed #332; padding-bottom: 2px; line-height: 1.4; animation: fadeIn 0.3s; }
-        .log-new { color: #d0c0a8; text-shadow: 0 0 5px #a8a090; border-left: 3px solid var(--insight-color); padding-left: 5px; }
+        /* Log 視窗調整 */
+        #log-window { 
+            height: 110px; /* 預設高度縮小 */
+            background: #100c08; 
+            border-top: 2px solid var(--border-color); 
+            padding: 8px 10px; 
+            font-size: 0.8rem; 
+            font-family: monospace; 
+            color: #a8a090; 
+            overflow-y: scroll; 
+            flex-shrink: 0; 
+        }
+        .log-entry { margin-bottom: 3px; border-bottom: 1px dashed #332; padding-bottom: 2px; line-height: 1.3; }
+        .log-new { color: #d0c0a8; border-left: 3px solid var(--insight-color); padding-left: 5px; }
         .log-negative { color: var(--hp-color); border-left-color: var(--hp-color); }
         .log-positive { color: var(--success-color); border-left-color: var(--success-color); }
         .log-info { color: var(--courage-color); border-left-color: var(--courage-color); }
@@ -148,34 +251,51 @@
         .log-event { color: var(--event-color); font-weight: bold; border-left-color: var(--event-color); }
         .log-phantom { color: #776; font-style: italic; text-decoration: line-through; }
 
+        /* 手機版特別優化 (螢幕高度小於 800px 或 寬度小於 600px) */
+        @media (max-height: 850px), (max-width: 600px) {
+            h1 { font-size: 1.8rem; margin-bottom: 5px; }
+            .subtitle { font-size: 0.9rem; margin-bottom: 15px; }
+            
+            .manual-box { padding: 15px; font-size: 0.85rem; max-height: 55vh; }
+            .manual-box p { margin-bottom: 8px; font-size: 1rem; }
+            .manual-box li { margin-bottom: 4px; }
+            
+            .start-btn { padding: 10px 25px; font-size: 1rem; margin-top: 15px; }
+            
+            /* 遊戲內介面壓縮 */
+            #log-window { height: 90px; } /* Log 變矮 */
+            #story-area { padding: 15px 15px; font-size: 1.05rem; }
+        }
+
+        /* 骰子動畫層 */
         #dice-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(20,15,10,0.95); z-index: 25; display: none; flex-direction: column; justify-content: center; align-items: center; backdrop-filter: blur(5px); }
-        #dice-visual { width: 120px; height: 120px; border: 5px solid #d0c0a8; display: flex; justify-content: center; align-items: center; font-size: 4rem; font-weight: bold; color: #d0c0a8; background: #2a2218; box-shadow: 0 0 40px rgba(208,192,168,0.1); border-radius: 50%; margin-bottom: 20px; transition: all 0.1s; font-family: monospace; }
+        #dice-visual { width: 100px; height: 100px; border: 4px solid #d0c0a8; display: flex; justify-content: center; align-items: center; font-size: 3.5rem; font-weight: bold; color: #d0c0a8; background: #2a2218; border-radius: 50%; margin-bottom: 15px; font-family: monospace; }
         .dice-rolling { animation: roll 0.05s infinite; }
         @keyframes roll { 0% { transform: rotate(0deg) scale(1); } 25% { transform: rotate(8deg) scale(1.02); } 50% { transform: rotate(0deg) scale(1); } 75% { transform: rotate(-8deg) scale(1.02); } 100% { transform: rotate(0deg) scale(1); } }
         .dice-success { border-color: var(--success-color) !important; color: var(--success-color) !important; box-shadow: 0 0 50px var(--success-color) !important; transform: scale(1.1); }
         .dice-fail { border-color: var(--fail-color) !important; color: var(--fail-color) !important; box-shadow: 0 0 50px var(--fail-color) !important; transform: scale(0.9); }
 
-        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-track { background: #1a1510; }
         ::-webkit-scrollbar-thumb { background: #3a2f24; border-radius: 2px; }
-        ::-webkit-scrollbar-thumb:hover { background: #544a3d; }
     </style>
 </head>
 <body>
     <div id="vignette"></div>
-    <div id="dice-overlay"><div id="dice-visual">?</div><div id="dice-msg" style="font-size: 1.5rem; color: #d0c0a8; margin-bottom: 10px; font-weight: bold; letter-spacing: 3px; font-family: 'Yu Mincho', serif;">命運判定...</div><div id="dice-detail" style="font-size: 1rem; color: #887;"></div></div>
+    <div id="dice-overlay"><div id="dice-visual">?</div><div id="dice-msg" style="font-size: 1.3rem; color: #d0c0a8; margin-bottom: 8px; font-weight: bold; letter-spacing: 2px;">命運判定...</div><div id="dice-detail" style="font-size: 0.9rem; color: #887;"></div></div>
 
     <div id="app-container">
+        <!-- 封面：文字已精簡，並使用彈性盒模型避免溢出 -->
         <div id="start-screen">
             <h1><i class="fas fa-torii-gate"></i> 鳴神村異聞</h1>
-            <p style="color: #887; margin-bottom: 25px; font-size: 1.1rem; letter-spacing: 5px; font-family: 'Yu Mincho', serif;">黃泉之際 - 沉浸怪談版</p>
-            <div style="max-width: 500px; line-height: 2; text-align: left; background: #241c14; padding: 25px; border: 1px solid #3a2f24; border-radius: 2px; font-size: 1rem; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
-                <p style="color: var(--item-color); font-weight: bold; font-size: 1.1rem; margin-bottom: 15px; font-family: 'Yu Mincho', serif;"><i class="fas fa-scroll"></i> 探索手冊</p>
-                <ul style="padding-left: 20px; list-style-type: circle; color: #c0b098;">
-                    <li><b>怪異談</b>：這是一款日式恐怖文字冒險遊戲，你將追查被迷霧籠罩的廢村「鳴神村」中發生的慘劇真相。</li>
-                    <li><b>心魂與膽量</b>：「心魂」代表對靈異現象的耐性，「膽量」代表對物理恐怖的耐性。任一項耗盡都將迎來毀滅。</li>
-                    <li><b>勿熄燈火</b>：黑暗會侵蝕精神。請管理珍貴的「燈油」，維持手邊的光源。</li>
-                    <li><b>民俗智慧</b>：村中殘留的傳承與記錄，將會成為你的助力。</li>
+            <p class="subtitle">黃泉之際 - 沉浸怪談版</p>
+            <div class="manual-box">
+                <p style="color: var(--item-color); font-weight: bold; font-family: 'Yu Mincho', serif;"><i class="fas fa-scroll"></i> 探索手冊</p>
+                <ul style="list-style-type: circle;">
+                    <li><b>怪異談</b>：追查廢村「鳴神村」慘劇真相的日式恐怖ADV。</li>
+                    <li><b>心魂與膽量</b>：歸零即死。心魂抗靈異，膽量抗物理。</li>
+                    <li><b>勿熄燈火</b>：黑暗侵蝕精神。請管理「燈油」維持光源。</li>
+                    <li><b>民俗智慧</b>：村中傳承與記錄將成為助力。</li>
                 </ul>
             </div>
             <button class="start-btn" onclick="game.start()"><i class="fas fa-walking"></i> 踏入廢村</button>
@@ -183,7 +303,7 @@
 
         <header>
             <div><i class="fas fa-user-ninja"></i> 探索者：民俗學者 <span id="phobia-display" class="phobia-tag"></span></div>
-            <div class="turn-indicator"><i class="far fa-clock"></i> 時刻: <span id="turn-display">1</span>/18</div>
+            <div class="turn-indicator"><i class="far fa-clock"></i> <span id="turn-display">1</span>/18</div>
         </header>
 
         <section id="status-bar">
@@ -195,8 +315,8 @@
         </section>
 
         <section id="inventory-bar">
-            <span style="color:#887; font-size:0.8rem; margin-right: 10px;"><i class="fas fa-briefcase"></i> 持有物:</span>
-            <div id="inventory-list" style="display:flex; gap:10px;"></div>
+            <span style="color:#887; font-size:0.7rem; margin-right: 5px;"><i class="fas fa-briefcase"></i> 持有:</span>
+            <div id="inventory-list" style="display:flex; gap:8px;"></div>
         </section>
 
         <section id="story-area">
@@ -210,167 +330,155 @@
         </section>
 
         <div id="end-screen" style="display: none;">
-            <h1 id="end-title" style="font-family: 'Yu Mincho', serif; letter-spacing: 5px;">結局</h1>
-            <div id="end-icon" style="font-size: 5rem; margin: 30px 0; color: #554;"></div>
-            <p id="end-desc" style="max-width: 600px; margin: 10px 0; line-height: 2; font-size: 1.1rem; color: #c0b098; font-family: 'Yu Mincho', serif;"></p>
-            <div id="end-stats" style="color: #887; font-size: 1rem; margin-bottom: 20px; font-family: monospace;"></div>
+            <h1 id="end-title" style="font-family: 'Yu Mincho', serif; letter-spacing: 3px; font-size: 1.8rem;">結局</h1>
+            <div id="end-icon" style="font-size: 4rem; margin: 20px 0; color: #554;"></div>
+            <p id="end-desc" style="max-width: 600px; margin: 10px 0; line-height: 1.6; font-size: 1rem; color: #c0b098; padding: 0 20px;"></p>
+            <div id="end-stats" style="color: #887; font-size: 0.9rem; margin-bottom: 20px; font-family: monospace;"></div>
             
-            <div style="display:flex; gap:10px;">
-                <button class="start-btn" style="padding:10px 20px; font-size:1rem; margin-top:0;" onclick="game.copyHistory()"><i class="fas fa-copy"></i> 複製記錄</button>
-                <button class="start-btn reset-btn" style="padding:10px 20px; font-size:1rem; margin-top:0;" onclick="game.reset()"><i class="fas fa-redo"></i> 再次挑戰</button>
+            <div style="display:flex; gap:10px; flex-wrap: wrap; justify-content: center;">
+                <button class="start-btn" style="padding:10px 20px; font-size:0.9rem; margin-top:5px;" onclick="game.copyHistory()"><i class="fas fa-copy"></i> 複製記錄</button>
+                <button class="start-btn reset-btn" style="padding:10px 20px; font-size:0.9rem; margin-top:5px;" onclick="game.reset()"><i class="fas fa-redo"></i> 再次挑戰</button>
             </div>
         </div>
     </div>
 
     <script>
-        /* --- 繁體中文化設定 --- */
-        // 重新定義恐懼症 (Phobias)
+        /* --- 遊戲資料與邏輯 --- */
         const PHOBIAS = [
-            { id: 'dark', name: '黑暗恐懼', desc: '在黑暗中心魂減少量加倍', icon: 'fa-moon' },
-            { id: 'blood', name: '穢物恐懼', desc: '在不潔場所心魂減少量加倍', icon: 'fa-biohazard' },
-            { id: 'noise', name: '聲響恐懼', desc: '突發聲響造成的心魂減少量加倍', icon: 'fa-bell-slash' }
+            { id: 'dark', name: '暗恐', desc: '黑暗心魂損耗加倍', icon: 'fa-moon' },
+            { id: 'blood', name: '潔癖', desc: '不潔處心魂損耗加倍', icon: 'fa-biohazard' },
+            { id: 'noise', name: '聲恐', desc: '突發聲響心魂損耗加倍', icon: 'fa-bell-slash' }
         ];
 
-        // 重新定義物品 (Items)
         const ITEMS = {
-            key: { name: "老舊倉庫鑰匙", icon: "fa-key", desc: "用來打開村外倉庫的生鏽鑰匙。" },
-            crowbar: { name: "柴刀 (Nata)", icon: "fa-hammer", desc: "雖然生鏽但依然鋒利。可以破壞物理障礙。膽量判定+10%。" }, 
-            amulet: { name: "淨化之鹽", icon: "fa-seedling", desc: "驅除不潔的強力物品。最後的儀式需要它。" }, 
-            lighter: { name: "和蠟燭", icon: "fa-fire", desc: "手持光源。能緩和對黑暗的恐懼。" },
-            journal: { name: "祖父的手記", icon: "fa-book", desc: "身為民俗學者的祖父留下的調查記錄。民俗判定+10%。" },
-            gun: { name: "古舊火繩槍", icon: "fa-gun", desc: "火繩槍。只有一發子彈。能物理性地擊退強大的靈障。" },
-            medkit: { name: "藥草包", icon: "fa-leaf", desc: "治療傷口的傳統藥草。" }, 
-            mirror_shard: { name: "手鏡", icon: "fa-mirror", desc: "據說能映照出真實姿態的古鏡。" }
+            key: { name: "倉庫鑰匙", icon: "fa-key", desc: "打開生鏽倉庫。" },
+            crowbar: { name: "柴刀", icon: "fa-hammer", desc: "破壞障礙。膽量+10%。" }, 
+            amulet: { name: "淨化鹽", icon: "fa-seedling", desc: "驅除不潔。儀式用。" }, 
+            lighter: { name: "和蠟燭", icon: "fa-fire", desc: "手持光源。緩和恐懼。" },
+            journal: { name: "祖父手記", icon: "fa-book", desc: "民俗學記錄。民俗+10%。" },
+            gun: { name: "火繩槍", icon: "fa-gun", desc: "僅一發子彈。物理驅魔。" },
+            medkit: { name: "藥草包", icon: "fa-leaf", desc: "治療傷口。" }, 
+            mirror_shard: { name: "手鏡", icon: "fa-mirror", desc: "映照真實。" }
         };
 
-        // 重新定義突發事件 (Forced Events)
         const FORCED_EVENTS = [
-            { msg: "【怪異】感覺背後傳來了「喀啦喀啦」的木屐聲...", effect: { san: -5 } },
-            { msg: "【怪異】突然，一股生溫的風伴隨著線香的味道撲鼻而來。", effect: { courage: -5 } },
-            { msg: "【發現】在崩塌的石牆縫隙中，發現了一枚古老的寬永通寶。", effect: { insight: 5 } },
-            { msg: "【怪異】天花板垂下了一束黑色的頭髮。", effect: { san: -3, hp: -2 } },
-            { msg: "【想起】想起了祖父曾說過的關於這村子的奇妙習俗。", effect: { insight: 10, san: 2 } },
-            { msg: "【發現】倒塌的燈籠旁，掉落著還能使用的燈油罐。", effect: { fuel: 5 } },
-            { msg: "【怪異】視野角落似乎有穿著白衣的東西一閃而過。", effect: { san: -8 } },
-            { msg: "【進食】啃了一口保存食用的乾飯。沒有任何味道。", effect: { hp: 5, san: -2 } }
+            { msg: "【怪異】背後傳來了「喀啦」的木屐聲...", effect: { san: -5 } },
+            { msg: "【怪異】一股生溫的風伴隨線香撲鼻而來。", effect: { courage: -5 } },
+            { msg: "【發現】石牆縫隙中發現古老寬永通寶。", effect: { insight: 5 } },
+            { msg: "【怪異】天花板垂下了一束黑髮。", effect: { san: -3, hp: -2 } },
+            { msg: "【想起】想起了祖父說過的村子習俗。", effect: { insight: 10, san: 2 } },
+            { msg: "【發現】倒塌燈籠旁掉落著燈油罐。", effect: { fuel: 5 } },
+            { msg: "【怪異】視野角落有白衣一閃而過。", effect: { san: -8 } },
+            { msg: "【進食】啃了一口無味的乾飯。", effect: { hp: 5, san: -2 } }
         ];
 
-        /* --- 模組化場景資料庫 (繁體中文) --- */
-        // A: 導入 - 村子入口
-        // B: 探索 - 廢屋群 (穢物 theme)
-        // C: 探索 - 通往神社的道路 (聲響 theme)
-        // D: 探索 - 地下祭壇 (黑暗 theme)
-        // E: 終局 - 本殿
         const MODULES = {
             A: [
-                { text: "穿過霧氣瀰漫的山路，你抵達了「鳴神村」的入口。眼前矗立著腐朽巨大的鳥居，前方被濃霧遮蔽了視野。潮濕的空氣中混雜著霉味，以及微弱的泥土與血腥味。這裡是你的祖父最後被目擊的地點。完全的死寂壓迫著你的耳膜。", type: "dark", choices: [
-                    { text: "調查鳥居", desc: "注連繩似乎快斷了。柱子的根部可能夾著什麼東西。", icon: "fa-search", type: "check", checkType: "insight", chance: 80, success: { item: 'lighter', msg: "在鳥居的陰影處，發現了一個像是有人藏起來的桐木盒。裡面放著未使用的和蠟燭。" }, fail: { hp: -5, msg: "手伸到柱子後面的瞬間，大量的蜈蚣爬了出來！你嚇得縮手，不慎跌倒擦傷。" } },
-                    { text: "尋找足跡", desc: "觀察潮濕的地面，確認最近是否有人進入村子。", icon: "fa-eye", effect: { insight: 5 }, msg: "在泥濘的地面上，發現了無數赤腳的小腳印...一直延伸到村子裡。" },
-                    { text: "強行突破", desc: "無法忍受這詭異的氣氛。為了盡快找到祖父的線索，你衝進霧中。", icon: "fa-running", effect: { hp: -10, san: -10 }, msg: "視野不清，你撞上了隱藏在霧中的石碑。肩膀受到重擊，難以言喻的不安侵蝕著內心。", reckless: true }
+                { text: "穿過霧氣，你抵達了「鳴神村」入口。腐朽的巨大鳥居聳立，前方被濃霧遮蔽。空氣混雜著霉味與血腥味。這是祖父最後失蹤之地。死寂壓迫著你的耳膜。", type: "dark", choices: [
+                    { text: "調查鳥居", desc: "柱子根部似乎藏著東西。", icon: "fa-search", type: "check", checkType: "insight", chance: 80, success: { item: 'lighter', msg: "在陰影處發現桐木盒，內有未使用的和蠟燭。" }, fail: { hp: -5, msg: "伸手時爬出大量蜈蚣！嚇得縮手跌倒。" } },
+                    { text: "尋找足跡", desc: "觀察地面是否有進村痕跡。", icon: "fa-eye", effect: { insight: 5 }, msg: "泥濘地上有無數赤腳小腳印延伸進村。" },
+                    { text: "強行突破", desc: "無法忍受詭異氣氛，衝進霧中。", icon: "fa-running", effect: { hp: -10, san: -10 }, msg: "視野不清撞上石碑。肩膀受擊，不安侵蝕內心。", reckless: true }
                 ]},
-                { text: "來到了村子的大道。兩旁排列著曾經有人居住的木造房屋，但紙門破損，牆壁也快崩塌。異常的是，每戶人家的屋簷下都掛著臉部被塗黑的稻草人。風一吹，人偶們便齊刷刷地搖晃，發出乾枯的聲響。", type: "noise", choices: [
-                    { text: "觀察人偶", desc: "雖然令人不舒服，但這奇妙的習俗應該有其意義。走近觀察。", icon: "fa-image", effect: { insight: 10, san: -5 }, msg: "發現人偶的背後用墨水寫著「替身」。這不是詛咒，而是為了逃避某種東西的護身符嗎？" },
-                    { text: "搜索廢屋", desc: "進入附近的廢屋，尋找是否有可用的工具。", icon: "fa-home", type: "check", checkType: "insight", chance: 70, success: { item: 'key', msg: "在崩壞的佛壇抽屜裡，發現了一把舊倉庫的鑰匙。大概是哪裡的鑰匙吧。" }, fail: { hp: -5, san: -5, msg: "踩穿了腐爛的地板！腳拔不出來，焦慮讓心跳加速。" }, tag: "noise" },
-                    { text: "快步通過", desc: "感覺到了人偶們的視線（明明沒有臉）。不想在這裡久留。", icon: "fa-walking", effect: { courage: -2 }, msg: "你移開視線，快步穿過街道。雖然感覺背後傳來了人偶掉落的聲音，但你沒有回頭。" }
+                { text: "來到村子大道。兩旁木造房屋破損嚴重，且每戶屋簷下都掛著臉被塗黑的稻草人。風吹過，人偶齊刷刷搖晃發出聲響。", type: "noise", choices: [
+                    { text: "觀察人偶", desc: "雖不舒服，但應有其意義。", icon: "fa-image", effect: { insight: 10, san: -5 }, msg: "人偶背後寫著「替身」。似是為了逃避某物的護身符。" },
+                    { text: "搜索廢屋", desc: "進入廢屋尋找工具。", icon: "fa-home", type: "check", checkType: "insight", chance: 70, success: { item: 'key', msg: "在佛壇抽屜發現舊倉庫鑰匙。" }, fail: { hp: -5, san: -5, msg: "踩穿腐爛地板！腳拔不出來倍感焦慮。" }, tag: "noise" },
+                    { text: "快步通過", desc: "感覺人偶在看你。不想久留。", icon: "fa-walking", effect: { courage: -2 }, msg: "快步穿過。雖感覺背後有人偶掉落聲，但沒回頭。" }
                 ]},
-                { text: "來到了位於村子中央的集會所遺跡。只有這裡霧氣較薄，月光灑落。中央有焚火的痕跡，周圍圍繞著數十尊地藏菩薩像。但是，所有地藏的頭都被物理性地敲碎而不見了。", type: "blood", choices: [
-                    { text: "調查焚火遺跡", desc: "看起來像是新的灰燼。最近有人在這裡嗎？", icon: "fa-search", type: "check", checkType: "insight", chance: 80, success: { item: 'crowbar', msg: "在灰燼中發現了一把生鏽的柴刀（Nata）。可以用來防身。" }, fail: { san: -5, msg: "撥弄灰燼時，裡面露出了燒焦的動物骨頭...不，那是人的手指骨。" } },
-                    { text: "雙手合十", desc: "對無頭的地藏們感到憐憫，雙手合十供養。", icon: "fa-praying-hands", effect: { san: 5 }, msg: "靜靜祈禱後，感覺心情稍微平靜了一些。風停了。" },
-                    { text: "側耳傾聽", desc: "確認寂靜中是否混雜著不自然的聲音。", icon: "fa-ear-listen", effect: { insight: 15, san: -15 }, msg: "混雜在風聲中，聽到了像是複數人類在唸經的低沉聲音...那不是這個世界的聲音。" }
+                { text: "村中央集會所遺跡。唯此處霧薄有月光。中央有焚火痕跡，周圍圍繞著數十尊頭部被敲碎的地藏像。", type: "blood", choices: [
+                    { text: "調查焚火", desc: "像是新的灰燼。", icon: "fa-search", type: "check", checkType: "insight", chance: 80, success: { item: 'crowbar', msg: "灰燼中發現生鏽柴刀。可防身。" }, fail: { san: -5, msg: "撥弄灰燼，露出了燒焦的人類指骨。" } },
+                    { text: "雙手合十", desc: "憐憫無頭地藏，合十供養。", icon: "fa-praying-hands", effect: { san: 5 }, msg: "靜心祈禱後，風停了。" },
+                    { text: "側耳傾聽", desc: "確認是否有聲音。", icon: "fa-ear-listen", effect: { insight: 15, san: -15 }, msg: "風中混雜著像是複數人類唸經的低沉聲音...非人世之聲。" }
                 ]},
-                { text: "進入了看似村長家的大宅。穿過充滿霉味的玄關，大廳裡擺放著積滿灰塵的豪華七段女兒節人偶。但是，最上層的男雛和女雛位置顛倒，而且雙眼的部位都被挖空，臉頰上流著像是紅色眼淚的東西。", type: "dark", choices: [
-                    { text: "觸摸人偶", desc: "告訴自己這只是舊人偶，伸手確認其質感。", icon: "fa-hand-paper", type: "check", checkType: "courage", chance: 70, success: { insight: 15, item: "mirror_shard", msg: "在女雛的懷中發現了藏起來的手鏡。鏡面雖然模糊，但似乎能映照出什麼。" }, fail: { san: -20, msg: "觸碰的瞬間，人偶的頭顱滾落下來！斷面湧出大量的黑髮，纏繞在你的手臂上！" } },
-                    { text: "尋找書籍", desc: "房間角落有張文桌。可能留有村子的記錄。", icon: "fa-book-open", type: "check", checkType: "insight", chance: 80, success: { insight: 10, msg: "發現了為了鎮壓名為「鳴神大人」的存在，而進行活人獻祭的記錄。" }, fail: { san: -5, msg: "書上的文字像活著的蚯蚓般蠕動，無法閱讀。" } },
-                    { text: "點火", desc: "應該淨化這個不潔的空間。用和蠟燭的火燒掉人偶。", icon: "fa-fire", req: "lighter", effect: { fuel: -5, san: 5 }, msg: "乾燥的人偶瞬間燃燒起來。在火焰舞動中，彷彿聽見了人偶臨死前的慘叫聲。" }
+                { text: "進入村長大宅。大廳擺放著積灰的豪華七段女兒節人偶。但男雛女雛位置顛倒，雙眼被挖空流著血淚。", type: "dark", choices: [
+                    { text: "觸摸人偶", desc: "確認質感。", icon: "fa-hand-paper", type: "check", checkType: "courage", chance: 70, success: { insight: 15, item: "mirror_shard", msg: "女雛懷中藏著手鏡。似能映照真實。" }, fail: { san: -20, msg: "人偶頭顱滾落！斷面湧出黑髮纏繞手臂！" } },
+                    { text: "尋找書籍", desc: "文桌上可能有記錄。", icon: "fa-book-open", type: "check", checkType: "insight", chance: 80, success: { insight: 10, msg: "發現為了鎮壓「鳴神大人」而進行活人獻祭的記錄。" }, fail: { san: -5, msg: "書上文字像蚯蚓般蠕動無法閱讀。" } },
+                    { text: "點火", desc: "用和蠟燭燒掉不潔人偶。", icon: "fa-fire", req: "lighter", effect: { fuel: -5, san: 5 }, msg: "人偶燃燒中，彷彿發出臨死慘叫。" }
                 ]},
-                { text: "來到宅邸後方，通往竹林的石板路。前方被稱為「不入之森」，是連村民都畏懼的地方。竹子隨風搖曳發出「沙沙」聲，深處被完全的黑暗包圍。", type: "dark", choices: [
-                    { text: "點亮燈火", desc: "在黑暗中前進需要光亮。消耗燈油照亮周圍。", icon: "fa-lightbulb", req: "fuel", effect: { fuel: -3, san: 5 }, msg: "和蠟燭搖曳的光芒照亮了竹林的狹窄小徑。確保了視野，稍微安心了一些。" },
-                    { text: "在黑暗中前進", desc: "燈油很珍貴。依靠月光和直覺，慎重地前進。", icon: "fa-walking", type: "check", checkType: "courage", chance: 60, success: { courage: 15 }, fail: { hp: -10, san: -10, msg: "在黑暗中被竹根絆倒，滾落斜坡。滿身泥濘，而且感覺腳上留有被什麼東西抓住的觸感。" } },
-                    { text: "投石問路", desc: "為了確認森林深處是否潛藏著什麼，丟石頭試探反應。", icon: "fa-cube", effect: { insight: 5 }, msg: "石頭打在竹子上發出乾枯的聲響。隨後，稍遲傳來了「嘻嘻」的微小笑聲。" }
+                { text: "宅邸後方通往「不入之森」的石板路。竹子隨風發出沙沙聲，深處完全黑暗。", type: "dark", choices: [
+                    { text: "點亮燈火", desc: "消耗燈油照亮。", icon: "fa-lightbulb", req: "fuel", effect: { fuel: -3, san: 5 }, msg: "燭光照亮小徑。確保視野稍微安心。" },
+                    { text: "黑暗前進", desc: "依靠直覺慎重前進。", icon: "fa-walking", type: "check", checkType: "courage", chance: 60, success: { courage: 15 }, fail: { hp: -10, san: -10, msg: "被竹根絆倒滾落斜坡。腳上有被抓住的觸感。" } },
+                    { text: "投石問路", desc: "丟石頭試探。", icon: "fa-cube", effect: { insight: 5 }, msg: "石頭落地聲後，稍遲傳來「嘻嘻」微小笑聲。" }
                 ]}
             ],
-            B: [ // 穢物 Theme: 廢屋、生活痕跡
-                { text: "【探索：廢屋群】你踏入了一間快要崩塌的民宅。地上散亂著破爛的棉被，牆上附著無數變成茶色的手印。從裡面的房間，傳來像是有人用指甲抓榻榻米的「喀哩喀哩」聲。", type: "blood", choices: [
-                    { text: "確認聲音來源", desc: "壓抑恐懼，架起柴刀窺視裡面的房間。", icon: "fa-search", req: "crowbar", type: "check", checkType: "courage", chance: 75, success: { item: 'journal', msg: "發現榻榻米下藏著祖父的手記！聲音的真面目似乎只是老鼠...。" }, fail: { san: -15, msg: "房間角落裡，一名長髮女子正趴在地上抓著榻榻米。她緩緩回頭...沒有臉！" } },
-                    { text: "調查壁櫥", desc: "調查沒有聲音的壁櫥。可能藏著什麼。", icon: "fa-box-open", type: "check", checkType: "insight", chance: 70, success: { item: 'medkit', msg: "在滿是灰塵的柳條箱中，發現了保存狀態良好的藥草包。" }, fail: { san: -10, msg: "拉開拉門，裡面塞滿了大量的日本人偶，所有的眼睛都盯著你看。" } },
-                    { text: "逃離屋子", desc: "這裡很危險。本能如此警告著。", icon: "fa-door-open", effect: { courage: -5 }, msg: "你慌張地衝出屋子。背後傳來拉門被用力關上的聲音。" }
+            B: [
+                { text: "【探索：廢屋群】踏入崩塌民宅。牆上有茶色手印。裡間傳來指甲抓榻榻米的「喀哩喀哩」聲。", type: "blood", choices: [
+                    { text: "確認聲音", desc: "架起柴刀窺視。", icon: "fa-search", req: "crowbar", type: "check", checkType: "courage", chance: 75, success: { item: 'journal', msg: "榻榻米下藏著祖父手記！聲音只是老鼠。" }, fail: { san: -15, msg: "角落無臉長髮女子正抓著榻榻米。緩緩回頭..." } },
+                    { text: "調查壁櫥", desc: "調查沒聲音的壁櫥。", icon: "fa-box-open", type: "check", checkType: "insight", chance: 70, success: { item: 'medkit', msg: "發現保存良好的藥草包。" }, fail: { san: -10, msg: "裡面塞滿大量盯著你看的日本人偶。" } },
+                    { text: "逃離屋子", desc: "本能警告危險。", icon: "fa-door-open", effect: { courage: -5 }, msg: "衝出屋子。背後傳來拉門用力關上聲。" }
                 ]},
-                { text: "來到緣側，庭院的池塘裡積滿了混濁的水。水面漂浮著白色的和服，周圍有像黑色魚類的東西游動著。那件和服正緩緩向這裡靠近。", type: "blood", choices: [
-                    { text: "屏息不動", desc: "消除氣息等待它過去。動的話會被發現。", icon: "fa-stop", type: "check", checkType: "courage", chance: 60, success: { san: 5, msg: "和服在你面前停下，漂浮了一會兒後，又回到了池塘中央。你鬆了一口氣。" }, fail: { san: -15, msg: "恐懼使雙腳顫抖，踢到了小石子。水面衝出一隻蒼白的手，試圖抓住你的腳踝！" } },
-                    { text: "丟東西", desc: "將手邊的石頭丟向池塘遠處，轉移注意。", icon: "fa-share", effect: { insight: 5 }, msg: "石頭發出水聲，和服與黑魚們一齊游向了那邊。趁現在離開。" },
-                    { text: "用柴刀攻擊", desc: "既然靠近了，就只能動手。揮舞柴刀。", icon: "fa-hammer", req: "crowbar", effect: { hp: -15, courage: 20 }, msg: "你將柴刀劈向水面的和服。隨著水花濺起，發出了類似悲鳴的聲音，和服沉了下去，但反作用力讓你手臂受傷。", reckless: true }
+                { text: "庭院池塘積滿濁水。水面漂浮白色和服，周圍有黑魚游動。和服正緩緩靠近。", type: "blood", choices: [
+                    { text: "屏息不動", desc: "消除氣息等待。", icon: "fa-stop", type: "check", checkType: "courage", chance: 60, success: { san: 5, msg: "和服漂浮一會後離開。" }, fail: { san: -15, msg: "腿軟踢到石子。水面衝出蒼白之手抓腳踝！" } },
+                    { text: "丟東西", desc: "丟石頭轉移注意。", icon: "fa-share", effect: { insight: 5 }, msg: "和服游向石頭落點。趁機離開。" },
+                    { text: "用柴刀攻擊", desc: "揮舞柴刀。", icon: "fa-hammer", req: "crowbar", effect: { hp: -15, courage: 20 }, msg: "劈向和服。發出悲鳴沉下，但手臂因反作用力受傷。", reckless: true }
                 ]},
-                { text: "經過土間時，發現樑上掛著一個像是巨大蜂巢的物體。仔細一看，那是由泥土、稻草以及人類頭髮凝固而成的某種東西。裡面微弱地傳來像是嬰兒的哭聲。", type: "blood", choices: [
-                    { text: "確認內容物", desc: "民俗學的好奇心戰勝了恐懼。慎重地窺視內部。", icon: "fa-eye", type: "check", checkType: "insight", chance: 60, success: { insight: 15, msg: "裡面放著形狀奇特、似乎是用於村子土著信仰的依代。是貴重的資料。" }, fail: { san: -20, msg: "裡面衝出一隻腐爛的小手，試圖抓住你的臉！" } },
-                    { text: "燒毀", desc: "這是不潔之物。用和蠟燭的火淨化它。", icon: "fa-fire", req: "lighter", effect: { fuel: -5, san: 5 }, msg: "伴隨著燒焦頭髮的臭味，那東西燃燒起來。哭聲變成了臨死前的慘叫。" },
-                    { text: "無視並前進", desc: "不能與之扯上關係。當作沒看到趕緊趕路。", icon: "fa-walking", effect: { san: -5 }, msg: "背後的哭聲變大，變成了在耳邊竊竊私語的聲音，但你沒有停下腳步。" }
+                { text: "土間樑上掛著由泥土、稻草及頭髮凝固成的巨大蜂巢狀物。傳來微弱嬰兒哭聲。", type: "blood", choices: [
+                    { text: "確認內容", desc: "慎重窺視內部。", icon: "fa-eye", type: "check", checkType: "insight", chance: 60, success: { insight: 15, msg: "是土著信仰的依代。貴重資料。" }, fail: { san: -20, msg: "衝出腐爛小手抓你的臉！" } },
+                    { text: "燒毀", desc: "用火淨化。", icon: "fa-fire", req: "lighter", effect: { fuel: -5, san: 5 }, msg: "燒焦臭味四溢。哭聲變成慘叫。" },
+                    { text: "無視前進", desc: "當作沒看到。", icon: "fa-walking", effect: { san: -5 }, msg: "哭聲變成耳邊竊竊私語。" }
                 ]}
             ],
-            C: [ // 聲響 Theme: 通往神社的道路、自然威脅
-                { text: "【探索：山路】正在攀登通往神社、長滿青苔的石階。兩側延綿排列著無頭地藏，雨開始淅淅瀝瀝地下了起來。遠處傳來「咚...」的鐘聲，明明鐘樓應該沒有人才對。", type: "noise", choices: [
-                    { text: "趕路", desc: "在鐘聲逼近前，爬完這詭異的石階。", icon: "fa-running", type: "check", checkType: "courage", chance: 70, success: { courage: 5 }, fail: { hp: -10, msg: "在濕滑的青苔上滑倒，跌落了好幾階。膝蓋受到重擊，劇痛傳遍全身。" } },
-                    { text: "尋找小路", desc: "石階太危險了。尋找像獸徑一樣的小路。", icon: "fa-route", type: "check", checkType: "insight", chance: 60, success: { insight: 10, item: "gun" }, fail: { hp: -15, san: -5, msg: "雖然進入了灌木叢，但被銳利的荊棘包圍，為了脫身消耗了體力。感覺到了某種視線。" } },
-                    { text: "原地待命", desc: "在弄清聲音的真面目前，躲在石燈籠陰影處觀察。", icon: "fa-hide", effect: { fuel: -2, san: 5 }, msg: "屏氣凝神一會兒後，鐘聲停止了。但是浪費了寶貴的時間與燈油。" }
+            C: [
+                { text: "【探索：山路】攀登通往神社的青苔石階。兩側是無頭地藏，雨開始下。遠處傳來無人鐘樓的鐘聲。", type: "noise", choices: [
+                    { text: "趕路", desc: "快速爬完石階。", icon: "fa-running", type: "check", checkType: "courage", chance: 70, success: { courage: 5 }, fail: { hp: -10, msg: "在濕滑青苔滑倒，跌落好幾階受傷。" } },
+                    { text: "尋找小路", desc: "尋找獸徑。", icon: "fa-route", type: "check", checkType: "insight", chance: 60, success: { insight: 10, item: "gun" }, fail: { hp: -15, san: -5, msg: "被荊棘包圍，感覺到視線。" } },
+                    { text: "原地待命", desc: "躲在石燈籠後觀察。", icon: "fa-hide", effect: { fuel: -2, san: 5 }, msg: "鐘聲停止了。但浪費了時間與燈油。" }
                 ]},
-                { text: "在石階途中，經過了一座小祠堂。門稍微開著，裡面飄出鐵鏽味。每當風吹過，門就會發出「吱...吱...」的摩擦聲。", type: "noise", choices: [
-                    { text: "打開祠堂", desc: "確認裡面供奉著什麼。可能是重要的線索。", icon: "fa-door-open", type: "check", checkType: "insight", chance: 70, success: { item: 'amulet', msg: "祠堂裡有一個被刺滿生鏽釘子的人偶，以及藏在下面的「淨化之鹽」。" }, fail: { san: -15, msg: "打開門，裡面放著寫有你名字的紅色牌位。心臟彷彿結凍了。" } },
-                    { text: "撒鹽", desc: "感覺到不潔的氣息。撒出手邊的淨化之鹽來清淨。", icon: "fa-seedling", req: "amulet", effect: { san: 15, itemLost: "amulet" }, msg: "撒鹽後，祠堂裡冒出了黑煙，摩擦聲也停止了。感覺空氣變得清淨了。" },
-                    { text: "雙手合十離開", desc: "敬鬼神而遠之。稍微拜一下，就那樣通過。", icon: "fa-praying-hands", effect: { courage: -2 }, msg: "為了不刺激祠堂，你靜靜地離開了現場。" }
+                { text: "石階途中的小祠堂。門微開飄出鐵鏽味，風吹發出摩擦聲。", type: "noise", choices: [
+                    { text: "打開祠堂", desc: "確認供奉物。", icon: "fa-door-open", type: "check", checkType: "insight", chance: 70, success: { item: 'amulet', msg: "發現刺滿釘子的人偶與「淨化之鹽」。" }, fail: { san: -15, msg: "裡面放著寫有你名字的紅色牌位。" } },
+                    { text: "撒鹽", desc: "淨化不潔。", icon: "fa-seedling", req: "amulet", effect: { san: 15, itemLost: "amulet" }, msg: "冒出黑煙摩擦聲停止。空氣變清淨。" },
+                    { text: "雙手合十", desc: "敬鬼神而遠之。", icon: "fa-praying-hands", effect: { courage: -2 }, msg: "靜靜離開現場。" }
                 ]},
-                { text: "突然，周圍的樹木劇烈搖晃，整座山都在鳴動。是土石流的前兆，還是山神的憤怒？腳下的地面開始出現裂痕。", type: "noise", choices: [
-                    { text: "往高處跑", desc: "避開崩塌的地面，全力跑向附近的岩場。", icon: "fa-running", type: "check", checkType: "courage", chance: 65, success: { courage: 10 }, fail: { hp: -20, msg: "來不及了！被捲入崩塌的土石中，全身挫傷。" } },
-                    { text: "抓住樹根", desc: "緊緊抓住附近粗壯的樹根，等待搖晃停止。", icon: "fa-tree", type: "check", checkType: "courage", chance: 80, success: { hp: -5, san: -5, msg: "承受住了劇烈的搖晃，但被掉落的樹枝擦傷。搖晃停止後，周圍的景色改變了。" }, fail: { hp: -25, msg: "抓住的樹根斷裂，你滑落了斜坡。" } },
-                    { text: "照鏡子", desc: "這可能不是現實。試著用手鏡映照出真實。", icon: "fa-mirror", req: "mirror_shard", effect: { insight: 20, san: -10 }, msg: "鏡中映出的並非搖晃的山，而是巨大的黑影正在搖晃山體的模樣。理解那是幻覺的瞬間，搖晃停止了。" }
+                { text: "周圍樹木劇烈搖晃，整座山都在鳴動。地面出現裂痕。", type: "noise", choices: [
+                    { text: "往高處跑", desc: "跑向岩場。", icon: "fa-running", type: "check", checkType: "courage", chance: 65, success: { courage: 10 }, fail: { hp: -20, msg: "被捲入土石流，全身挫傷。" } },
+                    { text: "抓住樹根", desc: "緊抓樹根等待。", icon: "fa-tree", type: "check", checkType: "courage", chance: 80, success: { hp: -5, san: -5, msg: "承受住搖晃，但被樹枝擦傷。" }, fail: { hp: -25, msg: "樹根斷裂滑落斜坡。" } },
+                    { text: "照鏡子", desc: "這可能不是現實。", icon: "fa-mirror", req: "mirror_shard", effect: { insight: 20, san: -10 }, msg: "鏡中映出巨大黑影正搖晃山體。理解是幻覺後搖晃停止。" }
                 ]}
             ],
-            D: [ // 黑暗 Theme: 地下、儀式場所
-                { text: "【探索：神社地下】發現了隱藏在本殿地板下的樓梯，下到了地下。那是被完全的黑暗與撲鼻腐臭支配的洞窟。牆壁不是濕潤的泥土，而是有著某種柔軟肉塊般的質感。", type: "dark", choices: [
-                    { text: "增強照明", desc: "這片黑暗很危險。多用點燈油，確保視野。", icon: "fa-fire", req: "fuel", effect: { fuel: -5, san: 5 }, msg: "火焰增強後，看清了原本以為是牆壁的東西，其實是無數破舊的和服與棉被層層堆疊壓實而成的。" },
-                    { text: "摸索前進", desc: "為了節省燈油，沿著牆壁慎重前進。", icon: "fa-walking", type: "check", checkType: "courage", chance: 50, success: { courage: 15, insight: 5 }, fail: { hp: -15, san: -15, msg: "摸到牆壁的瞬間，那塊「肉」脈動了一下，試圖吞噬你！你拚命掙脫了。" } },
-                    { text: "用柴刀刻牆", desc: "一邊用柴刀劈開這噁心的牆壁一邊前進。", icon: "fa-hammer", req: "crowbar", type: "check", checkType: "courage", chance: 70, success: { courage: 10, msg: "每當揮舞柴刀，牆壁就會滲出黑色液體，但道路打開了。" }, fail: { san: -20, msg: "切開牆壁，裡面湧出大量人類頭髮，纏住了你的腳。" } }
+            D: [
+                { text: "【探索：神社地下】下到地下洞窟。黑暗與腐臭。牆壁有著肉塊質感。", type: "dark", choices: [
+                    { text: "增強照明", desc: "多用燈油確保視野。", icon: "fa-fire", req: "fuel", effect: { fuel: -5, san: 5 }, msg: "看清牆壁是無數舊和服與棉被堆疊而成。" },
+                    { text: "摸索前進", desc: "沿牆慎重前進。", icon: "fa-walking", type: "check", checkType: "courage", chance: 50, success: { courage: 15, insight: 5 }, fail: { hp: -15, san: -15, msg: "牆壁脈動試圖吞噬你！拚命掙脫。" } },
+                    { text: "用柴刀刻牆", desc: "劈開噁心牆壁。", icon: "fa-hammer", req: "crowbar", type: "check", checkType: "courage", chance: 70, success: { courage: 10, msg: "牆壁滲出黑液，道路打開。" }, fail: { san: -20, msg: "切開牆壁湧出大量頭髮纏腳。" } }
                 ]},
-                { text: "在洞窟深處，發現了巨大的祭壇。那裡站著村民們稱為「鳴神大人」的存在——身高八尺（約2.4公尺），穿著白衣的無臉巨女，正背對著你。「...波波、波波波...」發出機械般奇妙的聲音。", type: "dark", choices: [
-                    { text: "屏住氣息", desc: "為了不被發現，躲在岩石陰影處屏息以待。", icon: "fa-hide", type: "check", checkType: "courage", chance: 60, success: { insight: 20, msg: "巨女發出了一陣奇妙的聲音後，消失在黑暗中。這是調查祭壇的機會。", flag: "saw_ritual" }, fail: { san: -30, msg: "心跳聲太大了。「波波波...」的聲音停止，巨女的頭向正後方旋轉180度看向了你！" } },
-                    { text: "開火繩槍", desc: "這是最大的威脅。只能在這裡解決它。射出珍貴的一發。", icon: "fa-gun", req: "gun", effect: { courage: 20, itemLost: "gun", flag: "entity_damaged" }, msg: "伴隨著轟鳴聲，子彈擊中了巨女的背部！巨女發出淒厲的慘叫，化為黑霧四散。但，這樣就結束了嗎？", reckless: true },
-                    { text: "用鏡子照", desc: "使用手鏡，映照出巨女的真面目。", icon: "fa-mirror", req: "mirror_shard", effect: { san: -25, insight: 25 }, msg: "鏡中映出的不是女人的姿態，而是無數詛咒漩渦的黑洞本身。窺視了那深淵，精神被削弱。" }
+                { text: "洞窟深處祭壇，站著高八尺的白衣無臉巨女「鳴神大人」，背對著你發出「波波波」機械聲。", type: "dark", choices: [
+                    { text: "屏住氣息", desc: "躲岩石後等待。", icon: "fa-hide", type: "check", checkType: "courage", chance: 60, success: { insight: 20, msg: "巨女消失。獲得調查機會。", flag: "saw_ritual" }, fail: { san: -30, msg: "心跳聲太大。巨女頭旋轉180度看向你！" } },
+                    { text: "開火繩槍", desc: "射出珍貴一發。", icon: "fa-gun", req: "gun", effect: { courage: 20, itemLost: "gun", flag: "entity_damaged" }, msg: "擊中背部！巨女慘叫霧散。結束了嗎？", reckless: true },
+                    { text: "用鏡子照", desc: "映照真面目。", icon: "fa-mirror", req: "mirror_shard", effect: { san: -25, insight: 25 }, msg: "鏡中映出詛咒黑洞。精神被削弱。" }
                 ]},
-                { text: "在祭壇旁，發現倒在地上的祖父！雖然還有氣息，但意識朦朧，像是在說夢話般重複著「鹽...必須用鹽淨化...」。", type: "blood", choices: [
-                    { text: "照顧祖父", desc: "使用藥草，讓祖父恢復意識。", icon: "fa-leaf", req: "medkit", type: "check", checkType: "insight", chance: 80, success: { insight: 20, msg: "祖父恢復意識了！他用顫抖的手，教導了封印鳴神大人的「神樂」步驟。", flag: "mentor_hint" }, fail: { san: -15, msg: "祖父突然睜大眼睛，大叫「你也會被帶走的！」，並開始發狂。" } },
-                    { text: "尋找鹽", desc: "相信祖父的話，在周圍尋找淨化之鹽。", icon: "fa-search", type: "check", checkType: "insight", chance: 70, success: { item: 'amulet', msg: "在祭壇角落，發現了還沒開封的淨化之鹽袋子！" }, fail: { hp: -10, msg: "伸手去拿鹽罐，卻被潛藏在裡面的毒蛇咬了一口。" } },
-                    { text: "揹起逃跑", desc: "這裡太危險了。揹起祖父嘗試逃到地上。", icon: "fa-running", type: "check", checkType: "courage", chance: 50, success: { courage: 10, msg: "揹著沉重的祖父，拚命地沿原路折返。總算逃出了地下。", flag: "mentor_saved" }, fail: { hp: -20, msg: "立足點崩塌，與祖父一起跌落。全身受到重擊，祖父的意識再次遠去。" } }
+                { text: "祭壇旁發現倒地的祖父！意識朦朧說著「鹽...必須用鹽...」。", type: "blood", choices: [
+                    { text: "照顧祖父", desc: "使用藥草。", icon: "fa-leaf", req: "medkit", type: "check", checkType: "insight", chance: 80, success: { insight: 20, msg: "祖父恢復，教導封印「神樂」步驟。", flag: "mentor_hint" }, fail: { san: -15, msg: "祖父發狂大叫「你也會被帶走的！」" } },
+                    { text: "尋找鹽", desc: "尋找淨化之鹽。", icon: "fa-search", type: "check", checkType: "insight", chance: 70, success: { item: 'amulet', msg: "在祭壇角落發現淨化之鹽！" }, fail: { hp: -10, msg: "被鹽罐裡的毒蛇咬傷。" } },
+                    { text: "揹起逃跑", desc: "揹祖父逃跑。", icon: "fa-running", type: "check", checkType: "courage", chance: 50, success: { courage: 10, msg: "總算逃出地下。", flag: "mentor_saved" }, fail: { hp: -20, msg: "與祖父一起跌落受傷。" } }
                 ]}
             ],
-            // 終局 (21-25) - 本殿決戰
             E: [
-                { text: "【終局：神樂殿】你與祖父（或繼承其遺志）抵達了神社的神樂殿。暴風雨肆虐，雷電撕裂天空。這裡是封印「鳴神大人」的最後場所。必須開始儀式。", type: "noise", choices: [
-                    // 修復：100% 成功率
-                    { text: "奉納神樂之舞", desc: "依照祖父的手記（或教導），跳起封印的神樂。", icon: "fa-fan", req: "journal", type: "check", checkType: "insight", chance: 100, success: { insight: 30, san: -10, msg: "當你開始舞動，暴風雨變得更加劇烈，雷聲轟鳴。這是儀式開始的信號。", flag: "kagura_performed" }, fail: { san: -20, msg: "（此選項不應失敗）" } },
-                    { text: "張掛注連繩", desc: "為了強化結界，在神樂殿周圍張掛新的注連繩。", icon: "fa-rope", type: "check", checkType: "courage", chance: 80, success: { courage: 20, hp: -10, msg: "雖然被強風吹襲，但總算掛好了注連繩。結界暫時強化了。", flag: "barrier_strengthened" }, fail: { hp: -30, msg: "被突風吹飛的屋瓦直擊，你被摔在地上。" } },
-                    { text: "成為替身", desc: "為了完成儀式，自願成為最後的「依代」。", icon: "fa-skull", effect: { hp: -99, san: 0 }, msg: "你坐在祭壇中央，將短刀刺向喉嚨。在意識遠去之中，感覺到村子恢復了平靜..." }
+                { text: "【終局：神樂殿】暴風雨肆虐。這裡是封印「鳴神大人」的最後場所。", type: "noise", choices: [
+                    { text: "奉納神樂", desc: "跳起封印神樂。", icon: "fa-fan", req: "journal", type: "check", checkType: "insight", chance: 100, success: { insight: 30, san: -10, msg: "暴風雨加劇，儀式開始。", flag: "kagura_performed" }, fail: { san: -20, msg: "..." } },
+                    { text: "張掛注連繩", desc: "強化結界。", icon: "fa-rope", type: "check", checkType: "courage", chance: 80, success: { courage: 20, hp: -10, msg: "掛好注連繩，結界強化。", flag: "barrier_strengthened" }, fail: { hp: -30, msg: "被瓦片擊中。" } },
+                    { text: "成為替身", desc: "自願成為依代。", icon: "fa-skull", effect: { hp: -99, san: 0 }, msg: "短刀刺喉。村子恢復平靜..." }
                 ]},
-                { text: "儀式途中，「鳴神大人」終於現出了真身。那是黑色的霧塊，從中伸出無數蒼白的手臂，紅色的眼珠骨碌碌地盯著你。", type: "dark", choices: [
-                    { text: "用火繩槍射擊", desc: "將剩下最後的一發，射向位於中心的眼珠。", icon: "fa-gun", req: "gun", effect: { itemLost: "gun", courage: 20 }, msg: "轟音一閃！子彈貫穿了眼珠，怪物發出苦悶的聲音並霧散。但，這樣就完全消滅了嗎？" },
-                    { text: "潑油放火", desc: "將剩下的燈油全部潑上去，用和蠟燭點火。", icon: "fa-fire", req: "fuel", effect: { fuel: -10, hp: -15 }, msg: "怪物渾身是火，發出絕叫並痛苦翻滾。你也沐浴在火星中受了燒傷。" },
-                    { text: "繼續神樂", desc: "無論發生什麼，都不能停止舞動。忍耐恐懼，繼續跳下去。", icon: "fa-fan", type: "check", checkType: "courage", chance: 70, success: { san: -10, msg: "無數的手臂試圖抓住你，但神樂的結界將其彈開。儀式進入佳境。" }, fail: { hp: -40, msg: "因恐懼停下腳步的瞬間，蒼白的手臂纏上你的身體，勒緊。聽見了骨頭碎裂的聲音。" } }
+                { text: "儀式途中，「鳴神大人」現出真身。黑霧中伸出無數手臂與紅眼。", type: "dark", choices: [
+                    { text: "火繩槍射擊", desc: "射擊眼珠。", icon: "fa-gun", req: "gun", effect: { itemLost: "gun", courage: 20 }, msg: "子彈貫穿眼珠，怪物霧散。" },
+                    { text: "潑油放火", desc: "全部燈油燒盡。", icon: "fa-fire", req: "fuel", effect: { fuel: -10, hp: -15 }, msg: "怪物燃燒翻滾。你也受傷。" },
+                    { text: "繼續神樂", desc: "忍耐恐懼繼續跳。", icon: "fa-fan", type: "check", checkType: "courage", chance: 70, success: { san: -10, msg: "結界彈開手臂。儀式進入佳境。" }, fail: { hp: -40, msg: "手臂纏上身體勒緊。" } }
                 ]},
-                { text: "怪物的精神攻擊開始了。直接對你的腦內說話。「...過來...來這邊...混合在一起吧...」那是使用了失去的家人或朋友的聲音。", type: "noise", choices: [
-                    { text: "咬舌保持意識", desc: "用肉體的疼痛甩開對精神的干涉。", icon: "fa-tooth", effect: { hp: -10, san: 10, courage: 20 }, msg: "口中擴散著鐵鏽味。疼痛讓意識變得鮮明，幻聽遠去了。" },
-                    { text: "傾聽聲音", desc: "懷念的聲音...去那邊的話，會變得輕鬆嗎？", icon: "fa-question", effect: { san: -30, insight: 20 }, msg: "你接受了被同化。界線變得曖昧，自我開始崩壞。" },
-                    { text: "用鏡子反射", desc: "使用手鏡，將精神攻擊原樣反射給怪物。", icon: "fa-mirror", req: "mirror_shard", effect: { san: 15 }, msg: "將鏡子轉向它，怪物沐浴在自己的詛咒中畏縮了。趁機重整態勢。" }
+                { text: "怪物的精神攻擊。用親友聲音說「...過來...混合吧...」。", type: "noise", choices: [
+                    { text: "咬舌保持意識", desc: "用疼痛甩開干涉。", icon: "fa-tooth", effect: { hp: -10, san: 10, courage: 20 }, msg: "劇痛讓意識鮮明。" },
+                    { text: "傾聽聲音", desc: "懷念的聲音...", icon: "fa-question", effect: { san: -30, insight: 20 }, msg: "自我開始崩壞。" },
+                    { text: "用鏡子反射", desc: "反射精神攻擊。", icon: "fa-mirror", req: "mirror_shard", effect: { san: 15 }, msg: "怪物被自己詛咒反噬。" }
                 ]},
-                { text: "儀式進入最終階段。雷電從天而降，神樂殿被火焰包圍。要完成封印，還是結束這一切。", type: "dark", choices: [
-                    { text: "封印 (需：鹽與神樂)", desc: "跳完神樂，最後用淨化之鹽封印「鳴神大人」。", icon: "fa-seedling", req: "amulet", effect: { final: "seal" }, msg: "你高舉鹽巴，大喊最後的祝詞！閃電直擊祭壇！" },
-                    { text: "燒毀村子", desc: "推倒燈油桶，用火焰淨化這個被詛咒的村子。", icon: "fa-bomb", req: "fuel", effect: { final: "boom" }, msg: "你將點燃的蠟燭丟進燈油桶。爆炸的火焰升起，一切都將化為灰燼。" },
-                    { text: "逃離村子", desc: "已經極限了。放棄儀式，下山逃跑。", icon: "fa-running", effect: { final: "escape" }, msg: "你拋下一切，在暴風雨中連滾帶爬地逃出了村子。背後傳來了絕望的咆哮。" }
+                { text: "最終階段。雷電交加。完成封印，還是結束這一切。", type: "dark", choices: [
+                    { text: "封印 (需：鹽+神樂)", desc: "用鹽封印鳴神。", icon: "fa-seedling", req: "amulet", effect: { final: "seal" }, msg: "高舉鹽巴大喊祝詞！" },
+                    { text: "燒毀村子", desc: "用火淨化詛咒。", icon: "fa-bomb", req: "fuel", effect: { final: "boom" }, msg: "點燃燈油。一切化為灰燼。" },
+                    { text: "逃離村子", desc: "放棄儀式逃跑。", icon: "fa-running", effect: { final: "escape" }, msg: "連滾帶爬逃出村子。" }
                 ]}
             ]
         };
 
-        /* --- 遊戲邏輯 (核心邏輯保持不變) --- */
         const game = {
             turn: 1,
             maxTurns: 25,
-            stats: { hp: 100, san: 80, courage: 50, insight: 10, fuel: 25 },
+            stats: {},
             inventory: [],
             flags: [],
             phobia: null,
@@ -381,7 +489,6 @@
 
             start: function() {
                 this.turn = 1;
-                // 初期狀態
                 this.stats = { hp: 100, san: 80, courage: 50, insight: 10, fuel: 25 };
                 this.inventory = [];
                 this.flags = [];
@@ -390,20 +497,13 @@
                 this.phobia = PHOBIAS[Math.floor(Math.random() * PHOBIAS.length)];
                 
                 const midModules = ['B', 'C', 'D'].sort(() => Math.random() - 0.5);
-                this.scenarioTimeline = [
-                    ...MODULES.A,
-                    ...MODULES[midModules[0]],
-                    ...MODULES[midModules[1]],
-                    ...MODULES[midModules[2]],
-                    ...MODULES.E
-                ];
-                console.log("Map Order:", midModules);
+                this.scenarioTimeline = [...MODULES.A, ...MODULES[midModules[0]], ...MODULES[midModules[1]], ...MODULES[midModules[2]], ...MODULES.E];
 
                 document.getElementById('start-screen').style.display = 'none';
                 document.getElementById('end-screen').style.display = 'none';
                 document.getElementById('log-content').innerHTML = '';
                 this.updateUI();
-                this.log(`踏入鳴神村。你的弱點：${this.phobia.name} (${this.phobia.desc})`, "log-info");
+                this.log(`入村。弱點：${this.phobia.name}`, "log-info");
                 this.loadScenario();
                 this.checkAtmosphere();
             },
@@ -414,42 +514,25 @@
             },
 
             loadScenario: function() {
-                if (this.turn > this.scenarioTimeline.length) { 
-                    this.triggerEnding(); 
-                    return; 
-                }
-
+                if (this.turn > this.scenarioTimeline.length) { this.triggerEnding(); return; }
                 let data = this.scenarioTimeline[this.turn - 1];
-                // 刻表示變更
                 let text = `[${this.turn}刻] ${data.text}`;
                 let choices = [...data.choices];
-
                 this.historyLog.push(`${this.turn}刻: ${data.text}`);
 
-                // 幻覺事件（繁中化）
                 if (this.turn < 24 && this.stats.san < 70 && Math.random() < 0.3) {
-                    const phantomText = ["感覺聽到了誰的聲音", "腳邊掉落著零錢", "陰影處看見人影", "牆上的汙漬看著像人臉", "聽見了水聲"];
-                    const randomText = phantomText[Math.floor(Math.random() * phantomText.length)];
-                    const randomIcon = ["fa-ear-listen", "fa-coins", "fa-user-ninja", "fa-face-dizzy", "fa-water"][Math.floor(Math.random() * 5)];
-                    const insertIndex = Math.floor(Math.random() * (choices.length + 1));
-                    choices.splice(insertIndex, 0, {
-                        text: randomText, desc: "這是現實嗎...", icon: randomIcon, isPhantom: true, chance: 80, type: 'check'
+                    const rnd = ["聽見聲音", "腳邊有錢", "看見人影", "牆上有臉", "聽見水聲"][Math.floor(Math.random()*5)];
+                    choices.splice(Math.floor(Math.random() * (choices.length + 1)), 0, {
+                        text: rnd, desc: "這是現實嗎...", icon: "fa-question", isPhantom: true, chance: 80, type: 'check'
                     });
                 }
 
-                // 發狂模式（繁中化）
                 if (this.stats.san < 30) {
-                    text += " <span class='text-distort' style='display:block; margin-top:10px; color:#c0392b;'>[幻聽] " + this.getMadnessText() + "</span>";
-                    if (Math.random() < 0.4) {
-                        choices.push({ 
-                            text: "聽從幻聽：戳瞎雙眼", desc: "看不見的話，就不害怕了...", icon: "fa-eye-slash", 
-                            effect: { hp: -50, san: -50 }, msg: "你陷入了瘋狂。視野被黑暗包圍。", reckless: true, isMadness: true 
-                        });
-                    }
+                    text += " <span class='text-distort' style='display:block; margin-top:5px; color:#c0392b;'>[幻聽] " + this.getMadnessText() + "</span>";
+                    if (Math.random() < 0.4) choices.push({ text: "戳瞎雙眼", desc: "看不見就不怕了...", icon: "fa-eye-slash", effect: { hp: -50, san: -50 }, msg: "陷入瘋狂。", reckless: true, isMadness: true });
                 }
 
                 const storyContent = document.getElementById('story-content');
-                // 圖示變更
                 storyContent.innerHTML = `<i class="fas ${this.getScenarioIcon(this.turn)} story-icon"></i>` + text;
                 storyContent.className = 'story-text';
                 void storyContent.offsetWidth; 
@@ -459,13 +542,10 @@
                 choiceArea.innerHTML = '';
 
                 choices.forEach(choice => {
-                    // 終局條件檢查（繁中化對應）
                     if (choice.effect && choice.effect.final === 'seal') {
-                        const canSeal = this.hasItem('amulet') && this.flags.includes('kagura_performed');
-                        if (!canSeal) choice.desc += " <span style='color:#c0392b'>(條件未達成：需淨化之鹽與神樂)</span>";
-                        else choice.desc = "<span style='color:#27ae60; font-weight:bold;'>(條件達成 - 可封印)</span> " + choice.desc;
+                        if (!(this.hasItem('amulet') && this.flags.includes('kagura_performed'))) choice.desc += " <span style='color:#c0392b'>(未達成)</span>";
+                        else choice.desc = "<span style='color:#27ae60;'>(可封印)</span> " + choice.desc;
                     }
-
                     if (choice.req && !this.hasItem(choice.req)) return;
                     if (choice.req === 'fuel' && this.stats.fuel <= 0) return;
 
@@ -478,27 +558,16 @@
                     let chanceHtml = choice.type === 'check' ? `<span class="chance-tag">${this.calculateChance(choice)}%</span>` : '';
                     
                     btn.innerHTML = `<div class="choice-title">${iconHtml} ${choice.text} ${chanceHtml}</div><div class="choice-desc">${choice.desc || ''}</div>`;
-                    
-                    btn.onclick = (e) => {
-                        if (choice.isPhantom) {
-                            this.triggerPhantom(e.currentTarget);
-                        } else {
-                            this.handleInput(choice);
-                        }
-                    };
+                    btn.onclick = (e) => choice.isPhantom ? this.triggerPhantom(e.currentTarget) : this.handleInput(choice);
                     choiceArea.appendChild(btn);
                 });
                 document.getElementById('turn-display').innerText = this.turn;
             },
 
-            triggerPhantom: function(btnElement) {
-                btnElement.style.transform = "scale(0.95)";
-                setTimeout(() => { btnElement.style.opacity = "0"; setTimeout(() => { btnElement.style.display = "none"; }, 200); }, 100);
-                document.getElementById('app-container').classList.add('shake');
-                setTimeout(() => document.getElementById('app-container').classList.remove('shake'), 200);
-                this.log("伸手去抓，那裡卻什麼也沒有。是幻覺！", "log-phantom");
-                this.stats.san -= 2;
-                this.updateUI();
+            triggerPhantom: function(btn) {
+                btn.style.opacity = "0"; setTimeout(() => btn.style.display = "none", 200);
+                this.log("幻覺！什麼也沒有。", "log-phantom");
+                this.stats.san -= 2; this.updateUI();
             },
 
             calculateChance: function(choice) {
@@ -511,35 +580,21 @@
 
             handleInput: async function(choice) {
                 if (this.isGameOver) return;
-                document.getElementById('app-container').classList.add('shake');
-                setTimeout(() => document.getElementById('app-container').classList.remove('shake'), 500);
-
-                this.historyLog.push(`選擇: ${choice.text}`);
-
                 if (choice.effect && choice.effect.final) this.finalChoice = choice.effect.final;
+                this.historyLog.push(`選: ${choice.text}`);
 
                 if (choice.type === 'check') {
                     const result = await this.rollDice(this.calculateChance(choice));
-                    if (result) this.applyEffect(choice.success);
-                    else this.applyEffect(choice.fail);
+                    this.applyEffect(result ? choice.success : choice.fail);
                 } else {
                     this.applyEffect(choice.effect || choice);
-					
-					// 如果是最終選擇，直接結束
-					if (choice.effect && choice.effect.final) {
-						setTimeout(() => this.triggerEnding(), 800);
-						return;
-					};
-					
-                    if (choice.msg) this.log(choice.msg, "log-info");
+                    if (choice.effect && choice.effect.final) { setTimeout(() => this.triggerEnding(), 800); return; }
                 }
 
-                if (choice.reckless) { this.stats.san -= 30; this.log("【魯莽行動】心魂 -30", "log-negative"); }
-                
+                if (choice.reckless) { this.stats.san -= 30; this.log("魯莽！心魂-30", "log-negative"); }
                 const currentData = this.scenarioTimeline[this.turn - 1];
                 if (currentData && currentData.type === this.phobia.id && this.stats.san < 60) {
-                    this.stats.san -= 10;
-                    this.log(`【恐懼症發作】${this.phobia.name}！ 心魂 -10`, "log-negative");
+                    this.stats.san -= 10; this.log(`恐懼症發作！心魂-10`, "log-negative");
                 }
                 this.postTurnProcess();
             },
@@ -553,31 +608,25 @@
                 if (effect.fuel) this.stats.fuel += effect.fuel;
                 if (effect.item) { this.addItem(effect.item); document.getElementById('inventory-bar').classList.add('item-get-anim'); setTimeout(()=>document.getElementById('inventory-bar').classList.remove('item-get-anim'), 1000); }
                 if (effect.itemLost) this.removeItem(effect.itemLost);
-                if (effect.flag) {
-                    this.flags.push(effect.flag);
-                    console.log("Flag added:", effect.flag);
-                }
+                if (effect.flag) this.flags.push(effect.flag);
                 if (effect.msg) this.log(effect.msg, (effect.hp < 0 || effect.san < 0) ? "log-negative" : "log-positive");
-                this.logStatsChange(effect);
+                this.updateUI();
             },
 
             postTurnProcess: function() {
                 this.stats.hp = Math.min(100, Math.max(0, this.stats.hp));
                 this.stats.san = Math.min(100, Math.max(0, this.stats.san));
                 this.stats.fuel = Math.min(50, Math.max(0, this.stats.fuel));
-                // 持有和蠟燭則消耗燃料
-                if (this.hasItem('lighter')) { this.stats.fuel -= 1; if (this.stats.fuel <= 0) this.log("和蠟燭燃燒殆盡了！", "log-negative"); }
+                if (this.hasItem('lighter')) { this.stats.fuel -= 1; if (this.stats.fuel <= 0) this.log("蠟燭燃盡！", "log-negative"); }
                 this.updateUI();
                 this.checkAtmosphere();
 
-                if (this.stats.hp <= 0) { this.endGame("死亡END：土塊", "fa-skull", "肉體迎來了極限。你的身體化為村子的泥土，長滿青苔。"); return; }
-                if (this.stats.san <= 0) { this.endGame("發狂END：神隱", "fa-face-dizzy", "心魂破碎四散。你不再是人，成為了鳴神大人的眷屬，永遠在村中徘徊。"); return; }
+                if (this.stats.hp <= 0) { this.endGame("死亡END：土塊", "fa-skull", "肉體化為村中泥土。"); return; }
+                if (this.stats.san <= 0) { this.endGame("發狂END：神隱", "fa-face-dizzy", "心魂破碎，成為眷屬徘徊村中。"); return; }
 
                 if (Math.random() < 0.20 && this.turn < 24) {
                     const evt = FORCED_EVENTS[Math.floor(Math.random() * FORCED_EVENTS.length)];
-                    if (!evt.condition || evt.condition(this)) {
-                        this.log(evt.msg, "log-event"); this.applyEffect(evt.effect);
-                    }
+                    this.log(evt.msg, "log-event"); this.applyEffect(evt.effect);
                 }
                 this.turn++;
                 setTimeout(() => this.loadScenario(), 500);
@@ -590,17 +639,15 @@
                     const diceMsg = document.getElementById('dice-msg');
                     const diceDetail = document.getElementById('dice-detail');
                     overlay.style.display = 'flex';
-                    diceVisual.className = 'dice-rolling';
-                    diceVisual.innerText = '';
-                    diceMsg.innerText = "命運判定...";
-                    diceMsg.style.color = "#d0c0a8";
-                    diceDetail.innerText = `目標成功率: ${chance}%`;
+                    diceVisual.className = 'dice-rolling'; diceVisual.innerText = '';
+                    diceMsg.innerText = "命運判定..."; diceMsg.style.color = "#d0c0a8";
+                    diceDetail.innerText = `成功率: ${chance}%`;
                     setTimeout(() => {
                         const roll = Math.floor(Math.random() * 100) + 1;
                         const isSuccess = roll <= chance;
                         diceVisual.className = ''; diceVisual.innerText = roll;
-                        if (isSuccess) { diceVisual.classList.add('dice-success'); diceMsg.innerText = "判定成功！"; diceMsg.style.color = "#27ae60"; } 
-                        else { diceVisual.classList.add('dice-fail'); diceMsg.innerText = "判定失敗..."; diceMsg.style.color = "#c0392b"; }
+                        if (isSuccess) { diceVisual.classList.add('dice-success'); diceMsg.innerText = "成功！"; diceMsg.style.color = "#27ae60"; } 
+                        else { diceVisual.classList.add('dice-fail'); diceMsg.innerText = "失敗..."; diceMsg.style.color = "#c0392b"; }
                         setTimeout(() => { overlay.style.display = 'none'; diceVisual.classList.remove('dice-success', 'dice-fail'); resolve(isSuccess); }, 600);
                     }, 600);
                 });
@@ -608,25 +655,16 @@
 
             triggerEnding: function() {
                 let title, desc, icon;
-                const { hasAmulet, mentorSaved, ritualStarted } = { 
-                    hasAmulet: this.hasItem('amulet'), // 鹽
-                    mentorSaved: this.flags.includes('mentor_saved'), // 救出祖父
-                    ritualStarted: this.flags.includes('kagura_performed') // 奉納神樂
-                };
+                const { hasAmulet, mentorSaved, ritualStarted } = { hasAmulet: this.hasItem('amulet'), mentorSaved: this.flags.includes('mentor_saved'), ritualStarted: this.flags.includes('kagura_performed') };
                 
-                console.log("Ending Check:", { finalChoice: this.finalChoice, hasAmulet, ritualStarted });
-
                 if (this.finalChoice === 'seal') {
-                    if (hasAmulet && ritualStarted) {
-                        title = "真END：鳴神封印"; desc = "依靠祖父的知識與淨化之鹽，奉納神樂完成了。鳴神大人再次陷入沉睡，籠罩村子的霧氣消散。你活了下來，並獲得了將此真相傳達給後世的使命。"; icon = "fa-sun";
-                    } else {
-                        title = "壞END：儀式失敗"; desc = "因為缺少鹽或神樂，封印不完全。成為了震怒的鳴神大人的依代，你的意識被永遠的黑暗吞噬。"; icon = "fa-cloud-bolt";
-                    }
+                    if (hasAmulet && ritualStarted) { title = "真END：鳴神封印"; desc = "封印完成。霧氣消散，你活了下來並傳承真相。"; icon = "fa-sun"; } 
+                    else { title = "壞END：儀式失敗"; desc = "缺少條件封印失敗。成為鳴神大人的依代。"; icon = "fa-cloud-bolt"; }
                 }
-                else if (this.finalChoice === 'boom') { title = "業火END：淨化"; desc = "你放出的火瞬間包圍了整個村子。連同鳴神大人，所有的污穢都被燒盡。因為你的犧牲，詛咒的連鎖或許被斬斷了...。"; icon = "fa-fire"; }
-                else if (this.finalChoice === 'escape' && mentorSaved) { title = "生還END：繼承者"; desc = "帶著受傷的祖父，九死一生逃出了村子。雖然村子的謎團依舊，但兩人能活著回來比什麼都重要。祖父的研究，將由你來繼承吧。"; icon = "fa-user-group"; }
-                else if (this.finalChoice === 'escape') { title = "通常END：唯一倖存者"; desc = "只有你一人逃離了村子。雖然身體無恙，但在村中看見的光景烙印在眼瞼深處無法離去。到了夜晚，彷彿能從遠處聽見那個「波波波...」的聲音。"; icon = "fa-person-running"; }
-                else { title = "壞END：行蹤不明"; desc = "你從此斷了音訊。霧氣濃厚的村子某處，地藏或許又增加了一尊。"; icon = "fa-question"; }
+                else if (this.finalChoice === 'boom') { title = "業火END：淨化"; desc = "火焰燒盡一切。詛咒連鎖或許被斬斷了。"; icon = "fa-fire"; }
+                else if (this.finalChoice === 'escape' && mentorSaved) { title = "生還END：繼承者"; desc = "與祖父九死一生逃出。繼承遺志。"; icon = "fa-user-group"; }
+                else if (this.finalChoice === 'escape') { title = "通常END：唯一倖存者"; desc = "獨自逃離。眼瞼深處仍留有村中光景。"; icon = "fa-person-running"; }
+                else { title = "壞END：行蹤不明"; desc = "斷了音訊。地藏又增加了一尊。"; icon = "fa-question"; }
                 this.endGame(title, icon, desc);
             },
 
@@ -662,10 +700,7 @@
                 win.prepend(entry);
                 if (win.children.length > 20) win.lastElementChild.remove();
             },
-            logStatsChange: function(effect) { let parts = []; if (effect.hp) parts.push(`生命${effect.hp}`); if (effect.san) parts.push(`心魂${effect.san}`); if (effect.courage) parts.push(`膽量${effect.courage}`); if (effect.insight) parts.push(`民俗${effect.insight}`); if (parts.length) this.log(`[${parts.join(' ')}]`, effect.hp<0||effect.san<0?"log-negative":"log-positive"); },
-            // 場景圖示變更
             getScenarioIcon: function(turn) { if(turn<=5)return"fa-torii-gate"; if(turn<=15)return"fa-house-chimney-crack"; if(turn<=20)return"fa-dungeon"; return"fa-cloud-bolt"; },
-            // 發狂時的幻聽（繁中化）
             getMadnessText: function() { const t=["在後面...","過來...","找到了...","逃不掉的...","那邊不行..."]; return t[Math.floor(Math.random()*t.length)]; },
 
             endGame: function(title, iconClass, desc) {
@@ -674,8 +709,8 @@
                 document.getElementById('end-title').innerText = title;
                 document.getElementById('end-desc').innerText = desc;
                 document.getElementById('end-icon').innerHTML = `<i class="fas ${iconClass}"></i>`;
-                document.getElementById('end-stats').innerText = `最終狀態: 生命:${this.stats.hp} 心魂:${this.stats.san}`;
-                setTimeout(() => screen.style.display = 'flex', 1500);
+                document.getElementById('end-stats').innerText = `狀態: 生命${this.stats.hp} 心魂${this.stats.san}`;
+                screen.style.display = 'flex';
             },
 
             copyHistory: function() {
@@ -684,12 +719,7 @@
                 textArea.value = text;
                 document.body.appendChild(textArea);
                 textArea.select();
-                try {
-                    document.execCommand('copy');
-                    alert("記錄已複製到剪貼簿。");
-                } catch (err) {
-                    console.error('Copy failed', err);
-                }
+                try { document.execCommand('copy'); alert("已複製記錄"); } catch (err) {}
                 document.body.removeChild(textArea);
             }
         };
