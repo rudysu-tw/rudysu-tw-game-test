@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>無盡迷宮冒險 | Endless Maze Adventure</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&family=Press+Start+2P&display=swap');
+
+        body {
+            background-color: #121212;
+            color: #e0e0e0;
+            font-family: 'Noto Sans TC', sans-serif;
+            overflow: hidden; 
+            touch-action: manipulation;
+        }
+
+        .retro-font {
+            font-family: 'Courier New', Courier, monospace;
+            letter-spacing: -0.5px;
+        }
+
+        /* CRT Monitor Effect */
+        .crt::before {
+            content: " ";
+            display: block;
+            position: absolute;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            z-index: 2;
+            background-size: 100% 2px, 3px 100%;
+            pointer-events: none;
+        }
+
+        .game-container {
+            max-width: 800px;
+            margin: 0 auto;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            border-left: 2px solid #333;
+            border-right: 2px solid #333;
+        }
+
+        .btn {
+            background: linear-gradient(to bottom, #4a5568, #2d3748);
+            border: 1px solid #718096;
+            color: white;
+            text-shadow: 1px 1px 0 #000;
+            transition: all 0.1s;
+        }
+        .btn:active {
+            transform: translateY(2px);
+            background: #2d3748;
+        }
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .hp-bar { background-color: #e53e3e; height: 100%; transition: width 0.3s; }
+        .mp-bar { background-color: #3182ce; height: 100%; transition: width 0.3s; }
+        .exp-bar { background-color: #d69e2e; height: 100%; transition: width 0.3s; }
+
+        .shake {
+            animation: shake 0.5s; 
+            animation-iteration-count: 1; 
+        }
+
+        @keyframes shake {
+            0% { transform: translate(1px, 1px) rotate(0deg); }
+            10% { transform: translate(-1px, -2px) rotate(-1deg); }
+            20% { transform: translate(-3px, 0px) rotate(1deg); }
+            30% { transform: translate(3px, 2px) rotate(0deg); }
+            40% { transform: translate(1px, -1px) rotate(1deg); }
+            50% { transform: translate(-1px, 2px) rotate(-1deg); }
+            60% { transform: translate(-3px, 1px) rotate(0deg); }
+            70% { transform: translate(3px, 1px) rotate(-1deg); }
+            80% { transform: translate(-1px, -1px) rotate(1deg); }
+            90% { transform: translate(1px, 2px) rotate(0deg); }
+            100% { transform: translate(1px, -2px) rotate(-1deg); }
+        }
+
+        .damage-text {
+            position: absolute;
+            color: #ff0000;
+            font-weight: bold;
+            font-size: 24px;
+            animation: floatUp 1s ease-out forwards;
+            text-shadow: 2px 2px 0 #000;
+            pointer-events: none;
+            z-index: 50; /* High z-index to show above everything */
+        }
+
+        @keyframes floatUp {
+            0% { transform: translateY(0); opacity: 1; }
+            100% { transform: translateY(-50px); opacity: 0; }
+        }
+        
+        /* Compact font utility */
+        .text-xxs {
+            font-size: 0.6rem;
+            line-height: 0.8rem;
+        }
+    </style>
+</head>
+<body class="text-sm md:text-base">
+
+<div class="game-container crt" id="app">
+    <!-- Header -->
+    <header class="bg-gray-900 p-2 border-b-2 border-gray-700 flex justify-between items-center shrink-0 z-10 h-12">
+        <div class="flex items-center gap-2">
+            <i class="fas fa-dungeon text-yellow-500 text-lg"></i>
+            <h1 class="font-bold text-yellow-500 retro-font text-base tracking-wider">無盡迷宮</h1>
+        </div>
+        <div class="text-gray-300 text-xs text-right">
+            <span id="gold-display" class="text-yellow-400 font-mono">0</span> G | 
+            B<span id="highscore-display" class="font-mono">1</span>
+        </div>
+    </header>
+
+    <!-- Main View -->
+    <main id="main-view" class="flex-grow relative bg-gray-800 flex flex-col overflow-hidden">
+        <!-- Content rendered by JS -->
+    </main>
+
+    <!-- Log Area (Fixed at bottom) -->
+    <div class="h-24 bg-black border-t-2 border-gray-600 p-2 overflow-y-auto shrink-0 z-10 text-xs md:text-sm" id="game-log">
+        <div class="text-gray-500 italic">> 歡迎來到星辰公會。</div>
+    </div>
+</div>
+
+<!-- Templates for Views -->
+
+<!-- 1. Guild View -->
+<template id="tpl-guild">
+    <div class="flex flex-col h-full p-4 items-center justify-center bg-[url('https://www.transparenttextures.com/patterns/dark-brick-wall.png')] overflow-y-auto">
+        <div class="text-center mb-6">
+            <h2 class="text-2xl text-white font-bold mb-2 retro-font">星辰公會</h2>
+            <p class="text-gray-400 text-xs">整頓裝備，強化隊伍，再次出發。</p>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4 w-full max-w-md mb-6">
+            <button onclick="game.rest()" class="btn p-4 rounded flex flex-col items-center gap-2 hover:bg-gray-700">
+                <i class="fas fa-bed text-2xl text-blue-400"></i>
+                <span>完全休整</span>
+            </button>
+            <button onclick="game.upgradeShop()" class="btn p-4 rounded flex flex-col items-center gap-2 hover:bg-gray-700">
+                <i class="fas fa-hammer text-2xl text-red-400"></i>
+                <span>強化裝備</span>
+            </button>
+        </div>
+
+        <button onclick="game.startDungeon()" class="btn w-full max-w-md py-4 text-xl font-bold bg-gradient-to-r from-yellow-700 to-yellow-600 border-yellow-500 rounded hover:from-yellow-600 hover:to-yellow-500 shadow-lg transform transition hover:-translate-y-1">
+            <i class="fas fa-skull mr-2"></i> 進入迷宮
+        </button>
+
+        <div class="mt-6 w-full max-w-md bg-gray-900 p-3 rounded border border-gray-700">
+            <h3 class="text-gray-400 text-xs mb-2 border-b border-gray-700 pb-1">隊伍狀態</h3>
+            <div id="guild-party-status" class="grid grid-cols-1 gap-2 text-xs"></div>
+        </div>
+    </div>
+</template>
+
+<!-- 2. Dungeon View (New Layout) -->
+<template id="tpl-dungeon">
+    <div class="flex flex-col h-full">
+        <!-- 1. Enemy Area (Top, Flexible) -->
+        <div class="flex-grow flex flex-col items-center justify-center p-2 bg-gray-900 relative border-b border-gray-700 min-h-[150px]" id="enemy-area">
+            <div class="absolute top-1 left-2 text-gray-500 font-mono text-xs">
+                B<span id="floor-display">1</span>F
+            </div>
+            <!-- Enemies rendered here -->
+            <div id="enemies-container" class="flex justify-center items-end gap-1 w-full h-full pb-2"></div>
+        </div>
+
+        <!-- 2. Command Area (Middle, Fixed Height) -->
+        <div class="bg-gray-800 p-1 z-20 border-t border-b border-gray-600 shadow-md">
+            <!-- Instruction / Info Text -->
+            <div id="turn-instruction" class="text-center text-yellow-400 text-xs mb-1 font-bold h-4 truncate">
+                準備戰鬥...
+            </div>
+
+            <!-- Action Buttons (4 cols) -->
+            <div id="action-menu" class="grid grid-cols-4 gap-1 h-14">
+                <button onclick="game.playerAction('attack')" class="btn rounded bg-red-900 border-red-700 hover:bg-red-800 flex flex-col items-center justify-center">
+                    <i class="fas fa-sword text-base mb-0.5"></i>
+                    <span class="text-xs">攻擊</span>
+                </button>
+                <button onclick="game.playerAction('skill')" class="btn rounded bg-blue-900 border-blue-700 hover:bg-blue-800 flex flex-col items-center justify-center">
+                    <i class="fas fa-magic text-base mb-0.5"></i>
+                    <span class="text-xs">技能</span>
+                </button>
+                <button onclick="game.playerAction('defend')" class="btn rounded bg-gray-700 border-gray-500 hover:bg-gray-600 flex flex-col items-center justify-center">
+                    <i class="fas fa-shield-alt text-base mb-0.5"></i>
+                    <span class="text-xs">防禦</span>
+                </button>
+                <button onclick="game.playerAction('escape')" class="btn rounded bg-yellow-900 border-yellow-700 hover:bg-yellow-800 flex flex-col items-center justify-center">
+                    <i class="fas fa-running text-base mb-0.5"></i>
+                    <span class="text-xs">撤退</span>
+                </button>
+            </div>
+            
+            <!-- Continue Button (Replaces actions when won) -->
+            <div id="continue-btn-area" class="hidden h-14">
+                <button onclick="game.nextStep()" class="btn w-full h-full rounded bg-green-800 border-green-600 hover:bg-green-700 animate-pulse font-bold text-sm">
+                    繼續前進 <i class="fas fa-chevron-right"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- 3. Party Area (Bottom, Compact Row of 4) -->
+        <div class="bg-gray-900 p-1 z-20 pb-2 shrink-0">
+            <div id="party-container" class="grid grid-cols-4 gap-1">
+                <!-- Character cards rendered here -->
+            </div>
+        </div>
+    </div>
+</template>
+
+<!-- Modal: Shop -->
+<div id="modal-overlay" class="fixed inset-0 bg-black bg-opacity-80 z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-gray-800 border-2 border-gray-600 rounded w-full max-w-md p-4 shadow-2xl">
+        <h3 class="text-lg font-bold text-yellow-500 mb-4 border-b border-gray-700 pb-2">裝備強化</h3>
+        <div id="modal-content" class="space-y-2 text-sm"></div>
+        <button onclick="game.closeModal()" class="mt-4 btn w-full py-2 rounded bg-gray-700 text-sm">離開</button>
+    </div>
+</div>
+
+<script>
+/**
+ * Game Constants & Data
+ */
+const CLASSES = {
+    WARRIOR: { name: '戰士', hp: 120, mp: 20, str: 15, mag: 2, spd: 8, icon: 'fa-fist-raised', color: 'text-red-400', skillCost: 8, skillName: '強力斬擊' },
+    MAGE:    { name: '法師', hp: 60, mp: 80, str: 3, mag: 18, spd: 10, icon: 'fa-hat-wizard', color: 'text-purple-400', skillCost: 15, skillName: '火焰風暴' },
+    CLERIC:  { name: '牧師', hp: 80, mp: 60, str: 5, mag: 12, spd: 6, icon: 'fa-cross', color: 'text-green-400', skillCost: 20, skillName: '全體治療' },
+    ROGUE:   { name: '盜賊', hp: 90, mp: 30, str: 12, mag: 4, spd: 15, icon: 'fa-user-ninja', color: 'text-yellow-400', skillCost: 10, skillName: '背刺' }
+};
+
+const ENEMIES = [
+    { name: '史萊姆', hp: 30, str: 8, exp: 5, gold: 2, icon: 'fa-disease', color: 'text-green-500' },
+    { name: '蝙蝠', hp: 20, str: 10, exp: 6, gold: 3, icon: 'fa-crow', color: 'text-gray-500' },
+    { name: '哥布林', hp: 50, str: 12, exp: 10, gold: 5, icon: 'fa-pastafarianism', color: 'text-green-700' },
+    { name: '骷髏', hp: 70, str: 15, exp: 15, gold: 8, icon: 'fa-skull', color: 'text-gray-300' },
+    { name: '獸人', hp: 120, str: 20, exp: 30, gold: 15, icon: 'fa-hippo', color: 'text-red-600' }, 
+    { name: '騎士', hp: 200, str: 30, exp: 80, gold: 50, icon: 'fa-chess-knight', color: 'text-purple-600' },
+    { name: '紅龍', hp: 500, str: 50, exp: 300, gold: 200, icon: 'fa-dragon', color: 'text-red-500' }
+];
+
+/**
+ * Game Logic
+ */
+class Game {
+    constructor() {
+        this.party = [];
+        this.gold = 0;
+        this.maxFloor = 1;
+        this.currentFloor = 1;
+        this.state = 'GUILD';
+        
+        this.battleState = {
+            enemies: [],
+            turnQueue: [],
+            currentActorIndex: 0,
+            round: 1
+        };
+
+        this.initParty();
+        this.loadGame();
+        this.renderGuild();
+        this.log('遊戲已載入。');
+    }
+
+    initParty() {
+        this.party = [
+            this.createChar('里歐', 'WARRIOR'),
+            this.createChar('艾琳', 'MAGE'),
+            this.createChar('聖光', 'CLERIC'),
+            this.createChar('暗影', 'ROGUE')
+        ];
+    }
+
+    createChar(name, classKey) {
+        const base = CLASSES[classKey];
+        return {
+            id: Math.random().toString(36).substr(2, 9),
+            name: name,
+            classKey: classKey,
+            level: 1,
+            exp: 0,
+            nextLevelExp: 50,
+            hp: base.hp,
+            maxHp: base.hp,
+            mp: base.mp,
+            maxMp: base.mp,
+            stats: { ...base },
+            gearLevel: 0,
+            isDead: false,
+            defending: false
+        };
+    }
+
+    saveGame() {
+        const data = {
+            party: this.party,
+            gold: this.gold,
+            maxFloor: this.maxFloor
+        };
+        localStorage.setItem('endlessMazeSave', JSON.stringify(data));
+        this.updateHeader();
+    }
+
+    loadGame() {
+        const saved = localStorage.getItem('endlessMazeSave');
+        if (saved) {
+            const data = JSON.parse(saved);
+            this.gold = data.gold;
+            this.maxFloor = data.maxFloor || 1;
+            if(data.party) this.party = data.party; 
+        }
+        this.updateHeader();
+    }
+
+    // Actions
+    startDungeon() {
+        if (this.party.some(c => c.hp <= 0)) {
+            this.log('有隊員重傷，請先休整！', 'danger');
+            return;
+        }
+        this.currentFloor = 1;
+        this.state = 'BATTLE';
+        this.renderDungeon();
+        this.startEncounter();
+    }
+
+    rest() {
+        this.party.forEach(c => {
+            c.hp = c.maxHp;
+            c.mp = c.maxMp;
+            c.isDead = false;
+        });
+        this.log('全員已恢復。', 'heal');
+        this.saveGame();
+        this.renderGuild();
+    }
+
+    upgradeShop() {
+        const cost = (level) => 100 * Math.pow(1.5, level);
+        const renderShop = () => {
+            const container = document.getElementById('modal-content');
+            container.innerHTML = '';
+            this.party.forEach(char => {
+                const currentCost = Math.floor(cost(char.gearLevel));
+                const canAfford = this.gold >= currentCost;
+                const row = document.createElement('div');
+                row.className = 'flex justify-between items-center bg-gray-700 p-2 rounded';
+                row.innerHTML = `
+                    <div>
+                        <div class="font-bold ${CLASSES[char.classKey].color} text-xs">
+                            ${char.name} +${char.gearLevel}
+                        </div>
+                    </div>
+                    <button onclick="game.buyUpgrade('${char.id}')" 
+                        class="btn px-2 py-1 text-xs rounded ${canAfford ? 'bg-yellow-700 hover:bg-yellow-600' : 'bg-gray-600 opacity-50 cursor-not-allowed'}" 
+                        ${!canAfford ? 'disabled' : ''}>
+                        ${currentCost}G
+                    </button>
+                `;
+                container.appendChild(row);
+            });
+        };
+        document.getElementById('modal-overlay').classList.remove('hidden');
+        renderShop();
+        this.currentShopRender = renderShop;
+    }
+
+    buyUpgrade(charId) {
+        const char = this.party.find(c => c.id === charId);
+        const cost = Math.floor(100 * Math.pow(1.5, char.gearLevel));
+        if (this.gold >= cost) {
+            this.gold -= cost;
+            char.gearLevel++;
+            char.maxHp += 10;
+            char.maxMp += 5;
+            char.stats.str += 2;
+            char.stats.mag += 2;
+            char.stats.spd += 1;
+            char.hp = char.maxHp;
+            char.mp = char.maxMp;
+            this.log(`${char.name} 強化成功！`, 'highlight');
+            this.saveGame();
+            if (this.currentShopRender) this.currentShopRender();
+        }
+    }
+
+    closeModal() {
+        document.getElementById('modal-overlay').classList.add('hidden');
+        this.currentShopRender = null;
+        this.renderGuild();
+    }
+
+    // Battle
+    startEncounter() {
+        this.log(`--- B${this.currentFloor} ---`);
+        const difficulty = this.currentFloor;
+        const enemyCount = Math.min(4, 1 + Math.floor(Math.random() * (difficulty / 2)));
+        
+        this.battleState.enemies = [];
+        for (let i = 0; i < enemyCount; i++) {
+            let typeIdx = Math.min(ENEMIES.length - 1, Math.floor(Math.random() * (difficulty / 2)) + Math.floor(Math.random() * 2));
+            if (difficulty > 10 && i === 0) typeIdx = Math.min(typeIdx + 2, ENEMIES.length -1);
+            const template = ENEMIES[typeIdx] || ENEMIES[0];
+            const scaler = 1 + (this.currentFloor * 0.1);
+            
+            this.battleState.enemies.push({
+                id: `enemy_${Date.now()}_${i}`,
+                ...template,
+                name: `${template.name}`, // Removed label to save space
+                maxHp: Math.floor(template.hp * scaler),
+                hp: Math.floor(template.hp * scaler),
+                str: Math.floor(template.str * scaler),
+                isDead: false
+            });
+        }
+        this.battleState.round = 1;
+        this.startRound();
+    }
+
+    startRound() {
+        this.party.forEach(p => p.defending = false);
+        const livingParty = this.party.filter(p => !p.isDead);
+        if (livingParty.length === 0) {
+            this.handleDefeat();
+            return;
+        }
+        this.battleState.turnQueue = [...livingParty]; 
+        this.battleState.currentActorIndex = 0;
+        this.updateBattleUI();
+        this.processTurn();
+    }
+
+    processTurn() {
+        const actor = this.battleState.turnQueue[this.battleState.currentActorIndex];
+        if (this.battleState.enemies.every(e => e.isDead)) {
+            this.handleVictory();
+            return;
+        }
+        if (!actor) {
+            this.enemyPhase();
+            return;
+        }
+        this.updateBattleUI(actor.id);
+        this.setInstruction(`輪到 ${actor.name}。`);
+        this.toggleInput(true);
+    }
+
+    playerAction(actionType) {
+        const actor = this.battleState.turnQueue[this.battleState.currentActorIndex];
+        const enemies = this.battleState.enemies.filter(e => !e.isDead);
+        if (enemies.length === 0) return;
+        const target = enemies[0];
+
+        switch (actionType) {
+            case 'attack':
+                this.animateAction(actor.id);
+                const dmg = Math.max(1, Math.floor(actor.stats.str * (1 + Math.random()*0.2)));
+                this.dealDamage(target, dmg);
+                this.log(`${actor.name} 攻擊 ${dmg} 點。`);
+                break;
+            case 'skill':
+                if (actor.mp >= CLASSES[actor.classKey].skillCost) {
+                    actor.mp -= CLASSES[actor.classKey].skillCost;
+                    this.performSkill(actor, enemies);
+                } else {
+                    this.log('MP 不足！', 'danger');
+                    return;
+                }
+                break;
+            case 'defend':
+                actor.defending = true;
+                this.log(`${actor.name} 防禦。`);
+                break;
+            case 'escape':
+                if (Math.random() > 0.5) {
+                    this.log(`撤退成功！`, 'highlight');
+                    this.returnToGuild();
+                    return;
+                } else {
+                    this.log(`撤退失敗！`, 'danger');
+                }
+                break;
+        }
+        this.battleState.currentActorIndex++;
+        this.processTurn();
+    }
+
+    performSkill(actor, enemies) {
+        this.animateAction(actor.id);
+        const info = CLASSES[actor.classKey];
+        if (actor.classKey === 'CLERIC') {
+            const healAmt = Math.floor(actor.stats.mag * 1.5);
+            this.party.forEach(p => {
+                if (!p.isDead) {
+                    p.hp = Math.min(p.maxHp, p.hp + healAmt);
+                    this.showDamageNumber(p.id, healAmt, 'heal');
+                }
+            });
+            this.log(`${actor.name} 全體恢復 ${healAmt}。`, 'heal');
+        } else if (actor.classKey === 'MAGE') {
+            const dmg = Math.floor(actor.stats.mag * 1.2);
+            enemies.forEach(e => this.dealDamage(e, dmg));
+            this.log(`${actor.name} 全體攻擊 ${dmg}。`, 'highlight');
+        } else if (actor.classKey === 'WARRIOR') {
+            const target = enemies[0];
+            const dmg = Math.floor(actor.stats.str * 2.5);
+            this.dealDamage(target, dmg);
+            this.log(`${actor.name} 重擊 ${dmg}。`, 'highlight');
+        } else if (actor.classKey === 'ROGUE') {
+             const target = enemies[0];
+             const dmg = Math.floor(actor.stats.str * 3);
+             this.dealDamage(target, dmg);
+             this.log(`${actor.name} 背刺 ${dmg}。`, 'highlight');
+        }
+    }
+
+    dealDamage(target, amount) {
+        target.hp -= amount;
+        this.showDamageNumber(target.id, amount, 'damage');
+        if (target.hp <= 0) {
+            target.hp = 0;
+            target.isDead = true;
+            this.log(`${target.name} 倒下。`);
+        }
+    }
+
+    async enemyPhase() {
+        this.toggleInput(false);
+        this.setInstruction('敵人行動中...');
+        const livingEnemies = this.battleState.enemies.filter(e => !e.isDead);
+        for (const enemy of livingEnemies) {
+            await new Promise(r => setTimeout(r, 600));
+            const targets = this.party.filter(p => !p.isDead);
+            if (targets.length === 0) break;
+            const target = targets[Math.floor(Math.random() * targets.length)];
+            this.animateAction(enemy.id);
+            let dmg = Math.max(1, enemy.str - Math.floor(target.stats.spd / 3));
+            if (target.defending) dmg = Math.floor(dmg / 2);
+            target.hp -= dmg;
+            this.showDamageNumber(target.id, dmg, 'damage');
+            this.log(`${enemy.name} 攻擊 ${target.name} ${dmg}。`, 'danger');
+            this.shake(target.id);
+            if (target.hp <= 0) {
+                target.hp = 0;
+                target.isDead = true;
+                this.log(`${target.name} 倒下！`, 'danger');
+            }
+            this.updateBattleUI();
+        }
+        if (this.party.every(p => p.isDead)) {
+            this.handleDefeat();
+        } else {
+            this.battleState.round++;
+            this.startRound();
+        }
+    }
+
+    handleVictory() {
+        this.toggleInput(false, true); // Show continue button
+        this.setInstruction('戰鬥勝利！');
+        let totalExp = 0;
+        let totalGold = 0;
+        this.battleState.enemies.forEach(e => {
+            totalExp += e.exp;
+            totalGold += e.gold;
+        });
+        this.gold += totalGold;
+        this.log(`獲得 ${totalGold}G，${totalExp}Exp。`, 'highlight');
+        this.party.forEach(p => {
+            if (!p.isDead) {
+                p.exp += totalExp;
+                if (p.exp >= p.nextLevelExp) this.levelUp(p);
+            }
+        });
+        this.updateBattleUI();
+        this.saveGame();
+    }
+
+    levelUp(char) {
+        char.level++;
+        char.exp -= char.nextLevelExp;
+        char.nextLevelExp = Math.floor(char.nextLevelExp * 1.2);
+        char.maxHp += Math.floor(Math.random() * 10) + 5;
+        char.maxMp += Math.floor(Math.random() * 5) + 2;
+        char.stats.str += 2;
+        char.stats.mag += 2;
+        char.hp = char.maxHp;
+        char.mp = char.maxMp;
+        this.log(`${char.name} 升級 (Lv.${char.level})！`, 'highlight');
+    }
+
+    nextStep() {
+        this.currentFloor++;
+        if (this.currentFloor > this.maxFloor) this.maxFloor = this.currentFloor;
+        this.party.forEach(p => { if (!p.isDead) p.hp = Math.min(p.maxHp, p.hp + 5); });
+        this.startEncounter();
+    }
+
+    handleDefeat() {
+        this.log('全軍覆沒...', 'danger');
+        setTimeout(() => {
+            this.returnToGuild();
+            this.party.forEach(p => { p.isDead = false; p.hp = 1; });
+            this.saveGame();
+            this.renderGuild();
+        }, 1500);
+    }
+
+    returnToGuild() {
+        this.state = 'GUILD';
+        this.saveGame();
+        this.renderGuild();
+    }
+
+    // Rendering
+    log(msg, type = '') {
+        const logEl = document.getElementById('game-log');
+        if (!logEl) return;
+        const entry = document.createElement('div');
+        entry.innerHTML = `> ${msg}`;
+        entry.className = `mb-0.5 ${type}`;
+        logEl.appendChild(entry);
+        logEl.scrollTop = logEl.scrollHeight;
+    }
+
+    updateHeader() {
+        const goldEl = document.getElementById('gold-display');
+        const floorEl = document.getElementById('highscore-display');
+        if (goldEl) goldEl.innerText = this.gold;
+        if (floorEl) floorEl.innerText = this.maxFloor;
+    }
+
+    renderGuild() {
+        const main = document.getElementById('main-view');
+        const tpl = document.getElementById('tpl-guild').content.cloneNode(true);
+        main.innerHTML = '';
+        main.appendChild(tpl);
+        const statusContainer = document.getElementById('guild-party-status');
+        this.party.forEach(c => {
+            const el = document.createElement('div');
+            el.className = 'flex justify-between items-center bg-black bg-opacity-50 p-2 rounded';
+            el.innerHTML = `
+                <div class="${CLASSES[c.classKey].color} font-bold"><i class="fas ${CLASSES[c.classKey].icon}"></i> ${c.name} (Lv.${c.level})</div>
+                <div class="text-gray-400 text-xs">HP:${c.hp}/${c.maxHp}</div>
+            `;
+            statusContainer.appendChild(el);
+        });
+        this.updateHeader();
+    }
+
+    renderDungeon() {
+        const main = document.getElementById('main-view');
+        const tpl = document.getElementById('tpl-dungeon').content.cloneNode(true);
+        main.innerHTML = '';
+        main.appendChild(tpl);
+        this.updateBattleUI();
+    }
+
+    setInstruction(text) {
+        const el = document.getElementById('turn-instruction');
+        if(el) el.innerText = text;
+    }
+
+    toggleInput(enable, showContinue = false) {
+        const am = document.getElementById('action-menu');
+        const cb = document.getElementById('continue-btn-area');
+        if(am) {
+            if (enable) {
+                am.classList.remove('pointer-events-none', 'opacity-50');
+                am.classList.remove('hidden');
+                if(cb) cb.classList.add('hidden');
+            } else {
+                if (!showContinue) {
+                    am.classList.add('pointer-events-none', 'opacity-50');
+                } else {
+                    am.classList.add('hidden');
+                    if(cb) cb.classList.remove('hidden');
+                }
+            }
+        }
+    }
+
+    updateBattleUI(activeCharId = null) {
+        const floorEl = document.getElementById('floor-display');
+        if (floorEl) floorEl.innerText = this.currentFloor;
+        this.updateHeader();
+
+        // Render Enemies - Compact
+        const enemyContainer = document.getElementById('enemies-container');
+        if (enemyContainer) {
+            enemyContainer.innerHTML = '';
+            this.battleState.enemies.forEach(e => {
+                if (e.isDead) return;
+                const el = document.createElement('div');
+                el.id = e.id;
+                el.className = `flex flex-col items-center justify-end relative mx-1 transition-transform`;
+                el.style.width = '22%'; // Fit 4
+                const hpPct = (e.hp / e.maxHp) * 100;
+                el.innerHTML = `
+                    <div class="text-2xl md:text-4xl ${e.color} drop-shadow-md mb-1">
+                        <i class="fas ${e.icon}"></i>
+                    </div>
+                    <div class="w-full h-1 bg-gray-700 rounded overflow-hidden border border-gray-600">
+                        <div class="h-full bg-red-600" style="width: ${hpPct}%"></div>
+                    </div>
+                    <div class="text-[10px] text-gray-400 mt-0.5 truncate w-full text-center">${e.name}</div>
+                `;
+                enemyContainer.appendChild(el);
+            });
+        }
+
+        // Render Party - 1x4 Grid Compact
+        const partyContainer = document.getElementById('party-container');
+        if (partyContainer) {
+            partyContainer.innerHTML = '';
+            this.party.forEach(c => {
+                const isActive = c.id === activeCharId;
+                const isDead = c.isDead;
+                const hpPct = (c.hp / c.maxHp) * 100;
+                const mpPct = (c.mp / c.maxMp) * 100;
+
+                const card = document.createElement('div');
+                card.id = `char-card-${c.id}`;
+                // Very compact card style
+                card.className = `flex flex-col p-1 rounded border border-gray-700 relative ${
+                    isDead ? 'bg-red-900 bg-opacity-30 opacity-50 grayscale' : 
+                    isActive ? 'bg-gray-700 border-yellow-500 shadow-sm' : 'bg-gray-800'
+                }`;
+                
+                card.innerHTML = `
+                    <div class="text-center mb-1 ${CLASSES[c.classKey].color}">
+                        <i class="fas ${CLASSES[c.classKey].icon} text-lg"></i>
+                        <div class="text-[10px] font-bold truncate leading-none mt-0.5">${c.name}</div>
+                    </div>
+                    <div class="space-y-1 mt-auto">
+                        <div class="bg-gray-900 h-2 w-full rounded overflow-hidden relative">
+                             <div class="hp-bar" style="width: ${hpPct}%"></div>
+                             <div class="absolute inset-0 text-[8px] text-white text-center leading-[8px] drop-shadow-md">${c.hp}</div>
+                        </div>
+                        <div class="bg-gray-900 h-1.5 w-full rounded overflow-hidden relative">
+                            <div class="mp-bar" style="width: ${mpPct}%"></div>
+                        </div>
+                    </div>
+                    ${c.defending ? '<div class="absolute top-0 right-0 text-blue-400 text-[10px] p-0.5"><i class="fas fa-shield-alt"></i></div>' : ''}
+                `;
+                partyContainer.appendChild(card);
+            });
+        }
+    }
+
+    showDamageNumber(targetId, amount, type) {
+        let el = document.getElementById(targetId) || document.getElementById(`char-card-${targetId}`);
+        if (!el) return;
+        const rect = el.getBoundingClientRect();
+        const floatEl = document.createElement('div');
+        floatEl.className = 'damage-text ' + (type === 'heal' ? 'text-green-400' : 'text-red-500');
+        floatEl.innerText = amount;
+        floatEl.style.left = (rect.left + rect.width/2 - 10) + 'px';
+        floatEl.style.top = (rect.top) + 'px';
+        document.body.appendChild(floatEl);
+        setTimeout(() => floatEl.remove(), 1000);
+    }
+    
+    animateAction(actorId) {
+        let el = document.getElementById(actorId) || document.getElementById(`char-card-${actorId}`);
+        if (el) {
+            el.style.transform = 'translateY(-5px)';
+            setTimeout(() => el.style.transform = 'translateY(0)', 200);
+        }
+    }
+    
+    shake(targetId) {
+         let el = document.getElementById(targetId) || document.getElementById(`char-card-${targetId}`);
+         if(el) {
+             el.classList.remove('shake');
+             void el.offsetWidth;
+             el.classList.add('shake');
+         }
+    }
+}
+
+window.onload = () => { window.game = new Game(); };
+</script>
+</body>
+</html>
