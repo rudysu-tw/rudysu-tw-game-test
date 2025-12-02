@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+  <title>邏輯測驗遊戲</title>
+  <style>
+    :root {
+      --primary: #212134;
+      --accent: #fdaf4c;
+      --background: linear-gradient(145deg, #ffe6f0 0%, #fffada 100%);
+      --card: #fff6dc;
+      --border: #f2bcbe;
+      --btn: #fdaf4c;
+      --btn-hover: #f99d24;
+      --pink: #fe799c;
+      --blue: #289ee0;
+      --shadow-text: #fff3f9;
+    }
+    body {
+      margin: 0;
+      font-family: 'Baloo 2', 'Segoe UI', '微軟正黑體', Arial, sans-serif;
+      background: var(--background);
+      color: var(--primary);
+    }
+    h1 {
+      text-align: center;
+      margin: 30px 0 12px 0;
+      font-size: 2.3rem;
+      letter-spacing: 2.5px;
+      font-family: 'Baloo 2', 'Segoe UI', cursive, sans-serif;
+      color: var(--pink);
+      text-shadow: 1px 1px 2px var(--shadow-text);
+      font-weight: 900;
+      animation: bounce .7s infinite alternate;
+    }
+    @keyframes bounce {
+      to { transform: translateY(-6px); }
+    }
+    #quiz-card {
+      max-width: 500px;
+      margin: 0 auto;
+      background: var(--card);
+      border-radius: 18px;
+      box-shadow: 0 7px 32px rgba(253,175,76,0.14);
+      border: 3px solid var(--border);
+      padding: 38px 16px;
+      position: relative;
+      overflow: hidden;
+    }
+    .question {
+      font-size: 1.22rem;
+      margin-bottom: 17px;
+      margin-left: 12px;
+      font-family: 'Baloo 2', 'Segoe UI', cursive;
+      color: var(--blue);
+      text-shadow: 1px 1px 3px #e8eefe;
+      font-weight: 700;
+      letter-spacing: 1px;
+    }
+    .bubble {
+      position: absolute;
+      border-radius: 50%;
+      opacity: .26;
+      pointer-events: none;
+      background: var(--accent);
+    }
+    .bubble.b1 { width:73px;height:73px;right:-35px;top:-14px;}
+    .bubble.b2 { width:60px;height:60px;left:-26px;bottom:-24px;}
+    .bubble.b3 { width:45px;height:45px;right:46px;bottom:-16px; background: var(--blue);}
+    .bubble.b4 { width:34px;height:34px;left:65px;top:12px; background: var(--pink);}
+    .options label {
+      display: block;
+      padding: 13px 14px;
+      margin-bottom: 8px;
+      border-radius: 12px;
+      background: #fffbee;
+      cursor: pointer;
+      border: 2px solid #ffe0c3;
+      box-shadow: 0 2px 8px rgba(253,175,76,0.04);
+      font-size: 1.07rem;
+      position: relative;
+      transition: background 0.18s, border-color .12s, transform .2s;
+      font-family: 'Baloo 2', 'Segoe UI', cursive;
+      color: var(--primary);
+      font-weight: 700;
+      letter-spacing: 0.7px;
+      text-shadow: 1px 1px 1px #f5f2e2;
+    }
+    .options input[type="radio"] {
+      margin-right: 10px;
+      accent-color: var(--accent);
+    }
+    .options label.selected {
+      background: linear-gradient(96deg,#fff7df 70%,#ffe1e8 110%);
+      border-color: var(--accent);
+      transform: scale(1.04);
+      color: var(--blue);
+      text-shadow: 1px 1px 3px #e8eefe;
+    }
+    #next-btn {
+      display: block;
+      width: 100%;
+      background: var(--btn);
+      color: #fff;
+      border: none;
+      border-radius: 13px;
+      padding: 15px 0;
+      font-size: 1.22rem;
+      cursor: pointer;
+      margin-top: 22px;
+      font-weight: 800;
+      letter-spacing: .9px;
+      box-shadow: 0 4px 12px rgba(253,175,76,0.12);
+      font-family: 'Baloo 2', 'Segoe UI', cursive;
+      transition: background .15s;
+      text-shadow: 1.5px 1.5px 2px #d28600;
+    }
+    #next-btn:disabled {
+      background: #cccccc;
+      cursor: not-allowed;
+      color: #fff;
+      text-shadow: none;
+    }
+    #next-btn:not(:disabled):hover {
+      background: var(--btn-hover);
+    }
+    #result {
+      text-align: center;
+      font-size: 1.55rem;
+      margin-top: 27px;
+      font-weight: bold;
+      color: var(--pink);
+      font-family: 'Baloo 2', 'Segoe UI', cursive;
+      text-shadow: 1.5px 1.5px 3px var(--shadow-text);
+      margin-bottom: 20px;
+      line-height: 1.7;
+    }
+    .progress-bar {
+      height: 17px;
+      background: #fef6e3;
+      border-radius: 10px;
+      margin-bottom: 12px;
+      overflow: hidden;
+      box-shadow: 0 2px 7px #ffeacc;
+      border: 1.7px solid #ffe8c6;
+    }
+    .progress-inner {
+      height: 100%;
+      background: linear-gradient(90deg, #fdaf4c 50%, #fe799c 150%);
+      border-radius: 10px 0 0 10px;
+      transition: width .3s;
+    }
+    @media (max-width: 600px) {
+      #quiz-card {max-width:99vw;padding:17px 3vw;}
+      h1 { font-size: 1.37rem; }
+      .question { font-size: 1.06rem; margin-left:3px;}
+      .options label {font-size: 1.03rem;}
+      #result { font-size: 1.13rem;}
+      .bubble{ display: none;}
+    }
+    /* Google Fonts */
+    @import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@700;900&display=swap');
+  </style>
+</head>
+<body>
+  <h1>邏輯測驗</h1>
+  <div id="quiz-card">
+    <div class="bubble b1"></div>
+    <div class="bubble b2"></div>
+    <div class="bubble b3"></div>
+    <div class="bubble b4"></div>
+    <div class="progress-bar"><div id="progress" class="progress-inner"></div></div>
+    <div id="question-container"></div>
+    <button id="next-btn" disabled>下一題</button>
+    <div id="result"></div>
+  </div>
+  <script>
+    // 題庫
+    const questions = [
+      {
+        q: "一個男孩、父親和爺爺一同去釣魚，他們之間只有兩人是父子關係，誰是誰的父親？",
+        a: ["父親是男孩的父親，爺爺是父親的父親", "男孩是父親的父親", "爺爺是男孩的父親", "父親是爺爺的父親"],
+        correct: 0
+      },
+      {
+        q: "以下哪項敘述邏輯上‘不可能’成立？",
+        a: ["所有鳥都會飛", "部分貓是黑色", "所有魚都能呼吸空氣", "有些學生不是老師"],
+        correct: 2
+      },
+      {
+        q: "假設有三個連續數字，相加是72，最小的是？",
+        a: ["24", "22", "23", "20"],
+        correct: 0
+      },
+      {
+        q: "小明說：“只要我考100分就請大家吃飯”。這句話的必要條件是？",
+        a: ["小明要考100分", "大家要想吃飯", "小明有錢", "小明考不考100分無關"],
+        correct: 0
+      },
+      {
+        q: "下列推論哪個是‘演繹推理’? ",
+        a: ["如果所有A都是B，小紅是A，所以小紅是B", "小明每天吃蘋果，所以蘋果有益健康", "有人更喜歡香蕉", "大家都玩同一種遊戲"],
+        correct: 0
+      },
+      {
+        q: "如果A大於B，B大於C，則下列正確的是？",
+        a: ["A大於C", "C大於B", "B大於A", "A等於B"],
+        correct: 0
+      },
+      {
+        q: "下列何者為‘必要條件’舉例？",
+        a: ["有水才能下雨", "有太陽才有月亮", "沒有風也會下雪", "沒電還能看電視"],
+        correct: 0
+      },
+      {
+        q: "全班只有小美和小強參加比賽，小美贏了，那小強是？",
+        a: ["輸家", "平手", "贏家", "裁判"],
+        correct: 0
+      },
+      {
+        q: "以下哪一組關係是邏輯‘同義’?",
+        a: ["蘋果=水果", "貓=動物", "少年=年輕人", "狗=寵物"],
+        correct: 2
+      },
+      {
+        q: "‘左手’和‘右手’在邏輯上的關係？",
+        a: ["相對", "同一", "一致", "同義"],
+        correct: 0
+      },
+      {
+        q: "如果甲比乙大，乙比丙大，丙比甲大，則？",
+        a: ["矛盾", "一致", "合理", "等於"],
+        correct: 0
+      },
+      {
+        q: "下列邏輯語句‘不正確’的是？",
+        a: ["所有狗都會叫", "有些魚會游泳", "所有人都會飛", "部分學生會寫字"],
+        correct: 2
+      },
+      {
+        q: "以下何者為‘充分條件’舉例？",
+        a: ["下雨就一定有雲", "有水就可以游泳", "天亮一定有太陽", "沒吃一定不餓"],
+        correct: 1
+      },
+      {
+        q: "甲乙丙三人賽跑，甲不是第一名，乙不是第三名，丙不是第二名，誰是第三名？",
+        a: ["乙", "甲", "丙", "都不是"],
+        correct: 2
+      },
+      {
+        q: "下列推理何者為‘歸納法’? ",
+        a: ["小明連續五年考試都第一，可能他很聰明", "所有蘋果是紅色", "如果A=B且B=C則A=C", "所有小狗都會跑"],
+        correct: 0
+      },
+      {
+        q: "‘非’運算對下列何者作用最明顯？",
+        a: ["真/假", "多/少", "大/小", "高/矮"],
+        correct: 0
+      },
+      {
+        q: "下列何者屬於‘充要條件’的特性？",
+        a: ["甲和乙同時成立即為真", "甲成立乙不成立", "乙成立甲不成立", "甲不成立乙成立"],
+        correct: 0
+      },
+      {
+        q: "有一群人站成一圈，從一人開始依次報數，報到第7的人是誰？",
+        a: ["第7個人", "第1個人", "第6個人", "第2個人"],
+        correct: 0
+      },
+      {
+        q: "以下句子哪個不屬於邏輯推理？",
+        a: ["明天是週五，所以週四之後是週五", "人類會呼吸空氣", "蘋果掉到地上", "天黑一定有太陽"],
+        correct: 3
+      },
+      {
+        q: "如果所有小貓都會跳，有些動物會跳，則？",
+        a: ["某些動物可能是小貓", "所有動物都會跳", "小貓不會跳", "所有小狗都會跳"],
+        correct: 0
+      }
+    ];
+
+    // 題目亂序
+    function shuffle(arr) {
+      for(let i = arr.length-1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i+1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+    }
+
+    let idxArr = [...Array(questions.length).keys()];
+    shuffle(idxArr);
+
+    let current = 0;
+    let selected = null;
+    let score = 0;
+
+    const questionContainer = document.getElementById('question-container');
+    const nextBtn = document.getElementById('next-btn');
+    const resultDiv = document.getElementById('result');
+    const progressBar = document.getElementById('progress');
+
+    function showQuestion(idxInOrder) {
+      const qIdx = idxArr[idxInOrder];
+      const q = questions[qIdx];
+      progressBar.style.width = `${(idxInOrder/(questions.length))*100}%`;
+      questionContainer.innerHTML = `
+        <div class="question">第${idxInOrder + 1}題：${q.q}</div>
+        <div class="options">
+          ${
+            q.a.map((opt, i) => `
+              <label>
+                <input type="radio" name="option" value="${i}" />${opt}
+              </label>
+            `).join('')
+          }
+        </div>
+      `;
+      nextBtn.disabled = true;
+      selected = null;
+      document.querySelectorAll('input[name="option"]').forEach(el => {
+        el.addEventListener('change', (e) => {
+          selected = parseInt(e.target.value);
+          nextBtn.disabled = false;
+          document.querySelectorAll('.options label').forEach(lab => lab.classList.remove('selected'));
+          e.target.parentElement.classList.add('selected');
+        });
+      });
+    }
+
+    function checkAnswer() {
+      if (selected === null) return;
+      if (selected === questions[idxArr[current]].correct) score++;
+      current++;
+      progressBar.style.width = `${(current/(questions.length))*100}%`;
+      if (current < questions.length) {
+        showQuestion(current);
+      } else {
+        showResult();
+      }
+      nextBtn.disabled = true;
+    }
+
+    function showResult() {
+      questionContainer.innerHTML = "";
+      nextBtn.style.display = "none";
+      let level = "邏輯能力一般";
+      let msg = "可以多練習與思考唷！";
+      if (score >= 19) { level = "邏輯能力極強"; msg="你是邏輯天才！很厲害"; }
+      else if (score >= 15) { level = "邏輯能力強"; msg="邏輯厲害，值得稱讚"; }
+      else if (score >= 10) { level = "邏輯能力普通"; msg="還不錯，加油！"; }
+      resultDiv.innerHTML = `
+        🎉 <b>測驗結束！</b> 🎉 <br>
+        您答對了 <span style="color:var(--blue);font-size:1.2em;">${score} / ${questions.length}</span> 題<br />
+        <span style="background:var(--accent);padding:4px 12px;border-radius:10px;color:var(--primary);font-weight:900;">
+          ${level}
+        </span>
+        <br><span style="color:var(--blue);font-weight:800;">${msg}</span>
+      `;
+    }
+
+    nextBtn.addEventListener('click', checkAnswer);
+
+    // 初始顯示
+    showQuestion(current);
+  </script>
+</body>
+</html>
