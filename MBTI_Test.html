@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>MBTI人格測驗遊戲</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      margin: 0;
+      background: linear-gradient(to bottom, #f5faff, #c0ddfa);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+    }
+    .container {
+      background: #fff;
+      border-radius: 20px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+      padding: 2rem 1.5rem;
+      max-width: 430px;
+      width: 100%;
+      margin: 2rem 0;
+      display: flex;
+      flex-direction: column;
+      min-height: 500px;
+    }
+    @media(max-width:600px) {
+      body {
+        background: linear-gradient(to bottom, #f5faff, #b7cff6);
+        align-items: stretch;
+      }
+      .container {
+        max-width: 100vw;
+        min-height: 100vh;
+        border-radius: 0;
+        margin: 0;
+        padding: 1.2rem 0.7rem;
+      }
+    }
+    h1 {
+      text-align: center;
+      color: #2779a7;
+      font-size: 2em;
+      margin-bottom: 1rem;
+    }
+    .cover {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 94%;
+      min-height: 350px;
+    }
+    .cover-icon {
+      font-size: 3.7em;
+      margin-bottom: 0.6em;
+      animation: floaty 2s infinite alternate;
+    }
+    @keyframes floaty {
+      0% { transform: translateY(0); }
+      100% { transform: translateY(-16px);}
+    }
+    .start-btn {
+      background: linear-gradient(90deg,#48d1cc 10%,#2779a7 80%);
+      color: #fff;
+      border: none;
+      font-size: 1.15em;
+      font-weight: bold;
+      padding: 0.9em 2.6em;
+      border-radius: 24px;
+      box-shadow: 0 2px 12px rgba(39,121,167,0.11);
+      margin-top: 1em;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .start-btn:hover {
+      background: #207da7;
+    }
+
+    .question {
+      font-size: 1.18em;
+      margin: 1.4em 0 1em 0;
+      display: flex;
+      justify-content: flex-start;
+      align-items: center;
+      color: #2779a7;
+      font-weight: 500;
+      letter-spacing: 0.03em;
+      min-height: 2.7em;
+    }
+    .emoji {
+      font-size: 2.2rem;
+      margin-right: 0.6em;
+      filter: drop-shadow(0 2px 3px #eee);
+    }
+    .option-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.7em;
+      margin-bottom: 1.1em;
+    }
+    .option {
+      outline: none;
+      border: none;
+      font-size: 1.08em;
+      font-weight: bold;
+      background: linear-gradient(90deg,#e3f0fc 60%, rgba(39,121,167,0.07) 100%);
+      color: #2779a7;
+      padding: 0.9em 1.2em;
+      border-radius: 14px;
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(39,121,167,0.08);
+      transition: background 0.18s, box-shadow 0.18s, transform 0.14s;
+      display: flex;
+      align-items: center;
+      gap: 0.7em;
+    }
+    .option:hover,.option:focus {
+      background: linear-gradient(90deg,#b6d9f7 70%,#e3f0fc 100%);
+      box-shadow: 0 4px 18px rgba(39,121,167,0.10);
+      transform: scale(1.03);
+      outline: 2px solid #2779a7;
+    }
+
+    .option-detail {
+      font-size: 0.97em;
+      color: #486986;
+      font-weight: normal;
+      margin-left: 0.4em;
+    }
+    .progress {
+      text-align:right;
+      margin-top:.8em;
+      color:#888;
+      font-size:.98em;
+    }
+    .result-box {
+      text-align: center;
+    }
+    .type-title {
+      font-size: 1.25em;
+      font-weight: bold;
+      color: #2779a7;
+      margin-top: 1em;
+    }
+    .desc {
+      margin: 1em 0 0.5em 0;
+      color: #444;
+      font-size: 1.09em;
+      line-height: 1.7;
+    }
+    .mbti-icons {
+      margin-top:0.8em;
+      font-size:2.4em;
+      letter-spacing:0.3em;
+      filter: drop-shadow(0 2px 3px #eee);
+    }
+    .restart-btn {
+      margin-top: 1.1em;
+      padding: 0.9em 2em;
+      background: linear-gradient(90deg,#d9b6f7 10%,#2779a7 90%);
+      color: #fff;
+      font-weight: bold;
+      border-radius: 24px;
+      border: 0;
+      cursor: pointer;
+      outline: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="container" id="app">
+    <div id="main"></div>
+  </div>
+<script>
+const questions = [
+  {
+    q: "遇到新朋友時，你會更想主動自我介紹？",
+    emoji: "😊",
+    options: [
+      { text: "主動出擊，喜歡和人建立聯繫", type: "E", detail: "善於交流與分享" },
+      { text: "先觀察，傾向靜靜在旁", type: "I", detail: "重視獨處與深度" },
+    ]
+  },
+  {
+    q: "做決策時，你習慣以事實和細節為主？",
+    emoji: "🔎",
+    options: [
+      { text: "務實考量，注重資料和證據", type: "S", detail: "注重現實經驗" },
+      { text: "願意相信直覺，注重大局與未來", type: "N", detail: "偏好創新與可能" },
+    ]
+  },
+  {
+    q: "遇到問題時，你傾向分析邏輯而非情感？",
+    emoji: "🤔",
+    options: [
+      { text: "客觀分析，先找出原因再解決", type: "T", detail: "強調邏輯和事實" },
+      { text: "理解情感，重視彼此的感受", type: "F", detail: "同理心強" },
+    ]
+  },
+  {
+    q: "清單做不完，你會焦慮嗎？",
+    emoji: "📋",
+    options: [
+      { text: "會，我喜歡明確規劃與結構", type: "J", detail: "需要掌控進度" },
+      { text: "不會，可以隨機應變", type: "P", detail: "偏好自由彈性" },
+    ]
+  },
+  {
+    q: "有新挑戰時，你通常會？",
+    emoji: "🚀",
+    options: [
+      { text: "立即嘗試，享受新鮮感", type: "E", detail: "樂於冒險探索" },
+      { text: "先評估，再決定是否參與", type: "I", detail: "慎重思考" },
+    ]
+  },
+  {
+    q: "旅行規劃，你偏好？",
+    emoji: "✈️",
+    options: [
+      { text: "詳細安排每一細節", type: "S", detail: "事先準備" },
+      { text: "即興經驗，享受未知", type: "N", detail: "順其自然" },
+    ]
+  },
+  {
+    q: "朋友遇難題時，你給建議方式？",
+    emoji: "💡",
+    options: [
+      { text: "理性分析，幫忙找到解決方案", type: "T", detail: "分析問題" },
+      { text: "先傾聽陪伴，支持對方感受", type: "F", detail: "情感支持" },
+    ]
+  },
+  {
+    q: "工作時你更需要？",
+    emoji: "⏰",
+    options: [
+      { text: "明確流程與時間表", type: "J", detail: "有序" },
+      { text: "彈性空間隨時調整", type: "P", detail: "即興" },
+    ]
+  }
+];
+
+// 減少重複亂數出現，用洗牌法
+function shuffle(arr) {
+  let newArr = arr.slice();
+  for (let i = newArr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [newArr[i], newArr[j]] = [newArr[j], newArr[i]];
+  }
+  return newArr;
+}
+
+const mbtiTypes = {
+  "ISTJ": { name:"責任型 — ISTJ", desc:"嚴謹、踏實，重視承諾與結構，有計劃地完成目標。", emoji:"🦉" },
+  "ISFJ": { name:"守護者 — ISFJ", desc:"溫和安靜，樂於照顧他人，且對細節很敏感。", emoji:"🛡️" },
+  "INFJ": { name:"理想家 — INFJ", desc:"有同理心且富想像力，追求意義並鼓勵他人成長。", emoji:"🌱" },
+  "INTJ": { name:"策劃者 — INTJ", desc:"獨立且策略性，善於分析未來並有遠見。", emoji:"🧠" },
+  "ISTP": { name:"工匠 — ISTP", desc:"冷靜、實際，喜愛發現及解決問題。", emoji:"🛠️" },
+  "ISFP": { name:"藝術家 — ISFP", desc:"隨和、具創造力，喜愛以行動表達感情。", emoji:"🎨" },
+  "INFP": { name:"調停者 — INFP", desc:"理想主義，真誠並追求內在和諧。", emoji:"🦋" },
+  "INTP": { name:"邏輯師 — INTP", desc:"理性、求知慾強，偏好獨立思考。", emoji:"🔬" },
+  "ESTP": { name:"行動者 — ESTP", desc:"果斷、喜歡挑戰和冒險，享受現在。", emoji:"🏍️" },
+  "ESFP": { name:"表演者 — ESFP", desc:"熱情開朗，享受和大家一起快樂互動。", emoji:"🎉" },
+  "ENFP": { name:"激勵者 — ENFP", desc:"充滿好奇心，擅長激勵與連結人群。", emoji:"🌈" },
+  "ENTP": { name:"創新者 — ENTP", desc:"聰明靈活，善於激盪新想法並刺激討論。", emoji:"🚀" },
+  "ESTJ": { name:"管理者 — ESTJ", desc:"組織力強，擅長領導與明確執行計畫。", emoji:"📊" },
+  "ESFJ": { name:"親善者 — ESFJ", desc:"善解人意，擅長協調人際關係與互助。", emoji:"🤝" },
+  "ENFJ": { name:"導師 — ENFJ", desc:"充滿關懷，鼓勵他人發揮潛能。", emoji:"🦸" },
+  "ENTJ": { name:"指揮官 — ENTJ", desc:"目標明確，具備高效行動力與決策能力。", emoji:"🏆" }
+};
+
+let answers = [];
+let quizIdx = 0;
+let shuffledQ = [];
+
+// 加入封面
+function renderCover() {
+  document.getElementById('main').innerHTML = `
+    <div class="cover">
+      <div class="cover-icon">🧩</div>
+      <h1 style="margin-bottom:0.6em;">MBTI人格測驗</h1>
+      <div style="color:#444;max-width:320px;margin-bottom:0.9em;font-size:1.12em;">
+        由專業題選打造，協助你發掘真正的自我。<br>手機、電腦皆可全版流暢體驗！
+      </div>
+      <button class="start-btn" onclick="startQuiz()">開始測驗 🚀</button>
+    </div>
+  `;
+  answers = [];
+  quizIdx = 0;
+}
+// 題目洗牌
+function startQuiz() {
+  shuffledQ = shuffle(questions);
+  answers = [];
+  quizIdx = 0;
+  renderQuestion();
+}
+// 每次渲染一題
+function renderQuestion() {
+  if (quizIdx >= shuffledQ.length) return renderResult();
+  const q = shuffledQ[quizIdx];
+  document.getElementById('main').innerHTML = `
+    <div class="question"><span class="emoji">${q.emoji}</span>${q.q}</div>
+    <div class="option-group">
+      ${q.options.map((opt, i) => 
+        `<button class="option" onclick="select(${i})">
+          <span>${opt.text}</span>
+          <span class="option-detail">${opt.detail}</span>
+        </button>`
+      ).join('')}
+    </div>
+    <div class="progress">第 ${quizIdx+1} / ${shuffledQ.length} 題</div>
+  `;
+}
+function select(i) {
+  answers.push(shuffledQ[quizIdx].options[i].type);
+  quizIdx++;
+  renderQuestion();
+}
+function renderResult() {
+  const stat = { I:0, E:0, S:0, N:0, T:0, F:0, J:0, P:0 };
+  answers.forEach(t => stat[t]++);
+  const mbti = 
+    (stat.I >= stat.E ? "I" : "E") +
+    (stat.S >= stat.N ? "S" : "N") +
+    (stat.T >= stat.F ? "T" : "F") +
+    (stat.J >= stat.P ? "J" : "P");
+  const result = mbtiTypes[mbti];
+  document.getElementById('main').innerHTML = `
+    <div class="result-box">
+      <div class="type-title">${result.emoji} ${result.name}</div>
+      <div class="desc">${result.desc}</div>
+      <div class="mbti-icons">
+        ${mbti.split("").map(t=>{
+          return t==='I'?'😶':t==='E'?'😁':t==='S'?'🔍':t==='N'?'✨':t==='T'?'🧩':t==='F'?'❤️':t==='J'?'🗂️':'🎈'
+        }).join(" ")}
+      </div>
+      <button class="restart-btn" onclick="renderCover()">回到封面 ⬅️</button>
+      <button class="restart-btn" style="background:linear-gradient(90deg,#48d1cc 10%,#2779a7 80%);margin-left:0.7em;" onclick="startQuiz()">重新隨機測驗 🔄</button>
+    </div>
+  `;
+}
+renderCover();
+</script>
+</body>
+</html>
