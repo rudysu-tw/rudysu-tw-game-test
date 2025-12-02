@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>決戰首都：台北市長選舉模擬</title>
+    <!-- React & ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <!-- Babel -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Phosphor Icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&display=swap');
+        
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background-color: #f0f2f5;
+            overflow: hidden;
+        }
+
+        .news-marquee {
+            white-space: nowrap;
+            overflow: hidden;
+            box-sizing: border-box;
+        }
+
+        .news-marquee span {
+            display: inline-block;
+            padding-left: 100%;
+            animation: marquee 30s linear infinite;
+        }
+
+        @keyframes marquee {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(-100%, 0); }
+        }
+
+        /* Party Colors */
+        .bg-blue-party { background-color: #3b82f6; } 
+        .bg-green-party { background-color: #22c55e; } 
+        .bg-white-party { background-color: #64748b; } 
+        .bg-ind-party { background-color: #a855f7; } 
+
+        .text-blue-party { color: #3b82f6; }
+        .text-green-party { color: #22c55e; }
+        .text-white-party { color: #64748b; }
+        .text-ind-party { color: #a855f7; }
+
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .action-card {
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .action-card:hover:not(:disabled) {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            z-index: 10;
+        }
+        .action-card:active:not(:disabled) {
+            transform: scale(0.98);
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #1e293b; }
+        ::-webkit-scrollbar-thumb { background: #475569; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #64748b; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        // --- Game Config ---
+        const MAX_TURNS = 15;
+        
+        const PARTIES = [
+            { 
+                id: 'blue', 
+                name: '建設黨', 
+                type: 'establishment',
+                color: 'bg-blue-party', 
+                textColor: 'text-blue-party', 
+                trait: '大黨優勢 (政策+2, 受傷+1)', 
+                basePoll: 25 
+            },
+            { 
+                id: 'green', 
+                name: '進步黨', 
+                type: 'establishment',
+                color: 'bg-green-party', 
+                textColor: 'text-green-party', 
+                trait: '大黨優勢 (政策+2, 受傷+1)', 
+                basePoll: 25 
+            },
+            { 
+                id: 'white', 
+                name: '新思黨', 
+                type: 'challenger',
+                color: 'bg-white-party', 
+                textColor: 'text-white-party', 
+                trait: '在野火力 (攻擊+2)', 
+                basePoll: 15 
+            },
+            { 
+                id: 'ind', 
+                name: '無黨籍', 
+                type: 'challenger',
+                color: 'bg-ind-party', 
+                textColor: 'text-ind-party', 
+                trait: '光腳不怕 (攻擊+2)', 
+                basePoll: 10 
+            }
+        ];
+
+        const CANDIDATE_NAMES = {
+            blue: ['趙守成', '郝天真', '蔣萬里', '連連看', '馬不沾', '韓總機', '朱隊友', '侯探長'],
+            green: ['陳革新', '林愛台', '賴清流', '蘇衝衝', '蔡英文體', '王世堅情', '謝長庭院', '胖周瑜'],
+            white: ['柯文哲學', '黃山山', '高紅安', '蔡壁咚', '學姊', '阿北', '賴香鈴', '柯P'],
+            ind: ['郭董', '宋神掌', '林素人', '賴佩霞光', '瓜吉', '館長', '柯賜海', '黃紅海']
+        };
+
+        // --- 30 Strategy Cards ---
+        const ACTION_CARDS = [
+            // === TIER 1: 安全牌 (90%+, Value 2-3) ===
+            { id: 1, name: '掃街拜票', type: 'boost', value: 3, failValue: 0, successRate: 0.95, desc: '走訪市場握手，穩固基本盤。', icon: 'handshake' },
+            { id: 2, name: '站路口', type: 'boost', value: 2, failValue: 0, successRate: 0.98, desc: '早起在十字路口揮手致意。', icon: 'traffic-signal' },
+            { id: 3, name: '發放面紙', type: 'boost', value: 2, failValue: 0, successRate: 0.95, desc: '印有大頭照的面紙，實用又宣傳。', icon: 'ticket' },
+            { id: 4, name: '公園晨運', type: 'boost', value: 3, failValue: 0, successRate: 0.90, desc: '陪阿公阿嬤跳土風舞。', icon: 'users' },
+            { id: 5, name: '總部成立', type: 'boost', value: 3, failValue: 1, successRate: 0.90, desc: '熱鬧開張，展現必勝決心。', icon: 'house' },
+            { id: 6, name: '定裝照曝光', type: 'boost', value: 2, failValue: 0, successRate: 0.95, desc: '展現親和力與專業形象。', icon: 'camera' },
+
+            // === TIER 2: 政策與建設 (75%-85%, Value 4-6) ===
+            { id: 7, name: '端出牛肉', type: 'boost', value: 5, failValue: 1, successRate: 0.85, desc: '發表詳盡政策白皮書。', icon: 'book' },
+            { id: 8, name: '居住正義', type: 'boost', value: 5, failValue: 1, successRate: 0.80, desc: '承諾蓋社宅，爭取青年票。', icon: 'buildings' },
+            { id: 9, name: '交通月票', type: 'boost', value: 4, failValue: 1, successRate: 0.85, desc: '推動1280吃到飽，通勤族最愛。', icon: 'train' },
+            { id: 10, name: '育兒津貼', type: 'boost', value: 4, failValue: 1, successRate: 0.85, desc: '加碼補助，減輕父母負擔。', icon: 'baby' },
+            { id: 11, name: '競選小物', type: 'boost', value: 4, failValue: 1, successRate: 0.80, desc: '設計感的文創小物，引發搶購。', icon: 'gift' },
+            { id: 12, name: '名人站台', type: 'boost', value: 5, failValue: 2, successRate: 0.75, desc: '邀請明星或大咖政治人物背書。', icon: 'star' },
+            { id: 13, name: '夫人牌', type: 'boost', value: 5, failValue: 1, successRate: 0.80, desc: '另一半陪同掃街，形象加分。', icon: 'heart' },
+            { id: 14, name: '造勢晚會', type: 'boost', value: 6, failValue: 2, successRate: 0.75, desc: '動員遊覽車，營造勝選氣勢。', icon: 'microphone-stage' },
+
+            // === TIER 3: 攻擊與攻防 (60%-70%, Attack 5-8) ===
+            { id: 15, name: '抹黑攻擊', type: 'attack', value: 6, failValue: 3, successRate: 0.65, desc: '爆料對手醜聞，降低其支持度。', icon: 'skull' },
+            { id: 16, name: '挖出違建', type: 'attack', value: 7, failValue: 3, successRate: 0.70, desc: '空拍機伺候，對手家裡有違建！', icon: 'house-line' },
+            { id: 17, name: '失言錄音', type: 'attack', value: 6, failValue: 4, successRate: 0.65, desc: '公佈私下錄音檔，人設崩壞。', icon: 'cassette-tape' },
+            { id: 18, name: '網軍出征', type: 'attack', value: 8, failValue: 4, successRate: 0.60, desc: '側翼洗版，但可能被抓包反串。', icon: 'robot' },
+            { id: 19, name: '甚至不姓蔣', type: 'attack', value: 5, failValue: 2, successRate: 0.60, desc: '攻擊對手身世血統問題。', icon: 'dna' },
+            { id: 20, name: '財產不明', type: 'attack', value: 6, failValue: 3, successRate: 0.65, desc: '質疑存款太少或土地太多。', icon: 'money' },
+
+            // === TIER 4: 策略操作 (50%-60%, Steal/Special) ===
+            { id: 21, name: '操作棄保', type: 'steal', value: 5, failValue: 3, successRate: 0.60, desc: '高喊「搶救」，吸收落後者的票。', icon: 'magnet' },
+            { id: 22, name: '悲情牌', type: 'boost', value: 6, failValue: 3, successRate: 0.60, desc: '淚灑攝影棚，全家下跪催票。', icon: 'drop' },
+            { id: 23, name: '切割爭議', type: 'boost', value: 5, failValue: 4, successRate: 0.55, desc: '「我不認識他」，神速切割隊友。', icon: 'scissors' },
+            { id: 24, name: '密室協商', type: 'steal', value: 6, failValue: 5, successRate: 0.50, desc: '私下運作利益交換，被發現會很慘。', icon: 'lock-key' },
+
+            // === TIER 5: 豪賭與極端手段 (<50%, High Reward/Risk) ===
+            { id: 25, name: '網紅直播', type: 'gamble', value: 8, failValue: 4, successRate: 0.50, desc: '館長合體？非大好即大壞。', icon: 'monitor-play' },
+            { id: 26, name: '抗中保台', type: 'boost', value: 8, failValue: 6, successRate: 0.45, desc: '販賣芒果乾，風險是用力過猛。', icon: 'shield-check' },
+            { id: 27, name: '論文抄襲', type: 'attack', value: 10, failValue: 7, successRate: 0.45, desc: '指控學歷造假，小心迴力鏢打到自己。', icon: 'graduation-cap' },
+            { id: 28, name: '假民調', type: 'gamble', value: 8, failValue: 6, successRate: 0.40, desc: '散佈有利自己的民調，被抓包會崩盤。', icon: 'chart-bar' },
+            { id: 29, name: '斬雞頭發誓', type: 'boost', value: 10, failValue: 8, successRate: 0.35, desc: '古老的儀式，賭上政治生命。', icon: 'knife' },
+            { id: 30, name: '剃光頭明志', type: 'boost', value: 12, failValue: 6, successRate: 0.40, desc: '落髮展現決心，視覺衝擊極大。', icon: 'user' },
+        ];
+
+        const RANDOM_EVENTS_DATA = [
+            { text: "爆發重大食安風暴，選民對政治人物失去信心。", targetType: 'all', value: -2 },
+            { text: "台北市獲選全球最宜居城市，全體候選人沾光。", targetType: 'all', value: 2 },
+            { text: "民調領先者被爆出陳年緋聞，形象受創！", targetType: 'leader', value: -4 },
+            { text: "墊底候選人淚灑攝影棚，獲得大量同情票。", targetType: 'last', value: 4 },
+            { text: "【突發】某候選人宣傳車違規停車被民眾檢舉。", targetType: 'random', value: -3 },
+            { text: "【突發】某候選人雨中救助流浪貓，暖心影片爆紅！", targetType: 'random', value: 4 },
+            { text: "你的競選廣告獲得年度廣告金像獎，點閱率破百萬。", targetType: 'player', value: 3 },
+            { text: "你在直播中不小心說錯話，遭到網友炎上。", targetType: 'player', value: -3 },
+            { text: "檢調大動作搜索某候選人競選總部！(涉嫌賄選)", targetType: 'random', value: -5 },
+            { text: "神秘企業家宣布捐贈大筆政治獻金給某候選人。", targetType: 'random', value: 5 },
+            { text: "眷村改建案順利推動，泛藍陣營鐵票歸隊。", targetType: 'party:blue', value: 3 },
+            { text: "國際局勢緊張，泛綠陣營操作「芒果乾」策略奏效。", targetType: 'party:green', value: 3 },
+            { text: "大學生發起返鄉投票專車，第三勢力（白色）看漲。", targetType: 'party:white', value: 3 },
+            { text: "選民厭惡藍綠惡鬥，無黨籍候選人意外受惠。", targetType: 'party:ind', value: 3 },
+            { text: "超級寒流來襲，投票率預估下降，選情變數增加。", targetType: 'all', value: 0 }, 
+        ];
+
+        const NEWS_TICKER_TEXTS = [
+            "颱風逼近，所有候選人勘災表演。",
+            "某候選人失言：「我不知道」，引發熱議。",
+            "股市大漲，執政黨候選人支持度微升。",
+            "捷運博愛座爭議再起，社群媒體戰翻天。",
+            "知名藝人表態挺某候選人。",
+            "早餐店阿姨表示：「這次不知道投誰。」",
+            "外媒關注台海局勢，國防議題升溫。",
+            "突然停電，能源政策成為焦點。",
+        ];
+
+        const randomInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
+        const getRandomName = (partyId) => {
+            const names = CANDIDATE_NAMES[partyId];
+            return names[randomInt(0, names.length - 1)];
+        };
+        const getRandomCards = (count) => {
+            let cards = [];
+            for(let i=0; i<count; i++) {
+                cards.push(ACTION_CARDS[randomInt(0, ACTION_CARDS.length - 1)]);
+            }
+            return cards;
+        };
+
+        function App() {
+            const [gameState, setGameState] = useState('intro'); 
+            const [turn, setTurn] = useState(1);
+            const [candidates, setCandidates] = useState([]);
+            const [playerIdx, setPlayerIdx] = useState(0); 
+            const [playerHand, setPlayerHand] = useState([]);
+            const [logs, setLogs] = useState([]);
+            const [undecidedVoters, setUndecidedVoters] = useState(25);
+            const [processingTurn, setProcessingTurn] = useState(false);
+            const [currentTicker, setCurrentTicker] = useState("選戰正式開打！");
+            const [nextEventTurn, setNextEventTurn] = useState(randomInt(2, 4));
+
+            const logsEndRef = useRef(null);
+            const remainingTurns = MAX_TURNS - turn;
+            const isFinalTurn = turn === MAX_TURNS;
+
+            useEffect(() => {
+                if (logsEndRef.current) {
+                    logsEndRef.current.scrollIntoView({ behavior: 'smooth' });
+                }
+            }, [logs]);
+
+            const startGame = () => {
+                const newCandidates = PARTIES.map(party => ({
+                    ...party,
+                    name: getRandomName(party.id),
+                    poll: party.basePoll + randomInt(-2, 5),
+                    isPlayer: false
+                }));
+
+                let totalPoll = newCandidates.reduce((acc, c) => acc + c.poll, 0);
+                const startUndecided = 100 - totalPoll;
+                setUndecidedVoters(startUndecided);
+
+                const pIdx = randomInt(0, 3);
+                newCandidates[pIdx].isPlayer = true;
+                newCandidates[pIdx].name = newCandidates[pIdx].name + " (你)";
+                
+                setCandidates(newCandidates);
+                setPlayerIdx(pIdx);
+                setPlayerHand(getRandomCards(4)); 
+                setLogs([{ turn: 0, msg: "選委會宣布：選戰正式開始！各方人馬就位。" }]);
+                setTurn(1);
+                setNextEventTurn(randomInt(2, 4));
+                setGameState('playing');
+                setProcessingTurn(false);
+            };
+
+            const addLog = (msg, type = 'normal') => {
+                setLogs(prev => [...prev, { turn: turn, msg, type }]);
+            };
+
+            const applyPollChange = (targetIdx, change, source = 'undecided') => {
+                setCandidates(prev => {
+                    const newCands = [...prev];
+                    let actualChange = change;
+
+                    // --- Party Balancing Logic ---
+                    // Mainstream parties (Blue/Green) are "Establishment".
+                    // They take extra damage when attacked (Source is 'attack').
+                    if (source === 'attack') {
+                        if (newCands[targetIdx].type === 'establishment') {
+                            actualChange += 1; // Extra penalty for establishment
+                        }
+                    }
+                    // -----------------------------
+
+                    if (source === 'undecided') {
+                        if (undecidedVoters - change < 0) actualChange = undecidedVoters;
+                        setUndecidedVoters(v => Math.max(0, v - actualChange));
+                        newCands[targetIdx].poll += actualChange;
+                    } 
+                    else if (source === 'attack') {
+                        if (newCands[targetIdx].poll - actualChange < 0) actualChange = newCands[targetIdx].poll;
+                        newCands[targetIdx].poll -= actualChange;
+                        setUndecidedVoters(v => v + actualChange);
+                    }
+                    else if (typeof source === 'number') {
+                        let stealAmount = actualChange;
+                        if (newCands[source].poll - actualChange < 0) stealAmount = newCands[source].poll;
+                        newCands[source].poll -= stealAmount;
+                        newCands[targetIdx].poll += stealAmount;
+                    }
+
+                    newCands[targetIdx].poll = Math.max(0, Math.round(newCands[targetIdx].poll * 10) / 10);
+                    return newCands;
+                });
+            };
+
+            const handleEventTrigger = () => {
+                const event = RANDOM_EVENTS_DATA[randomInt(0, RANDOM_EVENTS_DATA.length - 1)];
+                let msg = `【突發事件】${event.text}`;
+                let targets = [];
+
+                const sortedCands = [...candidates].map((c, i) => ({...c, idx: i})).sort((a,b) => b.poll - a.poll);
+
+                if (event.targetType === 'all') {
+                    candidates.forEach((_, i) => targets.push(i));
+                } else if (event.targetType === 'leader') {
+                    targets.push(sortedCands[0].idx);
+                } else if (event.targetType === 'last') {
+                    targets.push(sortedCands[sortedCands.length - 1].idx);
+                } else if (event.targetType === 'random') {
+                    targets.push(randomInt(0, 3));
+                } else if (event.targetType === 'player') {
+                    targets.push(playerIdx);
+                } else if (event.targetType.startsWith('party:')) {
+                    const pId = event.targetType.split(':')[1];
+                    const target = candidates.findIndex(c => c.id === pId);
+                    if (target !== -1) targets.push(target);
+                }
+
+                if (event.value !== 0) {
+                    targets.forEach(tIdx => {
+                        if (event.value > 0) {
+                            applyPollChange(tIdx, event.value, 'undecided');
+                        } else {
+                            applyPollChange(tIdx, Math.abs(event.value), 'attack');
+                        }
+                    });
+                    
+                    if (targets.length === 1) {
+                        const name = candidates[targets[0]].name;
+                        msg += ` (${name} 民調 ${event.value > 0 ? '+' : ''}${event.value}%)`;
+                    } else if (targets.length > 1) {
+                        msg += ` (相關候選人 民調 ${event.value > 0 ? '+' : ''}${event.value}%)`;
+                    }
+                }
+
+                addLog(msg, 'event');
+                setNextEventTurn(turn + randomInt(2, 4));
+            };
+
+            const handlePlayerAction = async (card) => {
+                if (processingTurn) return;
+                setProcessingTurn(true);
+
+                const isSuccess = Math.random() < card.successRate;
+                let msg = `你在第 ${turn} 週使用了【${card.name}】...`;
+                
+                if (isSuccess) {
+                    let gain = card.value;
+                    const myCandidate = candidates[playerIdx];
+
+                    // --- Party Advantage Logic (Active) ---
+                    let bonusMsg = "";
+                    if (card.type === 'boost') {
+                        if (myCandidate.type === 'establishment') {
+                            gain += 2;
+                            bonusMsg = "(大黨優勢 +2%)";
+                        }
+                    } else if (card.type === 'attack') {
+                        if (myCandidate.type === 'challenger') {
+                            gain += 2;
+                            bonusMsg = "(在野火力 +2%)";
+                        }
+                        if (myCandidate.poll < 20) {
+                            gain += 1;
+                            bonusMsg = bonusMsg ? "(在野+落後加成 +3%)" : "(告急加成 +1%)";
+                        }
+                    }
+                    // --------------------------------------
+                    
+                    if (card.type === 'boost' || card.type === 'gamble') {
+                        let finalGain = gain;
+                        // Party Specific Card Bonuses
+                        if (myCandidate.id === 'blue' && [1, 5, 29].includes(card.id)) finalGain += 1;
+                        if (myCandidate.id === 'green' && [14, 26, 30].includes(card.id)) finalGain += 1;
+                        if (myCandidate.id === 'white' && [18, 25, 28].includes(card.id)) finalGain += 1;
+
+                        applyPollChange(playerIdx, finalGain, 'undecided');
+                        msg += ` <span class="text-green-400 font-bold">成功！</span>民調上升 ${finalGain}% ${bonusMsg}。`;
+                    } 
+                    else if (card.type === 'attack') {
+                        const opponents = candidates.map((c, i) => ({...c, idx: i})).filter(c => !c.isPlayer);
+                        opponents.sort((a, b) => b.poll - a.poll);
+                        const target = opponents[0];
+                        
+                        applyPollChange(target.idx, gain, 'attack');
+                        msg += ` <span class="text-green-400 font-bold">效果顯著！</span>${target.name} 民調重挫 ${gain}% ${bonusMsg}。`;
+                    } 
+                    else if (card.type === 'steal') {
+                        const opponents = candidates.map((c, i) => ({...c, idx: i})).filter(c => !c.isPlayer);
+                        opponents.sort((a, b) => b.poll - a.poll);
+                        const target = opponents[0];
+
+                        applyPollChange(playerIdx, gain, target.idx);
+                        msg += ` <span class="text-green-400 font-bold">操作成功！</span>從 ${target.name} 搶走 ${gain}% 選票。`;
+                    }
+                } else {
+                    msg += ` <span class="text-red-400 font-bold">失敗了！</span>`;
+                    
+                    if (card.failValue > 0) {
+                        applyPollChange(playerIdx, card.failValue, 'attack'); 
+                        msg += ` 引起選民反感，自身民調下跌 ${card.failValue}%。`;
+                    } else {
+                        msg += ` 效果不如預期，沒有造成影響。`;
+                    }
+                }
+
+                addLog(msg, isSuccess ? 'success' : 'fail');
+                setTimeout(() => runAITurns(), 800);
+            };
+
+            const runAITurns = async () => {
+                const aiIndices = candidates.map((c, i) => i).filter(i => i !== playerIdx);
+
+                for (let i of aiIndices) {
+                    await new Promise(r => setTimeout(r, 500)); 
+                    
+                    const ai = candidates[i];
+                    const roll = Math.random();
+                    let actionMsg = "";
+                    
+                    if (roll < 0.3) {
+                        actionMsg = `${ai.name} 試圖炒作話題，但無人問津。`;
+                    } else if (roll < 0.6) {
+                        // AI Boost
+                        let gain = randomInt(2, 4);
+                        // AI Party Advantage
+                        if (ai.type === 'establishment') gain += 2;
+
+                        applyPollChange(i, gain, 'undecided');
+                        actionMsg = `${ai.name} 舉辦造勢活動，民調上升 ${gain}%。`;
+                    } else {
+                        // AI Attack
+                        const allSorted = candidates.map((c, idx) => ({...c, idx})).sort((a, b) => b.poll - a.poll);
+                        let targetIdx = allSorted[0].idx;
+                        if (targetIdx === i) targetIdx = allSorted[1].idx;
+
+                        let dmg = randomInt(2, 4);
+                        // AI Party Advantage
+                        if (ai.type === 'challenger') dmg += 2;
+                        if (ai.poll < 20) dmg += 1;
+
+                        applyPollChange(targetIdx, dmg, 'attack');
+                        actionMsg = `${ai.name} 陣營猛攻 ${candidates[targetIdx].name}，造成傷害 ${dmg}%。`;
+                    }
+                    addLog(actionMsg);
+                }
+                finishTurn();
+            };
+
+            const finishTurn = () => {
+                if (turn === nextEventTurn && turn < MAX_TURNS) {
+                    setTimeout(() => handleEventTrigger(), 500);
+                }
+                if (Math.random() > 0.7) {
+                    const news = NEWS_TICKER_TEXTS[randomInt(0, NEWS_TICKER_TEXTS.length - 1)];
+                    setCurrentTicker(news);
+                }
+                if (turn >= MAX_TURNS) {
+                    setTimeout(() => endGame(), 1000);
+                } else {
+                    setTurn(t => t + 1);
+                    setPlayerHand(getRandomCards(4));
+                    setProcessingTurn(false);
+                }
+            };
+
+            const endGame = () => {
+                setGameState('ended');
+            };
+
+            // --- Render ---
+            if (gameState === 'intro') {
+                return (
+                    <div className="h-screen w-full flex items-center justify-center bg-slate-900 bg-[url('https://images.unsplash.com/photo-1551024506-0bccd828d307?q=80&w=1920&auto=format&fit=crop')] bg-cover bg-blend-overlay">
+                        <div className="glass-panel p-8 rounded-2xl max-w-2xl text-center shadow-2xl m-4 border-t-4 border-yellow-400">
+                            <h1 className="text-5xl font-black text-white mb-6 drop-shadow-lg tracking-wider">
+                                決戰首都：<span className="text-yellow-400">台北市長</span>
+                            </h1>
+                            <p className="text-gray-200 text-lg mb-8 leading-relaxed">
+                                距離投票日還有 15 週。<br/>
+                                您將扮演四位候選人之一，從 30 種競選策略中抉擇。<br/>
+                                新增「政黨屬性」平衡機制：大黨政策強但怕抹黑，小黨攻擊力高。<br/>
+                                <span className="text-yellow-300 font-bold mt-2 block">小心！高報酬的險招，往往伴隨著巨大的反噬風險。</span>
+                            </p>
+                            <button onClick={startGame} className="bg-yellow-500 hover:bg-yellow-400 text-black font-bold py-4 px-12 rounded-full text-xl shadow-lg transform transition hover:scale-105 ring-4 ring-yellow-500/30">
+                                登記參選
+                            </button>
+                        </div>
+                    </div>
+                );
+            }
+
+            if (gameState === 'ended') {
+                const winner = [...candidates].sort((a, b) => b.poll - a.poll)[0];
+                return (
+                    <div className="h-screen w-full flex items-center justify-center bg-slate-900 overflow-y-auto">
+                        <div className="bg-white p-8 rounded-xl max-w-2xl w-full text-center shadow-2xl border-t-8 border-yellow-400 m-4">
+                            <h2 className="text-3xl font-bold text-gray-800 mb-4">開票結果出爐</h2>
+                            <div className="py-8">
+                                <div className={`text-6xl font-black mb-2 ${winner.textColor}`}>
+                                    {winner.name} 當選
+                                </div>
+                                <div className="text-2xl text-gray-500 font-bold">台北市長</div>
+                            </div>
+                            <div className="grid gap-3 mb-8">
+                                {[...candidates].sort((a, b) => b.poll - a.poll).map((c, idx) => (
+                                    <div key={idx} className={`flex items-center p-3 rounded-lg ${c.isPlayer ? 'ring-2 ring-yellow-400 bg-yellow-50' : 'bg-gray-100'}`}>
+                                        <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center font-bold mr-4">{idx + 1}</div>
+                                        <div className="flex-1 text-left">
+                                            <span className={`font-bold text-lg ${c.textColor}`}>{c.name}</span>
+                                            <span className="text-sm text-gray-500 ml-2">({c.trait})</span>
+                                        </div>
+                                        <div className="text-2xl font-black w-24 text-right">{c.poll.toFixed(1)}%</div>
+                                    </div>
+                                ))}
+                            </div>
+                            <button onClick={startGame} className="bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-8 rounded-lg shadow-lg">重新選舉</button>
+                        </div>
+                    </div>
+                );
+            }
+
+            return (
+                <div className="h-screen flex flex-col bg-gray-100 overflow-hidden">
+                    {/* Header */}
+                    <div className="flex-none bg-blue-900 text-white px-4 py-2 shadow-md z-10">
+                        <div className="flex justify-between items-center mb-1">
+                            <div className="flex items-center gap-3">
+                                <div className="bg-red-600 text-white font-bold px-2 py-0.5 rounded text-xs animate-pulse">LIVE</div>
+                                <h1 className="text-lg font-bold tracking-widest hidden md:block">202X 台北市長選舉</h1>
+                                <h1 className="text-lg font-bold tracking-widest md:hidden">決戰首都</h1>
+                            </div>
+                            <div className="flex items-center gap-3">
+                                <div className="bg-blue-800 px-3 py-1 rounded border border-blue-700 flex items-center gap-2">
+                                    <span className="text-xs text-blue-300 font-bold uppercase">WEEK</span>
+                                    <span className="font-mono font-bold text-xl text-yellow-400">{turn}<span className="text-gray-400 text-sm">/{MAX_TURNS}</span></span>
+                                </div>
+                                {isFinalTurn && <div className="text-red-500 font-black text-lg animate-pulse bg-white px-2 rounded">決戰週</div>}
+                            </div>
+                        </div>
+                        <div className="bg-black/30 rounded overflow-hidden py-0.5">
+                            <div className="news-marquee text-xs text-cyan-300 font-bold">
+                                <span>{currentTicker} | 歡迎收看特別報導 | 每一票都是關鍵 | 選情膠著，請審慎投票 | </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Main Content */}
+                    <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
+                        
+                        {/* Left: Polls & Actions */}
+                        <div className="flex-1 flex flex-col min-w-0 h-full">
+                            {/* Polls */}
+                            <div className="flex-none h-1/3 md:h-2/5 bg-white p-4 relative border-b border-gray-200">
+                                <div className="absolute top-2 right-2 bg-gray-100 px-2 py-1 rounded-full text-xs font-bold text-gray-500 z-10">
+                                    未表態: {undecidedVoters}%
+                                </div>
+                                <div className="flex justify-around items-end h-full w-full gap-2 pb-2">
+                                    {candidates.map((c, idx) => (
+                                        <div key={idx} className="flex flex-col items-center w-1/4 h-full justify-end group">
+                                            <div className="relative w-full flex justify-center items-end flex-1">
+                                                <div 
+                                                    className={`${c.color} w-full md:w-20 rounded-t-md transition-all duration-1000 ease-out relative shadow`}
+                                                    style={{ height: `${Math.min(100, c.poll * 2.5)}%`, minHeight: '20px' }}
+                                                >
+                                                    <span className="absolute -top-6 left-1/2 transform -translate-x-1/2 font-black text-lg text-gray-800">
+                                                        {c.poll.toFixed(0)}%
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            <div className={`mt-1 text-center p-1 rounded w-full text-sm ${c.isPlayer ? 'bg-yellow-100 border border-yellow-400' : 'bg-gray-50'}`}>
+                                                <div className={`font-bold truncate ${c.textColor}`}>{c.name.split(' ')[0]}</div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Cards Area */}
+                            <div className="flex-1 bg-slate-100 p-3 overflow-y-auto">
+                                <h3 className="text-gray-700 font-bold mb-2 flex items-center gap-2 text-sm sticky top-0 bg-slate-100 py-1 z-10">
+                                    <i className="ph ph-strategy text-lg"></i> 本週決策 (四選一)
+                                </h3>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pb-20 md:pb-0">
+                                    {processingTurn ? (
+                                        <div className="col-span-full h-40 flex items-center justify-center text-gray-500 animate-pulse font-bold">
+                                            <i className="ph ph-spinner animate-spin mr-2"></i> 競選團隊執行中...
+                                        </div>
+                                    ) : (
+                                        playerHand.map((card, idx) => (
+                                            <button 
+                                                key={idx}
+                                                onClick={() => handlePlayerAction(card)}
+                                                className="action-card bg-white p-3 rounded-lg shadow-sm border border-gray-200 text-left hover:border-blue-400 relative group flex flex-col justify-between"
+                                            >
+                                                <div>
+                                                    <div className="flex justify-between items-start mb-1">
+                                                        <div className="flex items-center gap-2">
+                                                            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white ${
+                                                                card.type === 'boost' ? 'bg-blue-500' :
+                                                                card.type === 'attack' ? 'bg-red-500' :
+                                                                card.type === 'steal' ? 'bg-purple-500' : 'bg-orange-500'
+                                                            }`}>
+                                                                <i className={`ph ph-${card.icon} text-lg`}></i>
+                                                            </div>
+                                                            <span className="font-bold text-gray-800 text-md">{card.name}</span>
+                                                        </div>
+                                                        <span className={`text-xs px-2 py-0.5 rounded-full font-bold ${
+                                                            card.successRate >= 0.8 ? 'bg-green-100 text-green-700' : 
+                                                            card.successRate >= 0.5 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'
+                                                        }`}>
+                                                            {Math.round(card.successRate * 100)}% 成功率
+                                                        </span>
+                                                    </div>
+                                                    <p className="text-xs text-gray-500 mb-2 pl-10 leading-tight">{card.desc}</p>
+                                                </div>
+                                                
+                                                <div className="grid grid-cols-2 gap-2 text-xs pl-10">
+                                                    <div className="bg-gray-50 p-1 rounded border border-gray-200">
+                                                        <span className="block text-gray-400 scale-90 origin-left">成功收益</span>
+                                                        <span className="font-bold text-green-600 text-sm">
+                                                            {card.type === 'attack' ? `對手 -${card.value}%` : `+${card.value}%`}
+                                                        </span>
+                                                    </div>
+                                                    <div className="bg-gray-50 p-1 rounded border border-gray-200">
+                                                        <span className="block text-gray-400 scale-90 origin-left">失敗代價</span>
+                                                        <span className={`font-bold text-sm ${card.failValue > 0 ? 'text-red-500' : 'text-gray-400'}`}>
+                                                            {card.failValue > 0 ? `-${card.failValue}%` : '無'}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </button>
+                                        ))
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Right: Info & Logs */}
+                        <div className="md:w-72 bg-slate-800 flex flex-col border-l border-gray-700 h-1/3 md:h-full">
+                            <div className="p-3 bg-slate-900 border-b border-gray-700 flex items-center gap-3">
+                                <div className={`w-10 h-10 rounded-full ${candidates[playerIdx].color} text-white flex items-center justify-center font-bold text-sm shrink-0`}>
+                                    你
+                                </div>
+                                <div className="min-w-0">
+                                    <div className="font-bold text-white truncate text-sm">{candidates[playerIdx].name}</div>
+                                    <div className="text-xs text-gray-400 truncate">{candidates[playerIdx].trait}</div>
+                                </div>
+                            </div>
+                            <div className="flex-1 flex flex-col overflow-hidden">
+                                <div className="bg-slate-800 px-3 py-1 text-xs text-gray-400 font-mono border-b border-gray-700 shrink-0">
+                                    > SYSTEM_LOG
+                                </div>
+                                <div className="flex-1 overflow-y-auto p-3 space-y-2 font-mono text-xs text-gray-300">
+                                    {logs.map((log, i) => (
+                                        <div key={i} className={`border-l-2 pl-2 ${
+                                            log.type === 'success' ? 'border-green-500' : 
+                                            log.type === 'fail' ? 'border-red-500' : 
+                                            log.type === 'event' ? 'border-yellow-400 bg-yellow-900/20' : 'border-gray-600'
+                                        }`}>
+                                            <span className="text-gray-500 mr-1">W{log.turn}</span>
+                                            <span dangerouslySetInnerHTML={{__html: log.msg}} className={log.type === 'event' ? 'text-yellow-300' : ''}></span>
+                                        </div>
+                                    ))}
+                                    <div ref={logsEndRef} />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
