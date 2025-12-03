@@ -33,7 +33,7 @@
             color: var(--text-color); 
             font-family: "Yu Mincho", "Hiragino Mincho ProN", "Microsoft JhengHei", "serif"; 
             height: 100vh; 
-            height: 100dvh; 
+            height: 100dvh; /* 針對行動裝置瀏覽器優化高度 */
             overflow: hidden; 
             display: flex; 
             flex-direction: column; 
@@ -55,7 +55,7 @@
             box-shadow: 0 0 40px rgba(0,0,0,0.95); 
         }
         
-        /* 視覺特效改為迷霧與閃爍的燈光感 */
+        /* 視覺特效 */
         #vignette { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; box-shadow: inset 0 0 100px rgba(0,0,0,0.8); z-index: 10; transition: box-shadow 0.5s ease; }
         .pulse-fast { animation: anxiety 0.8s infinite; }
         .pulse-slow { animation: anxiety 2s infinite; }
@@ -66,17 +66,77 @@
 
         .text-distort { text-shadow: 2px 0 var(--hp-color), -2px 0 var(--san-color); animation: glitch-text 0.2s infinite; }
         @keyframes glitch-text { 0% { transform: translate(0); opacity: 1; } 20% { transform: translate(-1px, 1px); opacity: 0.8; } 40% { transform: translate(1px, -1px); } 60% { transform: translate(-1px, -1px); opacity: 0.9; } 80% { transform: translate(1px, 1px); } 100% { transform: translate(0); opacity: 1; } }
-        /* 懷舊照片濾鏡 */
         .hallucination { filter: sepia(0.8) contrast(1.2) brightness(0.9); transition: filter 1s; } 
 
         @keyframes item-glow { 0% { box-shadow: 0 0 5px var(--item-color); background: #333; } 50% { box-shadow: 0 0 30px var(--item-color), inset 0 0 20px var(--item-color); background: #554; } 100% { box-shadow: 0 0 5px var(--item-color); background: #222; } }
         .item-get-anim { animation: item-glow 0.8s ease-out; }
 
-        #start-screen, #end-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(26, 26, 46, 0.98); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 30; text-align: center; padding: 30px; }
-        h1 { color: var(--accent-color); font-size: 2.5rem; text-shadow: 0 0 10px rgba(218, 165, 32, 0.5); margin-bottom: 10px; letter-spacing: 5px; font-weight: bold; font-family: "Yu Mincho", serif; border-bottom: 2px solid var(--accent-color); padding-bottom: 10px; }
-        .start-btn { background: linear-gradient(to bottom, #2c3e50, #1a252f); color: #d0c0a8; border: 1px solid var(--accent-color); padding: 12px 40px; font-size: 1.2rem; cursor: pointer; margin-top: 20px; transition: all 0.3s; font-family: inherit; letter-spacing: 3px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); border-radius: 2px; }
+        /* --- Start/End Screen 修正區 --- */
+        #start-screen, #end-screen { 
+            position: absolute; 
+            top: 0; left: 0; 
+            width: 100%; height: 100%; 
+            background: rgba(26, 26, 46, 0.98); 
+            display: flex; 
+            flex-direction: column; 
+            justify-content: center; /* 電腦版預設垂直置中 */
+            align-items: center; 
+            z-index: 30; 
+            text-align: center; 
+            padding: 30px; 
+            overflow-y: auto; /* 允許垂直捲動 */
+            -webkit-overflow-scrolling: touch; /* iOS 滑動順暢 */
+        }
+        
+        h1 { color: var(--accent-color); font-size: 2.5rem; text-shadow: 0 0 10px rgba(218, 165, 32, 0.5); margin-bottom: 10px; letter-spacing: 5px; font-weight: bold; font-family: "Yu Mincho", serif; border-bottom: 2px solid var(--accent-color); padding-bottom: 10px; flex-shrink: 0; }
+        
+        .start-btn { background: linear-gradient(to bottom, #2c3e50, #1a252f); color: #d0c0a8; border: 1px solid var(--accent-color); padding: 12px 40px; font-size: 1.2rem; cursor: pointer; margin-top: 20px; margin-bottom: 20px; transition: all 0.3s; font-family: inherit; letter-spacing: 3px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); border-radius: 2px; flex-shrink: 0; }
         .start-btn:hover { background: var(--accent-color); color: #1a1a2e; box-shadow: 0 0 20px var(--accent-color); transform: scale(1.05); }
 
+        /* 說明文字框樣式優化 */
+        .info-box {
+            max-width: 500px; 
+            line-height: 2; 
+            text-align: left; 
+            background: #1f2a40; 
+            padding: 25px; 
+            border: 1px solid #4b5d67; 
+            border-radius: 2px; 
+            font-size: 1rem; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            /* 內部捲動機制，防止文字太長撐破版面 */
+            max-height: 55vh;
+            overflow-y: auto;
+        }
+
+        /* --- 手機版面調整 (Media Query) --- */
+        @media (max-width: 700px) {
+            #start-screen {
+                justify-content: flex-start; /* 手機版從上方開始排，避免被切掉 */
+                padding: 40px 20px 20px 20px; /* 增加上方留白 */
+            }
+            h1 { font-size: 1.8rem; margin-bottom: 15px; }
+            .info-box {
+                padding: 15px;
+                font-size: 0.95rem;
+                line-height: 1.8;
+                max-height: 50vh; /* 限制高度讓按鈕露出來 */
+            }
+            .info-box ul {
+                padding-left: 20px;
+                margin: 5px 0;
+            }
+            #story-area {
+                padding: 15px 20px;
+                min-height: 0; 
+                flex-basis: 0;
+                flex-grow: 1;
+            }
+            #log-window { height: 120px; }
+            .choice-btn { min-height: 50px; }
+        }
+
+        /* --- UI Components --- */
         header { padding: 8px 15px; border-bottom: 1px solid var(--border-color); background: #0f1526; display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem; letter-spacing: 1px; flex-shrink: 0; }
         
         #status-bar { display: grid; grid-template-columns: repeat(5, 1fr); gap: 1px; background: var(--border-color); padding-bottom: 1px; flex-shrink: 0; }
@@ -110,17 +170,6 @@
 
         #choice-area { padding: 10px 15px; display: grid; grid-template-columns: 1fr; gap: 8px; background: #1f2a40; flex-shrink: 0; }
         @media (min-width: 700px) { #choice-area { grid-template-columns: 1fr 1fr; gap: 12px; } }
-
-        @media (max-width: 700px) {
-            #story-area {
-                padding: 15px 20px;
-                min-height: 0; 
-                flex-basis: 0;
-                flex-grow: 1;
-            }
-            h1 { font-size: 2rem; }
-            #log-window { height: 120px; }
-        }
 
         .choice-btn { background: linear-gradient(145deg, #2c3e50, #202d3a); border: 1px solid #4b5d67; color: #d0c0a8; padding: 10px 12px; cursor: pointer; font-family: inherit; font-size: 0.9rem; text-align: left; transition: all 0.2s; display: flex; flex-direction: column; justify-content: center; border-radius: 2px; position: relative; min-height: 55px; }
         .choice-title { font-weight: bold; margin-bottom: 2px; display: flex; align-items: center; gap: 6px; color: #e6e6d8; font-size: 1rem; }
@@ -164,18 +213,20 @@
     <div id="app-container">
         <div id="start-screen">
             <h1><i class="fas fa-magnifying-glass-location"></i> 帝都偵探錄</h1>
-            <p style="color: #aab; margin-bottom: 25px; font-size: 1.1rem; letter-spacing: 5px; font-family: 'Yu Mincho', serif;">黑百合之館 殺人事件</p>
-            <div style="max-width: 500px; line-height: 2; text-align: left; background: #1f2a40; padding: 25px; border: 1px solid #4b5d67; border-radius: 2px; font-size: 1rem; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
-                <p style="color: var(--accent-color); font-weight: bold; font-size: 1.1rem; margin-bottom: 15px; font-family: 'Yu Mincho', serif;"><i class="fas fa-file-contract"></i> 探偵手帳</p>
+            <p style="color: #aab; margin-bottom: 20px; font-size: 1.1rem; letter-spacing: 5px; font-family: 'Yu Mincho', serif;">黑百合之館 殺人事件</p>
+            
+            <div class="info-box">
+                <p style="color: var(--accent-color); font-weight: bold; font-size: 1.1rem; margin-bottom: 10px; font-family: 'Yu Mincho', serif; border-bottom: 1px solid #4b5d67; padding-bottom:5px;"><i class="fas fa-file-contract"></i> 探偵手帳</p>
                 <ul style="padding-left: 20px; list-style-type: circle; color: #e6e6d8;">
-                    <li><b>事件概要</b>：昭和初期，你在暴風雨夜受邀至「黑百合公館」。女主人百合子夫人離奇死亡。警察因土石流受阻，你必須在黎明前找出真兇。</li>
-                    <li><b>精神力與體力</b>：「精神力」象徵對詭譎謎團的冷靜，「體力」是對抗兇手襲擊的資本。</li>
-                    <li><b>光源管理</b>：公館停電中。請管理手邊的「燈油」，黑暗會吞噬線索與精神。</li>
-                    <li><b>推理與真相</b>：蒐集證物，最後在「推理環節」指認犯人。錯誤的指控將導致悲劇。</li>
+                    <li><b>事件概要</b>：昭和初期，受邀至「黑百合公館」。女主人離奇身亡，警察受阻，你需在黎明前找出真兇。</li>
+                    <li><b>精神與體力</b>：「精神」代表冷靜，「體力」是對抗襲擊的資本。歸零將導致失敗。</li>
+                    <li><b>光源管理</b>：公館停電。請管理「燈油」，黑暗將吞噬精神與線索。</li>
+                    <li><b>推理真相</b>：蒐集證物，於最終環節指認犯人。錯誤指控將致悲劇。</li>
                 </ul>
             </div>
+            
             <button class="start-btn" onclick="game.start()"><i class="fas fa-hat-cowboy"></i> 開始搜查</button>
-        </div>
+            <div style="height: 20px;"></div> </div>
 
         <header>
             <div><i class="fas fa-user-secret"></i> 私家偵探 <span id="phobia-display" class="phobia-tag"></span></div>
@@ -208,26 +259,25 @@
         <div id="end-screen" style="display: none;">
             <h1 id="end-title" style="font-family: 'Yu Mincho', serif; letter-spacing: 5px;">結案</h1>
             <div id="end-icon" style="font-size: 5rem; margin: 30px 0; color: #aab;"></div>
-            <p id="end-desc" style="max-width: 600px; margin: 10px 0; line-height: 2; font-size: 1.1rem; color: #e6e6d8; font-family: 'Yu Mincho', serif;"></p>
+            <p id="end-desc" style="max-width: 600px; margin: 10px 0; line-height: 2; font-size: 1.1rem; color: #e6e6d8; font-family: 'Yu Mincho', serif; padding: 0 20px;"></p>
             <div id="end-stats" style="color: #889; font-size: 1rem; margin-bottom: 20px; font-family: monospace;"></div>
             
             <div style="display:flex; gap:10px;">
                 <button class="start-btn" style="padding:10px 20px; font-size:1rem; margin-top:0;" onclick="game.copyHistory()"><i class="fas fa-copy"></i> 複製案卷</button>
                 <button class="start-btn reset-btn" style="padding:10px 20px; font-size:1rem; margin-top:0;" onclick="game.reset()"><i class="fas fa-redo"></i> 重新搜查</button>
             </div>
+            <div style="height: 30px;"></div>
         </div>
     </div>
 
     <script>
         /* --- 遊戲設定：帝都偵探風格 --- */
-        // 重新定義弱點 (Detective's Flaws)
         const PHOBIAS = [
             { id: 'dark', name: '夜盲症', desc: '在黑暗區域精神力減少量加倍', icon: 'fa-eye-slash' },
             { id: 'blood', name: '暈血症', desc: '在血腥現場精神力減少量加倍', icon: 'fa-droplet' },
             { id: 'noise', name: '神經質', desc: '突發聲響造成精神力減少量加倍', icon: 'fa-bolt' }
         ];
 
-        // 重新定義物品 (Items & Clues)
         const ITEMS = {
             key: { name: "書齋鑰匙", icon: "fa-key", desc: "通往百合子夫人私人書房的銅製鑰匙。" },
             crowbar: { name: "古董手杖", icon: "fa-person-cane", desc: "堅硬的黑檀木手杖。可用於防身或撬開物體。行動判定+10%。" }, 
@@ -239,7 +289,6 @@
             mirror_shard: { name: "放大鏡", icon: "fa-magnifying-glass", desc: "偵探的靈魂。能發現細微的痕跡。" }
         };
 
-        // 重新定義突發事件 (Atmosphere Events)
         const FORCED_EVENTS = [
             { msg: "【環境】窗外雷聲大作，宅邸的燈光閃爍了一下。", effect: { san: -5 } },
             { msg: "【聽覺】走廊深處傳來沉重的腳步聲，但轉頭卻空無一人。", effect: { courage: -5 } },
@@ -252,16 +301,6 @@
         ];
 
         /* --- 模組化劇本資料庫 (偵探懸疑) --- */
-        // A: 導入 - 玄關與大廳
-        // B: 搜查 - 東翼 (犯罪現場/血腥 theme)
-        // C: 搜查 - 西翼 (客房/嫌疑人/聲響 theme)
-        // D: 搜查 - 地下室 (隱藏秘密/黑暗 theme)
-        // E: 終局 - 廣間 (推理與指認)
-        
-        // 對應變數: 
-        // type: dark (夜盲), blood (暈血), noise (神經質)
-        // checkType: courage (行動/膽識), insight (推研/觀察)
-
         const MODULES = {
             A: [
                 { text: "暴風雨肆虐的夜晚，你作為私家偵探抵達了「黑百合公館」。警方因山路坍方無法抵達。迎接你的是臉色蒼白的老管家。女主人百合子夫人已被發現陳屍於東翼臥房。空氣中瀰漫著舊木頭與雪茄的味道。時間緊迫，兇手仍在宅邸內。", type: "noise", choices: [
@@ -290,7 +329,7 @@
                     { text: "記錄時間", desc: "記下電話響起的時間，這可能是機關。", icon: "fa-pen", effect: { insight: 5 }, msg: "記下了時間。這可能與自動播放裝置有關。" }
                 ]}
             ],
-            B: [ // 東翼 (犯罪現場/血腥 theme)
+            B: [ // 東翼
                 { text: "【搜查：臥房】踏入案發現場。百合子夫人倒在床上，喉嚨有明顯的勒痕。周圍散落著破碎的香水瓶，濃烈的香氣與血腥味混合，令人作嘔。", type: "blood", choices: [
                     { text: "驗屍", desc: "強忍不適，檢查屍體的狀況。", icon: "fa-user-nurse", type: "check", checkType: "insight", chance: 70, success: { item: 'mirror_shard', msg: "在屍體的手中緊握著一個「放大鏡」碎片。這似乎是兇手留下的痕跡。" }, fail: { san: -20, msg: "當你靠近時，屍體的眼睛似乎動了一下...你嚇得跌坐在地，沾了一身血。" } },
                     { text: "搜索床底", desc: "床下可能藏著兇手或證物。", icon: "fa-search", type: "check", checkType: "courage", chance: 75, success: { item: 'crowbar', msg: "發現了一把沾血的「古董手杖」。這就是兇器嗎？" }, fail: { hp: -10, msg: "床下竄出一隻受驚的大老鼠，咬傷了你的手指。" } },
@@ -307,7 +346,7 @@
                     { text: "用提燈照亮", desc: "從室內照亮外面。", icon: "fa-lightbulb", req: "fuel", effect: { fuel: -3, insight: 5 }, msg: "燈光照亮了欄杆，上面掛著一塊撕破的布料。兇手曾試圖從這裡垂降。" }
                 ]}
             ],
-            C: [ // 西翼 (客房/嫌疑人/聲響 theme)
+            C: [ // 西翼
                 { text: "【搜查：圖書室】西翼的圖書室傳來書籍掉落的聲音。這裡收藏著許多關於黑魔術與毒藥的禁書。", type: "noise", choices: [
                     { text: "潛入調查", desc: "悄悄進入，看看是誰在裡面。", icon: "fa-user-ninja", type: "check", checkType: "courage", chance: 70, success: { insight: 10, flag: "saw_culprit" }, fail: { hp: -10, msg: "被堆在地上的書絆倒了。黑暗中傳來有人逃跑的聲音。" }, successMsg: "你看見那個「投資人」正慌張地把一本書塞進懷裡逃走了。" },
                     { text: "檢查書架", desc: "看看少了哪本書。", icon: "fa-book-open", type: "check", checkType: "insight", chance: 80, success: { insight: 15, item: "medkit" }, fail: { san: -10, msg: "書架後方的眼睛圖案壁紙，彷彿在轉動..." }, successMsg: "發現一本關於「南洋劇毒」的書被翻開了。旁邊放著急救繃帶。" },
@@ -324,7 +363,7 @@
                     { text: "鎖上房門", desc: "把裡面的人困住，稍後再處理。", icon: "fa-lock", effect: { insight: 5 }, msg: "你悄悄轉動鑰匙。裡面的人似乎察覺了，開始瘋狂敲門。" }
                 ]}
             ],
-            D: [ // 地下室 (隱藏秘密/黑暗 theme)
+            D: [ // 地下室
                 { text: "【搜查：地下室】根據線索，你找到了通往地下酒窖的暗門。這裡瀰漫著發霉的味道和化學藥劑的刺鼻氣味。完全沒有光。", type: "dark", choices: [
                     { text: "點燃最大火力", desc: "大量消耗燈油，徹底照亮這裡。", icon: "fa-fire", req: "fuel", effect: { fuel: -5, san: 5 }, msg: "明亮的燈光下，你發現這裡不僅是酒窖，更是一個製毒工坊。牆上掛滿了乾燥的黑百合。" },
                     { text: "摸索前進", desc: "在黑暗中憑直覺前進。", icon: "fa-walking", type: "check", checkType: "courage", chance: 50, success: { courage: 15, insight: 5 }, fail: { hp: -15, san: -15, msg: "你踩到了碎玻璃，劇痛鑽心。黑暗中似乎有東西在呼吸..." } },
@@ -341,10 +380,9 @@
                     { text: "強行撬開", desc: "用手杖撬開爛掉的木欄。", icon: "fa-hammer", req: "crowbar", type: "check", checkType: "courage", chance: 60, success: { courage: 10, msg: "木欄斷裂。你救出了管家，但他太虛弱無法移動，只能告訴你暗道的出口。", flag: "mentor_saved" }, fail: { hp: -20, msg: "用力過猛，反彈的木頭擊中了你的腹部。痛得無法呼吸。" } }
                 ]}
             ],
-            // 終局 (21-25) - 廣間推理
+            // 終局
             E: [
                 { text: "【終局：黎明前的推理】黎明將至，風雨稍歇。你將宅邸內所有倖存者（假的管家、投資人、女僕）集合在廣間。是時候揭開真相了。", type: "noise", choices: [
-                    // 修復：100% 成功率
                     { text: "開始推理", desc: "根據搜集到的證據，重現案發經過。", icon: "fa-comments", req: "journal", type: "check", checkType: "insight", chance: 100, success: { insight: 30, san: -10, msg: "你的聲音在廣間迴盪。「兇手就在我們之中。」所有人的目光都集中在你身上。", flag: "kagura_performed" }, fail: { san: -20, msg: "（此選項不應失敗）" } },
                     { text: "虛張聲勢", desc: "假裝警方已經包圍了這裡，觀察反應。", icon: "fa-bullhorn", type: "check", checkType: "courage", chance: 80, success: { courage: 20, hp: -10, msg: "投資人的臉色變了。他試圖拔槍，但被你喝止了。", flag: "barrier_strengthened" }, fail: { hp: -30, msg: "沒人相信你。假管家冷笑著向你逼近。" } },
                     { text: "指認自己", desc: "「其實我才是兇手...」這種瘋狂的舉動或許能混淆視聽？", icon: "fa-face-dizzy", effect: { hp: -99, san: 0 }, msg: "你在壓力下崩潰了。胡言亂語中，真正的兇手從背後刺穿了你的心臟。" }
@@ -352,7 +390,6 @@
                 { text: "兇手見狀，撕下了偽裝。是那個「投資人」。他掏出了藏著的匕首，「既然被發現了，你們都得死！」", type: "blood", choices: [
                     { text: "開槍射擊", desc: "使用德林加手槍僅剩的子彈。", icon: "fa-gun", req: "gun", effect: { itemLost: "gun", courage: 20 }, msg: "砰！子彈擊中了投資人的肩膀。匕首落地。但他還想撲上來！" },
                     { text: "投擲提燈", desc: "將燃燒的提燈扔向兇手。", icon: "fa-fire", req: "fuel", effect: { fuel: -10, hp: -15 }, msg: "火焰在兇手身上燃燒起來！他發出慘叫，不得不停止攻擊。地毯也著火了。" },
-                    // 修正：取消手杖的硬性需求，改為通用格擋（有手杖加分）
                     { text: "進行防禦", desc: "利用手邊的東西或徒手進行防禦。(持有手杖效果更佳)", icon: "fa-shield-halved", type: "check", checkType: "courage", chance: 60, success: { san: -10, msg: "你勉強擋住了匕首。雖然手臂被劃傷，但避開了致命傷。" }, fail: { hp: -40, msg: "格擋慢了一步。匕首深深刺入了你的肩膀，鮮血直流。" } }
                 ]},
                 { text: "兇手陷入瘋狂，開始講述他的動機。「是那個女人想背叛組織！是黑百合的詛咒！」他的精神已經崩潰。", type: "noise", choices: [
@@ -368,10 +405,10 @@
             ]
         };
 
-        /* --- 遊戲邏輯 (核心邏輯保持不變) --- */
+        /* --- 遊戲邏輯 --- */
         const game = {
             turn: 1,
-            maxTurns: 18, // 修正：總回合數調整為實際長度
+            maxTurns: 18,
             stats: { hp: 100, san: 80, courage: 50, insight: 10, fuel: 25 },
             inventory: [],
             flags: [],
@@ -383,7 +420,6 @@
 
             start: function() {
                 this.turn = 1;
-                // 初期狀態
                 this.stats = { hp: 100, san: 80, courage: 50, insight: 10, fuel: 25 };
                 this.inventory = [];
                 this.flags = [];
@@ -399,7 +435,6 @@
                     ...MODULES[midModules[2]],
                     ...MODULES.E
                 ];
-                // 修正：動態設定最大回合數
                 this.maxTurns = this.scenarioTimeline.length;
                 console.log("Map Order:", midModules, "Length:", this.maxTurns);
 
@@ -429,7 +464,7 @@
 
                 this.historyLog.push(`${this.turn}: ${data.text}`);
 
-                // 幻覺事件 (Reskinned for Detective Mystery)
+                // 幻覺事件
                 if (this.turn < this.maxTurns - 1 && this.stats.san < 70 && Math.random() < 0.3) {
                     const phantomText = ["好像有人在敲牆壁", "發現了一枚沾血的硬幣", "窗外有人影閃過", "牆上的肖像畫似乎眨了眼", "聞到了杏仁味(氰化物?)"];
                     const randomText = phantomText[Math.floor(Math.random() * phantomText.length)];
@@ -440,7 +475,7 @@
                     });
                 }
 
-                // 發狂模式 (Mental Breakdown)
+                // 發狂模式
                 if (this.stats.san < 30) {
                     text += " <span class='text-distort' style='display:block; margin-top:10px; color:#c0392b;'>[幻聽] " + this.getMadnessText() + "</span>";
                     if (Math.random() < 0.4) {
@@ -452,7 +487,6 @@
                 }
 
                 const storyContent = document.getElementById('story-content');
-                // 圖示變更
                 storyContent.innerHTML = `<i class="fas ${this.getScenarioIcon(this.turn)} story-icon"></i>` + text;
                 storyContent.className = 'story-text';
                 void storyContent.offsetWidth; 
@@ -462,7 +496,6 @@
                 choiceArea.innerHTML = '';
 
                 choices.forEach(choice => {
-                    // 終局條件檢查
                     if (choice.effect && choice.effect.final === 'seal') {
                         const canSeal = this.hasItem('amulet') && this.flags.includes('kagura_performed');
                         if (!canSeal) choice.desc += " <span style='color:#cd5c5c'>(證據不足：需手帕與完成推理)</span>";
@@ -558,7 +591,6 @@
                 if (effect.itemLost) this.removeItem(effect.itemLost);
                 if (effect.flag) {
                     this.flags.push(effect.flag);
-                    console.log("Flag added:", effect.flag);
                 }
                 if (effect.msg) this.log(effect.msg, (effect.hp < 0 || effect.san < 0) ? "log-negative" : "log-positive");
                 this.logStatsChange(effect);
@@ -568,7 +600,6 @@
                 this.stats.hp = Math.min(100, Math.max(0, this.stats.hp));
                 this.stats.san = Math.min(100, Math.max(0, this.stats.san));
                 this.stats.fuel = Math.min(50, Math.max(0, this.stats.fuel));
-                // 持有提燈則消耗燃料
                 if (this.hasItem('lighter')) { this.stats.fuel -= 1; if (this.stats.fuel <= 0) this.log("提燈油盡燈枯了！", "log-negative"); }
                 this.updateUI();
                 this.checkAtmosphere();
@@ -612,13 +643,11 @@
             triggerEnding: function() {
                 let title, desc, icon;
                 const { hasAmulet, mentorSaved, ritualStarted } = { 
-                    hasAmulet: this.hasItem('amulet'), // 手帕 (關鍵證物)
-                    mentorSaved: this.flags.includes('mentor_saved'), // 救出真管家
-                    ritualStarted: this.flags.includes('kagura_performed') // 完成推理
+                    hasAmulet: this.hasItem('amulet'),
+                    mentorSaved: this.flags.includes('mentor_saved'),
+                    ritualStarted: this.flags.includes('kagura_performed')
                 };
                 
-                console.log("Ending Check:", { finalChoice: this.finalChoice, hasAmulet, ritualStarted });
-
                 if (this.finalChoice === 'seal') {
                     if (hasAmulet && ritualStarted) {
                         title = "真結局：帝都名偵探"; desc = "你的推理完美無缺。警方在最後一刻趕到，將投資人及其邪教組織一網打盡。黑百合館的悲劇落幕，而你的名聲將響徹帝都。"; icon = "fa-star";
@@ -666,9 +695,7 @@
                 if (win.children.length > 20) win.lastElementChild.remove();
             },
             logStatsChange: function(effect) { let parts = []; if (effect.hp) parts.push(`體力${effect.hp}`); if (effect.san) parts.push(`精神力${effect.san}`); if (effect.courage) parts.push(`行動${effect.courage}`); if (effect.insight) parts.push(`推研${effect.insight}`); if (parts.length) this.log(`[${parts.join(' ')}]`, effect.hp<0||effect.san<0?"log-negative":"log-positive"); },
-            // 場景圖示變更 (偵探風)
             getScenarioIcon: function(turn) { if(turn<=5)return"fa-dungeon"; if(turn<=15)return"fa-magnifying-glass"; if(turn<=20)return"fa-skull"; return"fa-gavel"; },
-            // 發狂時的幻聽
             getMadnessText: function() { const t=["兇手在身後...","別回頭...","血的味道...","它看著你...","不是我..."]; return t[Math.floor(Math.random()*t.length)]; },
 
             endGame: function(title, iconClass, desc) {
