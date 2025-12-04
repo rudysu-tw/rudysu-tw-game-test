@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>幽庭夜話 - Yūtei Night Tales</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root{
+            --bg:#0b0a09; /* 深墨和紙 */
+            --fg:#f2e9d8; /* 和紙象牙 */
+            --panel:#1a1816; /* 深栗木 */
+            --acc:#c46b47; /* 朱色 */
+            --good:#5baa6d; /* 若竹綠 */
+            --bad:#d34534; /* 緋色 */
+            --item:#e3c565; /* 金箔 */
+        }
+        *{box-sizing:border-box;}
+        body{margin:0;background:var(--bg); background-image:url(''); /* base bg */;color:var(--fg);font-family:"Noto Sans TC","Microsoft JhengHei",sans-serif;display:flex;justify-content:center;height:100vh;}
+        #app{width:100%;max-width:680px;height:100%;display:flex;flex-direction:column;background:linear-gradient(180deg,#121110,#0e0d0c);position:relative}
+        header{padding:12px 18px;background:#120f0c;border-bottom:1px solid #111;display:flex;justify-content:space-between;align-items:center}
+        header .title{font-family:serif;font-size:1.2rem;color:var(--acc)}
+        .turn{background:#181412;padding:6px 10px;border-radius:6px;font-family:monospace}
+        #status{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;padding:6px;border-bottom:1px solid #0d1214;background:#071013}
+        .char{background:#0c1512;padding:8px;border-radius:6px;display:flex;align-items:center;gap:8px}
+        .char .icon{font-size:1.2rem;color:#ddd}
+        .char .name{font-weight:700}
+        .hp-2{border-left:4px solid var(--good)}
+        .hp-1{border-left:4px solid var(--acc)}
+        .hp-0{border-left:4px solid #444;opacity:0.6;filter:grayscale(1)}
+        #inv{display:flex;gap:8px;padding:8px;border-bottom:1px solid #0d1214;background:#061015}
+        .inv-item{background:#111213;padding:6px 10px;border-radius:6px}
+        #story{flex:1;padding:18px;overflow:auto}
+        .area{color:#9aa5b1;font-size:0.85rem;margin-bottom:8px}
+        .scene{line-height:1.8}
+        #choices{padding:12px;background:#061015;border-top:1px solid #0d1214;display:flex;flex-direction:column;gap:8px}
+        .choice{background:#0b1113;padding:12px;border-radius:6px;display:flex;justify-content:space-between;align-items:center;cursor:pointer}
+        .choice.disabled{opacity:0.45;pointer-events:none}
+        .chance{font-family:monospace;padding:4px 8px;border-radius:4px;background:#071216}
+        #log{height:100px;background:#020405;color:#9aa5b1;padding:8px;overflow:auto;border-top:1px solid #071014}
+        .overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(2,2,2,0.95);z-index:60}
+        .start-btn{background:var(--acc);color:#fff;padding:10px 18px;border-radius:8px;border:none;cursor:pointer}
+        .end-card{max-width:640px;padding:20px;background:#071218;border-radius:10px;text-align:center}
+        .dice{width:84px;height:84px;border-radius:10px;border:3px solid #fff;display:flex;align-items:center;justify-content:center;font-size:2rem}
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div id="cover" class="overlay">
+            <div class="end-card">
+                <h1 style="color:var(--acc);margin:0;font-family:serif">幽庭夜話</h1>
+                <p style="color:#9aa5b1">日式幽邸 — 新章</p>
+                <div style="text-align:left;margin-top:12px;color:#bfc9cf">遊戲說明：<br>- 四名少年少女深入廢棄幽邸調查怪異傳聞。<br>- 每回合 2~3 個真選項，偶爾出現幻象陷阱（約 30% 機率）。<br>- 角色死亡後無法再執行行動（無法選該角色的選項）。<br>- 繃帶為單一治療道具；護守、短刀為關鍵道具。</div>
+                <button class="start-btn" style="margin-top:14px" onclick="G.start()">踏入幽庭</button>
+            </div>
+        </div>
+
+        <header>
+            <div class="title">幽庭夜話</div>
+            <div class="turn">回合: <span id="turn">1</span> / 18</div>
+        </header>
+
+        <div id="status"></div>
+        <div id="inv"></div>
+        <div id="story">
+            <div class="area" id="area"></div>
+            <div class="scene" id="scene"></div>
+        </div>
+        <div id="choices"></div>
+        <div id="log"></div>
+
+        <div id="diceOverlay" class="overlay" style="display:none;z-index:80">
+            <div style="text-align:center;color:var(--fg)">
+                <div class="dice" id="diceBox">?</div>
+                <div id="diceText" style="margin-top:8px;color:#cbd5da">檢定中...</div>
+            </div>
+        </div>
+
+        <div id="endOverlay" class="overlay" style="display:none">
+            <div class="end-card">
+                <h2 id="endTitle" style="color:var(--acc)"></h2>
+                <div id="endMsg" style="color:#bfc9cf;margin-top:8px"></div>
+                <div id="endStats" style="color:#9aa5b1;margin-top:10px"></div>
+                <button class="start-btn" style="margin-top:12px" onclick="G.reset()">再次挑戰</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    // === 角色與道具（和風） ===
+    const CHAR_DEF = {
+        akio:{name:'秋生',id:'akio'}, // 勇
+        yui:{name:'唯',id:'yui'}, // 智
+        haru:{name:'春',id:'haru'}, // 仁
+        mei:{name:'芽衣',id:'mei'} // 直覺
+    };
+
+    const ITEMS = {
+        'ofuda':{name:'祓札'},
+        'omamori':{name:'護守'},
+        'bandage':{name:'繃帶'},
+        'lantern':{name:'和燈'},
+        'katana':{name:'短刀'}
+    };
+
+    // 18 回合場景（完整）
+    const SCENARIOS = [
+        {area:'一章：入口·苔庭',text:'石階滿是濕苔。門扉半掩，門内偶有和服摩挲聲。',choices:[
+            {char:'akio',text:'推開門扉',desc:'硬闖或許會省時。',base:30,ok:'門扉慢慢開啟，木屑落下。',fail:'肩膀扭傷，行動受限。'},
+            {char:'yui',text:'辨識符咒',desc:'沿門框找符咒排列。',base:45,ok:{msg:'辨識排列，獲得祓札（可擋小型怨念）。',item:'ofuda'},fail:'讀法錯亂，頭暈數秒。'},
+            {char:'mei',text:'繞道小巷',desc:'小路或許更安全。',base:35,ok:'找到不被注意的側門。',fail:'迷路被荊棘劃傷。'}
+        ]},
+
+        {text:'庭院中一盞古燈忽暗忽明，陰影像是被拉長的手。',choices:[
+            {char:'haru',text:'清理枯葉',desc:'避免踩到危險陷阱。',base:40,ok:{msg:'在枯葉下找到繃帶。',item:'bandage'},fail:'被藏於葉下的釘子劃傷。'},
+            {char:'akio',text:'大聲呼喊',desc:'驅散不安。',base:30,ok:'陰影散去，氣氛略微緩和。',fail:'聲音引來夜禽攻擊。'}
+        ]},
+
+        {area:'二章：玄関',text:'玄関地板有輪廓像是有人來回拖曳過。鏡上有污痕，但反射處有異樣光點。',choices:[
+            {char:'yui',text:'檢視鏡面',desc:'鏡中或有線索。',base:50,ok:{msg:'鏡中反射出暗格位置，發現和燈。',item:'lantern'},fail:'鏡中伸出細手抓傷臉頰。'},
+            {char:'mei',text:'聆聽地板',desc:'有時聲音能導路。',base:35,ok:'分辨出回聲，找到暗格。',fail:'誤判方向，踏入陷阱。'}
+        ]},
+
+        {text:'走廊掛滿舊照，長久凝視像是在被注視。',choices:[
+            {char:'akio',text:'迅雷前衝',desc:'不看、不停。',base:35,ok:'衝破視線範圍。',fail:'被絆倒擦傷。'},
+            {char:'haru',text:'低聲祈禱',desc:'安撫不安。',base:45,ok:'氣場平穩，大家心情穩定。',fail:'祈禱引來回應，驚嚇。'}
+        ]},
+
+        {area:'三章：書齋',text:'書架倒塌，書頁翻動像在訴說。',choices:[
+            {char:'yui',text:'翻閱日記',desc:'或能知曉過去。',base:50,ok:{msg:'找到祭禮記載與短刀的藏處提示。',item:'katana'},fail:'書頁中藏著詛咒，精神受損。'},
+            {char:'haru',text:'整理書籍',desc:'或有遺失物。',base:35,ok:{msg:'在書中找到繃帶。',item:'bandage'},fail:'書櫃倒塌，陷入混亂。'}
+        ]},
+
+        {area:'四章：和室',text:'榻榻米有異樣濕跡，窗外風鈴聲中似有低泣。',choices:[
+            {char:'mei',text:'聞香尋跡',desc:'直覺告訴你方向。',base:45,ok:'找到暗門的方向。',fail:'被刺鼻氣味逼退。'},
+            {char:'akio',text:'撬開板縫',desc:'也許有藏物。',base:30,ok:'發現小櫃，內有護守。',fail:'木屑劃傷手掌。'}
+        ]},
+
+        {area:'五章：廚房',text:'鍋碗突然跳動，金屬聲在空氣中迴響。',choices:[
+            {char:'haru',text:'安撫器物',desc:'嘗試讓它們靜止。',base:40,ok:'器物緩和，氣氛穩定。',fail:'器物失控，碎片飛濺。'},
+            {char:'yui',text:'觀察磁場',desc:'找出誘因。',base:45,ok:{msg:'理解了法則，獲得祓札。',item:'ofuda'},fail:'被飛刀擦傷。'}
+        ]},
+
+        {area:'六章：廊下',text:'長廊盡頭有封印的門，門上有血字「勿至」。',choices:[
+            {char:'yui',text:'解讀封印',desc:'利用先前學到符號。',base:55,ok:'封印鬆動，門微開。',fail:'符文回噬，頭暈目眩。'},
+            {char:'akio',text:'破門而入',desc:'蠻力或可奏效。',base:30,ok:'門被撞開，發現下層通道。',fail:'反作用力造成重傷。'}
+        ]},
+
+        {area:'七章：地下小屋',text:'小屋昏暗，牆上掛著孩童的照片，眼神被切割般詭異。',choices:[
+            {char:'haru',text:'撫摸照片',desc:'或能安撫靈體。',base:40,ok:{msg:'照片中暗格取得繃帶。',item:'bandage'},fail:'照片像枯藤般伸出抓傷。'},
+            {char:'mei',text:'躲避觀察',desc:'不要與照片對視。',base:35,ok:'安然無事通過。',fail:'一張照片飛起割傷手臂。'}
+        ]},
+
+        {area:'八章：冷藏庫',text:'冷氣凜冽，箱內似乎藏了不該見的東西。',choices:[
+            {char:'akio',text:'破壞冷凍機',desc:'取消冷源試試。',base:35,ok:'機器崩解，找到短刀殘片，稍後可修復。',fail:'電流反噬，受傷。'},
+            {char:'yui',text:'尋找鑰匙',desc:'也許有鎖櫃。',base:45,ok:{msg:'發現小箱鑰匙，內含護守。',item:'omamori'},fail:'打開錯誤箱子，被惡臭侵襲。'}
+        ]},
+
+        {area:'九章：庭院深井',text:'井底傳來水聲，像是低語呼喚。',choices:[
+            {char:'mei',text:'傾聽深語',desc:'或能分辨真偽。',base:45,ok:'找到通往地下的安全通道。',fail:'被幻音迷惑，腳踝扭傷。'},
+            {char:'haru',text:'投下燈籠',desc:'照亮深處。',base:40,ok:{msg:'燈籠照亮，獲得和燈。',item:'lantern'},fail:'燈籠墜落，燈芯熄滅。'}
+        ]},
+
+        {area:'十章：外廊',text:'外廊的風鈴突然同時響起，聲音像撕裂的布。',choices:[
+            {char:'akio',text:'迎風而立',desc:'以氣勢壓制。',base:35,ok:'風鈴停止，氣息平靜。',fail:'被碎片劃破皮膚。'},
+            {char:'yui',text:'記下節律',desc:'或能找到節拍破綻。',base:45,ok:'破解節律，風鈴失效。',fail:'節律牽動精神，頭痛難忍.'}
+        ]},
+
+        {area:'十一章：祭壇前庭',text:'祭壇前有供品桌，桌上覆著老舊的布與灰塵。',choices:[
+            {char:'haru',text:'清除供品',desc:'或可減少怨念。',base:40,ok:{msg:'在供品下找到繃帶與短刀的一部分。',item:'bandage'},fail:'供品中藏針，受刺傷。'},
+            {char:'mei',text:'嗅出異味',desc:'辨別不尋常之物。',base:35,ok:'找到一塊散發冷意的布，可能是線索。',fail:'被氣味暈眩。'}
+        ]},
+
+        {area:'十二章：藏書間',text:'密室裡記錄著古老的祭典與對策，字句像在咬人。',choices:[
+            {char:'yui',text:'研讀祭文',desc:'或能學會弱化法術。',base:55,ok:'學會弱化祭法的咒語。',fail:'文字反噬，精神受損。'},
+            {char:'akio',text:'翻找工具',desc:'或可找到有用器物。',base:35,ok:{msg:'找到短刀，修復後可作最後一擊。',item:'katana'},fail:'工具損壞，割傷手掌。'}
+        ]},
+
+        {area:'十三章：稻田邊',text:'荒廢的稻田間有稻草人仍保持姿勢，像守望者。',choices:[
+            {char:'haru',text:'安撫稻草人',desc:'或許並非惡意。',base:45,ok:'稻草人鬆動，顯露地下小道。',fail:'稻草人攻擊，造成擦傷。'},
+            {char:'mei',text:'探看稻根',desc:'直覺指向下方。',base:35,ok:'找到隱藏的地道口。',fail:'被稻根絆倒。'}
+        ]},
+
+        {area:'十四章：回廊幽影',text:'回廊深處有人影飄動，但靠近就消失。',choices:[
+            {char:'yui',text:'追蹤影跡',desc:'靠經驗尋找真相。',base:45,ok:'找到線索並獲得護守碎片（可合成護守）。',fail:'被影子拖拽，手臂受創。'},
+            {char:'akio',text:'設下圈套',desc:'強攻前先防守。',base:35,ok:'圈套生效，困住一部分幽影。',fail:'圈套失靈，反被困住。'}
+        ]},
+
+        {area:'十五章：地下湖',text:'湖面霧氣翻滾，遠處有小舟在搖曳。',choices:[
+            {char:'mei',text:'感應水下',desc:'直覺分辨安全路線。',base:45,ok:'找到隱形橋梁的起點。',fail:'被幻象帶偏，差點滑入水中。'},
+            {char:'haru',text:'檢視小舟',desc:'或能尋到重要物品。',base:40,ok:{msg:'在小舟找到護守（完整）。',item:'omamori'},fail:'小舟破損，差點沉沒。'}
+        ]},
+
+        {area:'十六章：樓梯與暗室',text:'通往閣樓的梯子嘎吱作響，每一步都像審判。',choices:[
+            {char:'akio',text:'帶頭上樓',desc:'勇往直前。',base:40,ok:'成功登上閣樓。',fail:'踩空受重傷。'},
+            {char:'yui',text:'檢查踏板',desc:'找出安全階。',base:50,ok:'避開陷阱階，安全上行。',fail:'判斷錯誤，腳踝受傷。'}
+        ]},
+
+        {area:'十七章：閣樓邊緣',text:'閣樓空間像巨大的祭壇，血色法陣在木地板上微微顫動。',choices:[
+            {char:'yui',text:'弱化法陣',desc:'利用先前學到的咒語。',base:55,ok:'法陣震動減弱。',fail:'咒語回噬，暈眩。'},
+            {char:'akio',text:'清除障物',desc:'用火或力氣清場。',base:35,ok:'清空祭壇周圍，視線變好。',fail:'火勢失控，受傷。'}
+        ]},
+
+        {area:'十八章：終章·祭壇',text:'惡靈準備實體化，最後的決戰就在此。',choices:[
+            {char:'yui',text:'念出弱化咒',desc:'以知識攻擊其核心。',base:60,ok:'惡靈動作遲緩，受創。',fail:'咒語錯誤反噬。'},
+            {char:'mei',text:'使用護守封印',desc:'出手者以護守啟動封印（真結局條件）。',req:'omamori',base:100,ok:'護守光芒大放，封印生效。',fail:'護守碎裂，但仍造成影響。'},
+            {char:'akio',text:'短刀致命一擊',desc:'以短刀刺向核心。',req:'katana',base:85,ok:'短刀刺入，惡靈受重創。',fail:'短刀折斷，受重傷。'}
+        ]}
+    ];
+
+    // === 遊戲物件與邏輯 ===
+    const G = {
+        turn:1, maxTurn:18,
+        chars:{}, inventory:[], logEl:null, lastSuccess:false,
+
+        start(){
+            this.turn=1; this.inventory=['ofuda'];
+            this.chars={akio:2,yui:2,haru:2,mei:2};
+            document.getElementById('cover').style.display='none';
+            this.logEl = document.getElementById('log'); this.logEl.innerHTML='';
+            this.updateUI(); this.loadTurn();
+            this.log('夜色降臨，你們踏入幽庭...');
+        },
+
+        reset(){ location.reload(); },
+
+        loadTurn(){
+            if(this.turn>this.maxTurn) return;
+            const s = SCENARIOS[this.turn-1];
+            document.getElementById('area').innerText = s.area || '';
+            document.getElementById('scene').innerHTML = `<b>[回合 ${this.turn}]</b><br>`+s.text;
+            document.getElementById('turn').innerText=this.turn;
+            this.renderChoices(s);
+            this.updateUI();
+        },
+
+        renderChoices(s){
+            const container = document.getElementById('choices'); container.innerHTML='';
+            // 顯示活人可執行的選項；若選項需要道具且玩家無道具，禁用
+            let options = s.choices.filter(c=> {
+                if(c.type==='fake') return true;
+                // 如果選項有 req，但玩家沒道具則會顯示為 disabled（但保留在列表）
+                // 不展示由已死亡角色發起的非道具選項
+                if(c.req) return true;
+                return this.chars[c.char] > 0;
+            });
+
+            // 假選項 30% 出現（最後一回不出現）
+            if(Math.random()<0.30 && this.turn !== this.maxTurn){
+                options.push({type:'fake',text:'白影引路',desc:'似乎看見出口的幻影。',chanceDisp:'幻影'});
+            }
+
+            // 至少保留兩個選項
+            if(options.length<3){
+                // fallback: show first two original
+                options = s.choices.slice(0,2);
+            }
+
+            options.sort(()=>Math.random()-0.5);
+
+            options.forEach(opt=>{
+                const el = document.createElement('div'); el.className='choice';
+                if(opt.type==='fake'){
+                    el.innerHTML = `<div><b>${opt.text}</b><div style='font-size:0.85rem;color:#9aa5b1'>${opt.desc}</div></div><div class='chance'>${opt.chanceDisp||'幻影'}</div>`;
+                    el.onclick = ()=> this.handleFake();
+                }else{
+                    const reqNote = opt.req ? `（需道具：${ITEMS[opt.req].name}）` : '';
+                    const disabled = opt.req && !this.inventory.includes(opt.req);
+                    if(disabled) el.classList.add('disabled');
+                    const chance = this.calcChance(opt);
+                    el.innerHTML = `<div><b>${opt.text}</b><div style='font-size:0.85rem;color:#9aa5b1'>${opt.desc} ${reqNote}</div></div><div class='chance'>${chance}%</div>`;
+                    if(!disabled) el.onclick = ()=> this.handleReal(opt,chance);
+                }
+                container.appendChild(el);
+            });
+        },
+
+        calcChance(opt){
+            let base = opt.base || 30;
+            const hp = this.chars[opt.char] || 0;
+            base += Math.max(0,hp-1)*20;
+            const buffMap = {akio:'力量', yui:'知識', haru:'安撫', mei:'直覺'};
+            if(buffMap[opt.char] && opt.desc.includes(buffMap[opt.char])) base += 20;
+            if(base>95) base=95;
+            return Math.round(base);
+        },
+
+        handleReal(opt,chance){
+            this.showDice(chance).then(success=>{
+                this.lastSuccess = success;
+                if(success){
+                    const ok = opt.ok || '行動成功。';
+                    const msg = typeof ok === 'object' ? ok.msg : ok;
+                    this.log(msg,'good');
+                    if(typeof ok === 'object' && ok.item) this.gainItem(ok.item);
+
+                    // 使用道具（消耗）
+                    if(opt.req){
+                        // bandage 為「治療觸發」，消耗繃帶並為該回合執行者回復 1 HP（若需要）
+                        if(opt.req === 'bandage'){
+                            this.useItem('bandage');
+                            if(this.chars[opt.char] > 0 && this.chars[opt.char] < 2){
+                                this.chars[opt.char]++;
+                                this.log(`${CHAR_DEF[opt.char].name} 被繃帶治療，恢復一些氣力。`,'good');
+                            }
+                        } else {
+                            this.useItem(opt.req);
+                        }
+                    }
+
+                }else{
+                    this.log(opt.fail || '行動失敗。','bad');
+                    if(this.chars[opt.char] > 0){
+                        this.chars[opt.char]--;
+                        this.log(`${CHAR_DEF[opt.char].name} 受傷了。`,'bad');
+                    }
+                }
+
+                // 如果最後回合，直接判定結局
+                if(this.turn === this.maxTurn){
+                    setTimeout(()=>this.endGame(this.lastSuccess),700);
+                    return;
+                }
+
+                if(!this.checkGameOver()){
+                    this.turn++; this.updateUI(); setTimeout(()=>this.loadTurn(),700);
+                }
+            });
+        },
+
+        handleFake(){
+            this.log('那是幻影！陷阱被觸發。','bad');
+            this.showDice(50).then(_=>{
+                const alive = Object.keys(this.chars).filter(k=>this.chars[k]>0);
+                if(alive.length>0){
+                    const victim = alive[Math.floor(Math.random()*alive.length)];
+                    this.chars[victim]--;
+                    this.log(`${CHAR_DEF[victim].name} 因幻影受傷。`,'bad');
+                }
+
+                if(this.turn === this.maxTurn){
+                    setTimeout(()=>this.endGame(false),700);
+                    return;
+                }
+
+                if(!this.checkGameOver()){
+                    this.turn++; this.updateUI(); setTimeout(()=>this.loadTurn(),700);
+                }
+            });
+        },
+
+        showDice(chance){
+            const overlay = document.getElementById('diceOverlay'); const box = document.getElementById('diceBox'); const txt = document.getElementById('diceText');
+            overlay.style.display='flex'; box.innerText='?'; txt.innerText=`檢定中... (${chance}%)`;
+            return new Promise(res=>{
+                setTimeout(()=>{
+                    const roll = Math.floor(Math.random()*100)+1; const success = roll<=chance;
+                    box.innerText = roll; txt.innerText = success? '成功':'失敗'; txt.style.color = success? 'var(--good)':'var(--bad)';
+                    setTimeout(()=>{ overlay.style.display='none'; res(success); },600);
+                },600);
+            });
+        },
+
+        gainItem(id){ if(!this.inventory.includes(id)){ this.inventory.push(id); this.log('獲得道具：'+ITEMS[id].name,'good'); this.updateUI(); } },
+        useItem(id){ const idx = this.inventory.indexOf(id); if(idx>-1){ this.inventory.splice(idx,1); this.log('消耗道具：'+ITEMS[id].name,''); this.updateUI(); } },
+
+        checkGameOver(){
+            const alive = Object.values(this.chars).filter(h=>h>0).length;
+            if(alive===0){
+                setTimeout(()=> this.showEnd('壞結局：全滅','四人皆亡，幽庭回歸寂靜。'),900);
+                return true;
+            }
+            return false;
+        },
+
+        endGame(lastSuccess){
+            const aliveNames = Object.keys(this.chars).filter(k=>this.chars[k]>0).map(k=>CHAR_DEF[k].name);
+            const haveOmamori = this.inventory.includes('omamori');
+            if(lastSuccess && aliveNames.length>0 && haveOmamori){
+                this.showEnd('真結局：淨化','憑護守與四人之力，祭壇被封印。幽庭的怨念得以安息。');
+            }else if(lastSuccess && aliveNames.length>0){
+                this.showEnd('好結局：倖存','你們成功逃離，雖然帶著傷痕，但仍活著回到曙光。');
+            }else{
+                this.showEnd('壞結局：功虧一簣','最後的努力未能阻止幽庭的噬魂。');
+            }
+        },
+
+        showEnd(title,msg){ document.getElementById('endTitle').innerText=title; document.getElementById('endMsg').innerText=msg; const alive = Object.keys(this.chars).filter(k=>this.chars[k]>0).map(k=>CHAR_DEF[k].name).join(', ')||'無'; document.getElementById('endStats').innerText='生還者：'+alive; document.getElementById('endOverlay').style.display='flex'; },
+
+        updateUI(){
+            const s = document.getElementById('status'); s.innerHTML='';
+            for(const k in CHAR_DEF){ const hp=this.chars[k]; const cls = hp===2? 'hp-2': hp===1? 'hp-1':'hp-0'; const el = document.createElement('div'); el.className = 'char '+cls; el.innerHTML = `<div style="font-size:1rem;font-weight:700">${CHAR_DEF[k].name}</div><div style="margin-left:auto;color:#9aa5b1">${hp>0? (hp===2?'健康':'受傷'):'死亡'}</div>`; s.appendChild(el); }
+            const inv = document.getElementById('inv'); inv.innerHTML=''; this.inventory.forEach(id=>{ const div=document.createElement('div'); div.className='inv-item'; div.innerText = ITEMS[id].name; inv.appendChild(div); });
+        },
+
+        log(msg,cls){ const w = this.logEl; const d = document.createElement('div'); d.innerText = '> ' + msg; d.style.padding='4px 0'; if(cls==='good') d.style.color='var(--good)'; if(cls==='bad') d.style.color='var(--bad)'; w.prepend(d); }
+    };
+
+    window.G = G;
+    </script>
+</body>
+</html>
