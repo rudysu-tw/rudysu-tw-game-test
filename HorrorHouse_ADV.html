@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>鬼屋歷險 - Ghost House Adventure</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* --- 全域變數 --- */
+        :root {
+            --bg-color: #0d0d0d;
+            --text-color: #d0c0a8;
+            --ui-bg: #1f1a16;
+            --border-color: #4a3f33;
+            
+            /* 狀態顏色 */
+            --status-fine: #27ae60;   /* 無事 (HP 2) */
+            --status-hurt: #c0392b;   /* 受傷 (HP 1) */
+            --status-dead: #555;      /* 死亡 (HP 0) */
+            
+            --item-color: #f1c40f;
+        }
+
+        * { box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; }
+        
+        body { 
+            margin: 0; padding: 0; 
+            background-color: var(--bg-color); 
+            color: var(--text-color); 
+            font-family: "Microsoft JhengHei", "Heiti TC", serif; /* 改用襯線體增加小說感 */
+            height: 100dvh; 
+            overflow: hidden; 
+            display: flex; justify-content: center; 
+        }
+
+        #app-container { 
+            width: 100%; 
+            max-width: 600px; 
+            height: 100%; 
+            display: flex; 
+            flex-direction: column; 
+            background: var(--ui-bg); 
+            position: relative; 
+            box-shadow: 0 0 50px rgba(0,0,0,0.9);
+            border-left: 1px solid #333; 
+            border-right: 1px solid #333; 
+        }
+
+        /* --- 視覺特效 --- */
+        #vignette { 
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
+            pointer-events: none; 
+            box-shadow: inset 0 0 80px rgba(0,0,0,0.8); 
+            z-index: 10; 
+        }
+        .damage-effect { animation: red-flash 0.3s; }
+        @keyframes red-flash { 0% { box-shadow: inset 0 0 0 rgba(192, 57, 43, 0); } 50% { box-shadow: inset 0 0 100px rgba(192, 57, 43, 0.8); } 100% { box-shadow: inset 0 0 0 rgba(192, 57, 43, 0); } }
+
+        /* --- UI 元件 --- */
+        header {
+            padding: 8px 15px;
+            background: #14100c;
+            border-bottom: 1px solid var(--border-color);
+            display: flex; justify-content: space-between; align-items: center;
+            font-size: 0.9rem;
+            flex-shrink: 0;
+            z-index: 20;
+            height: 50px;
+        }
+        .turn-badge { background: #333; padding: 3px 8px; border-radius: 4px; border: 1px solid #555; color: #fff; font-family: monospace; }
+        
+        /* 角色狀態欄 (圖示化優化) */
+        #char-status-bar {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1px;
+            background: var(--border-color);
+            padding-bottom: 1px;
+            flex-shrink: 0;
+            height: 55px; /* 固定高度 */
+        }
+        .char-box {
+            background: #2c241e;
+            padding: 4px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border-top: 3px solid transparent;
+            transition: all 0.3s;
+        }
+        .char-icon { font-size: 1.1rem; margin-bottom: 2px; }
+        .char-info { display: flex; flex-direction: column; align-items: center; line-height: 1; }
+        .char-name { font-size: 0.7rem; font-weight: bold; color: #aaa; margin-bottom: 2px; }
+        .char-hp-text { font-size: 0.65rem; font-weight: bold; }
+        
+        .hp-2 { border-top-color: var(--status-fine); color: var(--status-fine); } 
+        .hp-1 { border-top-color: var(--status-hurt); color: var(--status-hurt); animation: pulse 2s infinite; } 
+        .hp-0 { border-top-color: var(--status-dead); color: var(--status-dead); background: #181410; filter: grayscale(1); opacity: 0.7; } 
+        
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.6; } 100% { opacity: 1; } }
+
+        /* 道具欄 */
+        #inventory-bar {
+            background: #181410;
+            padding: 0 10px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex; gap: 8px;
+            overflow-x: auto;
+            white-space: nowrap;
+            height: 40px;
+            align-items: center;
+            flex-shrink: 0;
+        }
+        .inv-item {
+            background: #3a3025;
+            color: var(--item-color);
+            padding: 3px 8px;
+            font-size: 0.7rem;
+            border-radius: 3px;
+            border: 1px solid #544a3d;
+            display: flex; align-items: center; gap: 5px;
+        }
+
+        /* 故事區 (捲動與排版保護) */
+        #story-area {
+            flex: 1 1 auto; /* 佔據剩餘空間 */
+            min-height: 0;  /* 關鍵：防止內容撐開容器 */
+            padding: 15px 20px;
+            overflow-y: auto;
+            background: radial-gradient(circle at center, #26211b 0%, #1a1510 100%);
+            color: #dcd0c0;
+            line-height: 1.7;
+            font-size: 1.05rem;
+            text-shadow: 0 2px 5px rgba(0,0,0,0.8);
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start; /* 內容從上開始 */
+        }
+        .area-title { 
+            color: #888; font-size: 0.75rem; letter-spacing: 2px; 
+            margin-bottom: 10px; border-left: 3px solid #8a2be2; padding-left: 8px; 
+            flex-shrink: 0;
+        }
+        .scene-text { 
+            animation: fadeIn 1s ease-out; 
+            margin-bottom: 10px; 
+            text-align: justify;
+        }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* 選項區 (統一為深色樣式，不提示角色) */
+        #choice-area {
+            padding: 10px;
+            background: #14100c;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            flex-shrink: 0;
+            border-top: 1px solid var(--border-color);
+            max-height: 40vh; /* 限制最大高度，避免蓋住故事 */
+            overflow-y: auto;
+        }
+        .choice-btn {
+            background: linear-gradient(to right, #2c241e, #201812);
+            border: 1px solid #4a3f33;
+            color: #b0a090;
+            padding: 10px 12px;
+            text-align: left;
+            font-size: 0.9rem;
+            cursor: pointer;
+            border-radius: 3px;
+            position: relative;
+            transition: all 0.2s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            min-height: 48px;
+        }
+        .choice-btn:active { transform: scale(0.98); background: #3e3228; }
+        .choice-title { font-weight: bold; display: flex; align-items: center; gap: 8px; font-family: sans-serif; }
+        .choice-desc { font-size: 0.7rem; color: #777; margin-top: 2px; }
+        .chance-badge { 
+            font-size: 0.75rem; padding: 2px 6px; border-radius: 3px; 
+            background: #111; border: 1px solid #444; color: #aaa; font-family: monospace;
+            min-width: 40px; text-align: center;
+        }
+        
+        /* 死亡選項樣式 (現在可點選，但樣式灰暗) */
+        .btn-dead { 
+            border-color: #333; 
+            background: #111;
+            color: #555;
+        }
+        .btn-dead .choice-title { text-decoration: line-through; }
+        .btn-dead .chance-badge { color: var(--status-hurt); border-color: var(--status-hurt); }
+
+        /* Log 視窗 */
+        #log-window {
+            height: 90px;
+            background: #000;
+            color: #aaa;
+            font-size: 0.8rem;
+            font-family: monospace;
+            padding: 8px;
+            overflow-y: scroll;
+            border-top: 2px solid #333;
+            flex-shrink: 0;
+        }
+        .log-line { margin-bottom: 4px; border-bottom: 1px dashed #222; padding-bottom: 2px; }
+        .log-success { color: var(--status-fine); }
+        .log-fail { color: var(--status-hurt); }
+        .log-item { color: var(--item-color); }
+
+        /* 骰子動畫 */
+        #dice-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85); z-index: 50;
+            display: none; justify-content: center; align-items: center; flex-direction: column;
+            backdrop-filter: blur(4px);
+        }
+        .dice-box {
+            width: 80px; height: 80px;
+            border: 3px solid #fff;
+            display: flex; justify-content: center; align-items: center;
+            font-size: 2.5rem; color: #fff;
+            background: #222;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        .dice-rolling { animation: shake-dice 0.1s infinite; }
+        @keyframes shake-dice { 0% { transform: rotate(0deg); } 25% { transform: rotate(5deg); } 75% { transform: rotate(-5deg); } 100% { transform: rotate(0deg); } }
+
+        /* 封面與結局 */
+        .overlay-screen {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(10, 8, 6, 0.98);
+            z-index: 100;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            text-align: center;
+            padding: 20px;
+        }
+        .start-btn {
+            margin-top: 30px; padding: 12px 30px; font-size: 1.1rem;
+            background: #333; color: #ddd; border: 1px solid #666; cursor: pointer;
+            letter-spacing: 2px;
+        }
+        .start-btn:hover { background: #c0392b; color: #fff; border-color: #f00; }
+
+    </style>
+</head>
+<body>
+
+    <div id="app-container">
+        <div id="vignette"></div>
+        
+        <!-- 骰子層 -->
+        <div id="dice-overlay">
+            <div id="dice-visual" class="dice-box">?</div>
+            <div id="dice-msg" style="color:#ddd;">判定中...</div>
+        </div>
+
+        <!-- 封面 -->
+        <div id="start-screen" class="overlay-screen">
+            <h1 style="color:#c0392b; font-size: 2.2rem; margin-bottom: 10px; font-family: serif;">鬼屋歷險</h1>
+            <p style="color:#888; letter-spacing: 1px;">黃泉之際 - 沉浸版</p>
+            <div style="background:#111; padding:15px; margin:20px 0; border:1px solid #333; text-align:left; font-size:0.9rem; color:#aaa; max-width: 90%;">
+                <p><i class="fas fa-exclamation-triangle"></i> <b>探險須知：</b></p>
+                <ul style="padding-left:20px; line-height:1.6;">
+                    <li><b>生死與共</b>：角色死亡後仍可行動，但成功率將大幅下降。</li>
+                    <li><b>觀察入微</b>：每回合固定 4 個選項，其中必有 1 個致命幻覺。</li>
+                    <li><b>謹慎選擇</b>：選項不再提示對應角色，請透過描述判斷適合人選。</li>
+                    <li><b>生命有限</b>：受傷即紅，再傷即死。</li>
+                </ul>
+            </div>
+            <button class="start-btn" onclick="game.start()">踏入廢墟</button>
+        </div>
+
+        <header>
+            <div style="font-weight:bold; color:#aaa; font-family:serif;"><i class="fas fa-skull"></i> 鬼屋歷險</div>
+            <div class="turn-badge">回合: <span id="turn-count">1</span> / 25</div>
+        </header>
+
+        <div id="char-status-bar">
+            <!-- 動態生成 -->
+        </div>
+
+        <div id="inventory-bar">
+            <span style="font-size:0.7rem; color:#666;">持有:</span>
+            <div id="inventory-list" style="display:flex; gap:5px;"></div>
+        </div>
+
+        <div id="story-area">
+            <div id="area-label" class="area-title"></div>
+            <div id="story-text" class="scene-text"></div>
+        </div>
+
+        <div id="choice-area">
+            <!-- 選項動態生成 -->
+        </div>
+
+        <div id="log-window">
+            <div class="log-line">> 準備開始...</div>
+        </div>
+
+        <div id="end-screen" class="overlay-screen" style="display:none;">
+            <h1 id="end-title" style="font-size:2rem; color:#ddd; margin-bottom:10px; font-family: serif;">結局</h1>
+            <div id="end-icon" style="font-size:4rem; margin:20px; color:#555;"></div>
+            <p id="end-desc" style="color:#bbb; max-width:80%; line-height:1.6;"></p>
+            <div id="end-stats" style="color:#888; font-size:0.9rem; margin-top:20px;"></div>
+            <button class="start-btn" onclick="game.reset()">再次挑戰</button>
+        </div>
+    </div>
+
+    <script>
+        const CHARS = {
+            leo: { name: "雷歐", id: "leo", icon: "fa-fist-raised" }, // 勇氣
+            emma: { name: "艾瑪", id: "emma", icon: "fa-lightbulb" }, // 智慧
+            jack: { name: "傑克", id: "jack", icon: "fa-hand-holding-heart" }, // 善良
+            sophie: { name: "蘇菲", id: "sophie", icon: "fa-eye" } // 感性
+        };
+
+        const HP_CONFIG = {
+            2: { text: "無事", class: "hp-2" },
+            1: { text: "受傷", class: "hp-1" },
+            0: { text: "死亡", class: "hp-0" }
+        };
+
+        const ITEMS = {
+            "bandage": { name: "繃帶", icon: "fa-band-aid" },
+            "key": { name: "鑰匙", icon: "fa-key" },
+            "flashlight": { name: "手電筒", icon: "fa-flashlight" },
+            "amulet": { name: "護符", icon: "fa-cross" },
+            "dagger": { name: "匕首", icon: "fa-khanda" },
+            "doll": { name: "人偶", icon: "fa-child" }
+        };
+
+        // 假選項庫 - 誘人的陷阱
+        const FAKE_MSGS = [
+            { text: "發現安全捷徑", desc: "這條路散發著溫暖的光芒。", chance: "95%" },
+            { text: "撿起地上的金幣", desc: "運氣真好，是珍貴的古董。", chance: "90%" },
+            { text: "回應同伴呼救", desc: "聽起來就在前方轉角處。", chance: "85%" },
+            { text: "拔出發光的聖劍", desc: "這一定是破關的神器。", chance: "99%" },
+            { text: "原地安心休息", desc: "這裡感覺完全沒有惡意。", chance: "80%" },
+            { text: "喝下神秘藥水", desc: "感覺能治癒身心所有創傷。", chance: "88%" },
+            { text: "閱讀發光卷軸", desc: "上面記載著逃脫的密語。", chance: "92%" },
+            { text: "跟隨白色蝴蝶", desc: "牠似乎想帶領我們避開危險。", chance: "85%" },
+            { text: "打開豪華寶箱", desc: "裡面肯定裝著重要物資。", chance: "90%" },
+            { text: "相信直覺衝刺", desc: "出口一定就在這扇門後。", chance: "95%" }
+        ];
+
+        // 25回合劇本 (固定3個真實選項 + 程式會補1個假選項 = 4個)
+        // 基礎機率 20-35%
+        const SCENARIOS = [
+            // Area 1: 庭院
+            { area: "區域 1：廢棄庭院", text: "濃霧如裹屍布般纏繞著生鏽的鐵柵門，門上的「禁止進入」告示牌滴著黑水。門鎖雖然老舊，卻依然緊閉，阻擋著通往真相的道路。", choices: [
+                { char: "leo", text: "用力踹開", desc: "這種鏽蝕的鎖，一腳就能解決。", base: 30, ok: "鐵門發出刺耳哀鳴後敞開。", fail: "反作用力讓你腳踝劇痛，門紋絲不動。" },
+                { char: "emma", text: "觀察結構", desc: "尋找鎖芯的弱點撬開它。", base: 35, ok: "這是一個簡易的機關，輕鬆解開。", fail: "太暗了，手指被生鏽的鐵絲劃破。" },
+                { char: "sophie", text: "鑽過破洞", desc: "柵欄下方似乎有個缺口。", base: 25, ok: "雖然衣服髒了，但大家順利通過。", fail: "缺口太小，衣服勾住導致驚慌受傷。" }
+            ]},
+            { text: "庭院裡的枯樹彷彿扭曲的鬼爪伸向天空，草叢中傳來窸窸窣窣的聲響，似乎有什麼東西正貼著地面快速爬行。", choices: [
+                { char: "leo", text: "大聲喝斥", desc: "展現氣勢嚇退潛伏的生物。", base: 30, ok: "一隻受驚的野貓竄出逃走。", fail: "聲音反而引來了帶刺的藤蔓攻擊。" },
+                { char: "sophie", text: "屏息通過", desc: "盡可能不發出聲音繞過去。", base: 35, ok: "你們像影子般安靜地通過了。", fail: "過度緊張反而踩斷樹枝，被枯木砸中。" },
+                { char: "jack", text: "安撫大家", desc: "讓恐慌的同伴保持冷靜。", base: 25, ok: "大家互相攙扶，有驚無險地走過。", fail: "恐慌蔓延，混亂中有人跌倒受傷。" }
+            ]},
+            { text: "門廊前蹲踞著一尊石像鬼，它的眼睛似乎隨著你們的移動而轉動，底座下隱約露出某個金屬物品的光澤。", choices: [
+                { char: "emma", text: "檢查底座", desc: "那是有人刻意藏起來的東西。", base: 30, ok: {msg:"發現手電筒！", item:"flashlight"}, fail: "石像突然崩塌，碎片飛濺傷人。" },
+                { char: "leo", text: "推開石像", desc: "把這礙眼的東西移開。", base: 25, ok: "推開後發現通往側門的小路。", fail: "石像異常沉重，用力過猛拉傷背部。" },
+                { char: "jack", text: "繞道而行", desc: "不要招惹這種不詳之物。", base: 40, ok: "雖然錯過了物品，但平安無事。", fail: "石像突然倒下，壓住了走在最後的人。" }
+            ]},
+            { text: "正門緊閉，門縫間滲出暗紅色的黏稠液體，散發著鐵鏽與腥味。這扇門似乎抗拒著任何訪客。", choices: [
+                { char: "jack", text: "確認液體", desc: "這到底是血還是鐵鏽水？", base: 30, ok: "只是陳年的鐵鏽水，虛驚一場。", fail: "是腐蝕性酸液！手指被灼傷。" },
+                { char: "emma", text: "找備用鑰匙", desc: "這種老宅通常會把鑰匙藏在附近。", base: 35, ok: {msg:"在腳踏墊下找到鑰匙！", item:"key"}, fail: "翻找花盆時被藏在裡面的毒蟲咬傷。" },
+                { char: "leo", text: "強行撞門", desc: "沒有什麼門是撞不開的。", base: 20, ok: "門板應聲斷裂，氣勢驚人。", fail: "門板堅硬如鐵，肩膀嚴重挫傷。" }
+            ]},
+            { text: "玄關矗立著一面巨大的穿衣鏡，鏡面布滿灰塵，但映照出的人影卻異常清晰，甚至...比本人還要清晰。", choices: [
+                { char: "sophie", text: "遮住鏡子", desc: "這面鏡子讓人感到生理不適。", base: 35, ok: "蓋上布後，那種被窺視感消失了。", fail: "鏡子在靠近時突然爆裂，碎片四濺。" },
+                { char: "emma", text: "觀察鏡像", desc: "鏡子裡似乎反射出不同的景象。", base: 25, ok: {msg:"發現鏡像中的牆有暗格，獲得繃帶。", item:"bandage"}, fail: "鏡中伸出一雙蒼白的手抓傷脖子。" },
+                { char: "leo", text: "打破鏡子", desc: "這種不祥之物留著也是禍害。", base: 25, ok: "鏡子粉碎，什麼事也沒發生。", fail: "打破鏡子的瞬間，天花板塌陷掉落瓦礫。" }
+            ]},
+            // Area 2: 大廳
+            { area: "區域 2：陰森大廳", text: "大廳掛滿了歷代屋主的畫像，當你們經過時，那些油畫中的眼珠似乎齊刷刷地轉向，死死盯著你們。", choices: [
+                { char: "jack", text: "鞠躬致意", desc: "對亡者保持敬意或許能保平安。", base: 35, ok: "視線變得柔和，壓迫感減輕。", fail: "畫像發出嘲笑聲，無形的力量將你推倒。" },
+                { char: "emma", text: "研究畫像", desc: "畫框邊緣刻著奇怪的文字。", base: 30, ok: "解讀出惡神的弱點資訊。", fail: "畫像流出血淚，精神受到嚴重衝擊。" },
+                { char: "leo", text: "快速跑過", desc: "不要跟這些東西有眼神接觸。", base: 30, ok: "一口氣衝過了長廊。", fail: "被捲起的地毯絆倒，重重摔在地上。" }
+            ]},
+            { text: "一具西洋盔甲擋在樓梯口，手持生鏽的長劍。盔甲內部空無一物，卻發出金屬摩擦的嘎吱聲。", choices: [
+                { char: "leo", text: "奪下長劍", desc: "這把劍或許能當作武器。", base: 25, ok: {msg:"獲得銀匕首，這是對付惡靈的利器！", item:"dagger"}, fail: "盔甲突然揮劍，手臂被劃出一道血痕。" },
+                { char: "emma", text: "尋找開關", desc: "這可能只是個防盜機關人偶。", base: 35, ok: "在背後找到了開關並關閉。", fail: "觸發了防禦機制，射出弩箭。" },
+                { char: "sophie", text: "側身繞過", desc: "盡量不要驚動它。", base: 30, ok: "屏息繞過，沒有觸發反應。", fail: "盔甲突然倒下，壓傷了腿。" }
+            ]},
+            { text: "通往二樓的木製樓梯已經斷裂，只剩下腐朽的支架。上方漆黑一片，隱約傳來風聲。", choices: [
+                { char: "leo", text: "搭建人梯", desc: "踩著肩膀爬上去。", base: 30, ok: "大家合力爬上了二樓平台。", fail: "支架崩塌，所有人摔成一團。" },
+                { char: "jack", text: "尋找梯子", desc: "雜物間應該有維修工具。", base: 35, ok: "找到一把穩固的鐵梯。", fail: "找到的梯子已經壞了，爬到一半摔落。" },
+                { char: "sophie", text: "利用繩索", desc: "用吊燈的繩索盪過去。", base: 20, ok: "驚險地盪到了對面。", fail: "繩索承受不住重量斷裂。" }
+            ]},
+            { text: "二樓書房書本散落一地，空氣中飄浮著灰塵。一本攤開的日記放在桌上，紙頁無風自動。", choices: [
+                { char: "emma", text: "閱讀日記", desc: "這可能記載著當年發生的事。", base: 35, ok: "得知了封印惡神的關鍵儀式。", fail: "書頁中夾著詛咒符咒，觸碰後爆炸。" },
+                { char: "jack", text: "整理書籍", desc: "強迫症發作，把書歸位。", base: 25, ok: {msg:"整理時發現書中夾著繃帶。", item:"bandage"}, fail: "書櫃突然倒塌壓在身上。" },
+                { char: "sophie", text: "感應氣息", desc: "這裡似乎殘留著強烈的意念。", base: 30, ok: {msg:"在抽屜夾層找到驅魔護符！", item:"amulet"}, fail: "被惡靈暫時附身，攻擊同伴。" }
+            ]},
+            { text: "走廊盡頭有一扇被黃色符咒封印的門，門內傳來指甲抓撓木板的聲音，令人毛骨悚然。", choices: [
+                { char: "emma", text: "解讀符咒", desc: "嘗試破解符咒的排列順序。", base: 30, ok: "封印解除，門鎖打開。", fail: "符咒反噬，引發小型爆炸。" },
+                { char: "leo", text: "物理破門", desc: "管他什麼封印，撞開就是了。", base: 15, ok: "門被撞飛，符咒燃燒殆盡。", fail: "強大的反作用力震傷了內臟。" },
+                { char: "jack", text: "使用護符", desc: "如果有護符，或許能淨化。", req: "amulet", base: 100, ok: "護符發出光芒，封印自動消散。", fail: "沒有護符，被黑氣侵蝕受傷。" }
+            ]},
+            // Area 3: 餐廳
+            { area: "區域 3：腐敗餐廳", text: "餐廳長桌旁，一個半透明的管家正機械式地倒著早已乾涸的紅酒，酒瓶裡流出的卻是蛆蟲。", choices: [
+                { char: "sophie", text: "嘗試溝通", desc: "詢問他通往地下室的路。", base: 30, ok: "管家機械地指向了正確的門。", fail: "管家突然變臉，發出刺耳尖叫。" },
+                { char: "leo", text: "掀翻桌子", desc: "打破這個該死的幻象。", base: 25, ok: "幻象消失，一切歸於死寂。", fail: "被飛起的盤子碎片劃得遍體鱗傷。" },
+                { char: "jack", text: "禮貌拒絕", desc: "假裝他是活人，禮貌應對。", base: 35, ok: "管家鞠躬後消失。", fail: "不知不覺中腹部劇痛如絞。" }
+            ]},
+            { text: "廚房裡，數把鋒利的菜刀突然浮空，刀尖對準了你們，發出嗡嗡的震動聲。", choices: [
+                { char: "leo", text: "格擋防禦", desc: "拿起鍋蓋當作盾牌。", base: 30, ok: "成功擋下了飛來的利刃。", fail: "鍋蓋被刺穿，手臂受傷。" },
+                { char: "emma", text: "尋找磁源", desc: "這一定是磁場在作怪。", base: 35, ok: "破壞了磁場中心，刀具掉落。", fail: "被一把飛刀刺中大腿。" },
+                { char: "sophie", text: "高頻尖叫", desc: "用音波干擾頻率？", base: 20, ok: "刀具失去控制掉在地上。", fail: "反而引來更多餐具攻擊。" }
+            ]},
+            { text: "巨大的冷藏庫掛著令人作嘔的肉塊，寒氣逼人，門在你們進入後突然「砰」地一聲關上了。", choices: [
+                { char: "jack", text: "檢查肉塊", desc: "這噁心的東西後面藏著什麼？", base: 25, ok: {msg:"在肉塊後發現了鑰匙。", item:"key"}, fail: "肉塊裡鑽出大量蟲子咬人。" },
+                { char: "leo", text: "破壞溫控", desc: "把製冷系統砸爛。", base: 30, ok: "溫度回升，門鎖自動解開。", fail: "開關漏電，被電擊麻痺。" },
+                { char: "emma", text: "撬開門鎖", desc: "在被凍死前打開門。", base: 40, ok: "在失溫前成功逃出。", fail: "門夾傷了手，且受到了凍傷。" }
+            ]},
+            { text: "僕人房一片狼藉，地上有凌亂的濕腳印延伸到衣櫃，衣櫃門微微晃動。", choices: [
+                { char: "emma", text: "追蹤腳印", desc: "看看這些腳印通往哪裡。", base: 35, ok: "發現地毯下的暗門。", fail: "走入死胡同被伏擊。" },
+                { char: "jack", text: "搜索床鋪", desc: "枕頭下可能有東西。", base: 30, ok: {msg:"找到急救繃帶。", item:"bandage"}, fail: "床底伸出一隻鬼手抓傷腳踝。" },
+                { char: "sophie", text: "躲進衣櫃", desc: "最危險的地方最安全？", base: 25, ok: "成功躲過了巡邏的怨靈。", fail: "衣櫃裡已經有個東西在等著你了。" }
+            ]},
+            { text: "通往地下室的升降梯搖搖欲墜，纜繩發出即將斷裂的悲鳴，控制面板閃爍著火花。", choices: [
+                { char: "leo", text: "手拉纜繩", desc: "用蠻力控制下降速度。", base: 30, ok: "雖然吃力，但平穩抵達。", fail: "纜繩斷裂，重重摔落。" },
+                { char: "emma", text: "修理電路", desc: "嘗試接通備用電源。", base: 35, ok: "電力恢復，電梯正常運作。", fail: "短路爆炸，碎片噴濺。" },
+                { char: "jack", text: "改走樓梯", desc: "雖然遠，但比較安全。", base: 45, ok: "雖然疲憊，但平安抵達。", fail: "樓梯突然塌陷，滾落受傷。" }
+            ]},
+            // Area 4: 地下室
+            { area: "區域 4：黑暗地窖", text: "地下室積滿了腥臭的黑水，水深及膝。水面下似乎有巨大的陰影游過，激起陣陣漣漪。", choices: [
+                { char: "leo", text: "揹人渡水", desc: "保護體弱的同伴過去。", base: 25, ok: "依靠體力強行渡過了水域。", fail: "水怪咬住了小腿，血染紅了水。" },
+                { char: "sophie", text: "感知路徑", desc: "憑直覺避開深水區。", base: 35, ok: "找到了一條隱藏的淺灘。", fail: "被幻覺迷惑走入深淵溺水。" },
+                { char: "emma", text: "製作木筏", desc: "利用漂浮的木箱。", base: 30, ok: "順利渡過，沒有沾溼。", fail: "木筏在途中散架，跌入水中。" }
+            ]},
+            { text: "酒窖裡的酒桶爆裂，流出的不是酒而是鮮紅的血液，迅速淹沒地面，甚至帶有腐蝕性。", choices: [
+                { char: "jack", text: "堵住缺口", desc: "用舊布堵住源頭。", base: 30, ok: "血流停止了。", fail: "被血液濺到，皮膚被腐蝕。" },
+                { char: "leo", text: "打破牆壁", desc: "這裡應該有通風口。", base: 25, ok: "打通了新路，逃離血水。", fail: "牆後湧出更多血液，避無可避。" },
+                { char: "sophie", text: "原地祈禱", desc: "這是不潔之物，需要淨化。", base: 35, ok: {msg:"光芒淨化了血液，獲得護符。", item:"amulet"}, fail: "祈禱聲引來了惡魔。" }
+            ]},
+            { text: "刑訊室裡擺滿了殘酷的刑具，一個刑具突然啟動，擋住了唯一的去路。", choices: [
+                { char: "emma", text: "解除機關", desc: "這只是一個機械裝置。", base: 30, ok: "機關停止運作，道路暢通。", fail: "操作失誤，被刑具夾傷。" },
+                { char: "leo", text: "暴力拆除", desc: "把它砸爛就沒事了。", base: 25, ok: "刑具被拆成廢鐵。", fail: "金屬碎片飛濺刺入皮膚。" },
+                { char: "jack", text: "安撫亡魂", desc: "這些刑具上附著怨念。", base: 35, ok: "房間變得明亮，怨念消散。", fail: "亡魂附身，控制你自殘。" }
+            ]},
+            { text: "地下湖中央有個孤島，一艘破舊的小船停在岸邊，迷霧中似乎有人影在船上招手。", choices: [
+                { char: "sophie", text: "感應方向", desc: "那個人影不太對勁。", base: 30, ok: "發現了另一條隱形橋。", fail: "被迷惑走入深水區。" },
+                { char: "leo", text: "強行游泳", desc: "這點距離游過去就是了。", base: 20, ok: "雖然疲憊，但成功登島。", fail: "被水鬼拖住腳踝。" },
+                { char: "jack", text: "檢查小船", desc: "或許船還能用。", base: 35, ok: {msg:"船上發現關鍵人偶。", item:"doll"}, fail: "船划到一半沉沒了。" }
+            ]},
+            { text: "通往閣樓的秘密螺旋梯，牆上用血寫滿了「不要上去」，每走一步，樓梯都在顫抖。", choices: [
+                { char: "leo", text: "帶頭衝鋒", desc: "恐懼源於猶豫，衝吧！", base: 30, ok: "一口氣衝上了閣樓。", fail: "樓梯突然坍塌，摔落受傷。" },
+                { char: "emma", text: "檢查結構", desc: "確認哪階是實心的。", base: 35, ok: "避開了所有陷阱階梯。", fail: "踩空扭傷了腳踝。" },
+                { char: "jack", text: "互相扶持", desc: "一個接一個慢慢走。", base: 40, ok: "雖然慢，但全員平安抵達。", fail: "最後一人被黑暗中的手抓傷。" }
+            ]},
+            // Area 5: 結局篇
+            { area: "區域 5：惡神祭壇", text: "閣樓是巨大的祭壇，中央畫著血紅色的法陣。空氣變得黏稠，呼吸困難，四周充滿了惡意的視線。", choices: [
+                { char: "emma", text: "研究法陣", desc: "找出法陣的能量節點。", base: 30, ok: "發現了惡神的致命弱點。", fail: "精神受到強烈衝擊，流鼻血。" },
+                { char: "leo", text: "清理障礙", desc: "燒掉周圍的蜘蛛網。", base: 25, ok: "場地清空，視野變好。", fail: "火勢失控，燒傷自己。" },
+                { char: "sophie", text: "預知危險", desc: "感受下一波攻擊的方位。", base: 35, ok: "成功預判並避開了偷襲。", fail: "被邪能震飛，撞上牆壁。" }
+            ]},
+            { text: "角落裡堆積如山的舊玩偶突然全部轉過頭來，空洞的眼眶流著血，一步步向你們逼近。", choices: [
+                { char: "leo", text: "正面戰鬥", desc: "把這些破布娃娃撕碎！", base: 25, ok: "殺出了一條血路。", fail: "被玩偶群起攻之，遍體鱗傷。" },
+                { char: "jack", text: "安撫亡靈", desc: "使用附身人偶作為容器。", req: "doll", base: 100, ok: "玩偶們停止了動作，安靜下來。", fail: "沒有關鍵道具，被玩偶淹沒。" },
+                { char: "emma", text: "切斷絲線", desc: "這些玩偶是被操縱的。", base: 30, ok: "找到了操縱者並切斷連結。", fail: "被無形的絲線勒住脖子。" }
+            ]},
+            { text: "空間開始扭曲，惡神巨大的虛影顯現。它發出的咆哮聲震耳欲聾，你們的身體開始出現裂痕。", choices: [
+                { char: "jack", text: "緊急治療", desc: "使用繃帶穩定傷勢。", req: "bandage", base: 100, ok: "全員傷勢得到緩解，恢復狀態。", fail: "沒有繃帶，只能硬撐。" },
+                { char: "sophie", text: "精神抵抗", desc: "張開精神護盾抵擋聲波。", base: 30, ok: "成功擋下了精神攻擊。", fail: "護盾破碎，七孔流血。" },
+                { char: "leo", text: "憤怒咆哮", desc: "用更有氣勢的吼聲回擊。", base: 25, ok: "惡神被氣勢震攝，動作停滯。", fail: "喉嚨破裂，咳血受傷。" }
+            ]},
+            { text: "惡神實體化，張開了深淵般的巨口準備吞噬一切。這是最後的戰鬥。", choices: [
+                { char: "leo", text: "致命一擊", desc: "使用銀匕首刺向核心。", req: "dagger", base: 90, ok: "匕首深深刺入惡神心臟！", fail: "沒有武器，徒手攻擊被打飛。" },
+                { char: "emma", text: "弱化咒語", desc: "利用之前的知識削弱它。", base: 30, ok: "惡神的動作變得遲緩。", fail: "唸錯咒語，法術反噬。" },
+                { char: "jack", text: "肉盾犧牲", desc: "挺身擋下這致命一擊。", base: 20, ok: "擋下了攻擊，但身受重傷。", fail: "承受不住攻擊，當場死亡。" }
+            ]},
+            { text: "【最終回合】惡神發出最後的悲鳴，整棟屋子開始崩塌。命運的抉擇就在此刻。", choices: [
+                { char: "sophie", text: "使用護符", desc: "封印惡神！(真結局條件)", req: "amulet", base: 100, ok: "強光爆發，惡神被永久封印！", fail: "沒有護符，封印失敗..." },
+                { char: "leo", text: "同歸於盡", desc: "抱著惡神跳下深淵。", base: 40, ok: "惡神消失，雷歐生死未卜。", fail: "力量不足，被惡神反噬全滅。" },
+                { char: "emma", text: "全員逃跑", desc: "趁著崩塌的縫隙逃離。", base: 60, ok: "在最後一刻衝出了鬼屋。", fail: "出口崩塌，被永遠困住。" }
+            ]}
+        ];
+
+        const game = {
+            turn: 1,
+            chars: { leo: 2, emma: 2, jack: 2, sophie: 2 },
+            inventory: [],
+            
+            start: function() {
+                this.turn = 1;
+                this.inventory = [];
+                // 初始化血量為 2
+                this.chars = { leo: 2, emma: 2, jack: 2, sophie: 2 };
+                
+                document.getElementById('start-screen').style.display = 'none';
+                document.getElementById('end-screen').style.display = 'none';
+                document.getElementById('log-window').innerHTML = '<div class="log-line">> 惡夢開始...</div>';
+                
+                this.updateUI();
+                this.loadTurn();
+            },
+
+            reset: function() {
+                document.getElementById('start-screen').style.display = 'flex';
+                document.getElementById('end-screen').style.display = 'none';
+            },
+
+            loadTurn: function() {
+                if (this.turn > 25) return;
+                
+                const scenario = SCENARIOS[this.turn - 1];
+                const areaLabel = document.getElementById('area-label');
+                const storyText = document.getElementById('story-text');
+                
+                // 更新標題與故事
+                if (scenario.area) {
+                    areaLabel.innerText = scenario.area;
+                    areaLabel.style.display = 'block';
+                    this.log(`進入 ${scenario.area}`, 'log-item');
+                }
+                
+                storyText.innerHTML = "";
+                void storyText.offsetWidth; // Trigger reflow
+                storyText.innerHTML = `<b>[回合 ${this.turn}]</b><br>${scenario.text}`;
+                storyText.classList.remove('scene-text');
+                void storyText.offsetWidth;
+                storyText.classList.add('scene-text');
+                
+                // 生成選項
+                this.renderChoices(scenario);
+                document.getElementById('turn-count').innerText = this.turn;
+            },
+
+            renderChoices: function(scenario) {
+                const container = document.getElementById('choice-area');
+                container.innerHTML = '';
+
+                // 1. 準備真實選項 (計算機率)
+                let options = scenario.choices.map(c => {
+                    // 檢查道具需求 (若不滿足，不顯示該選項，保持隱藏)
+                    if (c.req && !this.inventory.includes(c.req)) return null;
+                    
+                    const charHp = this.chars[c.char];
+                    let finalChance = c.base;
+                    let isDead = false;
+                    
+                    if (charHp > 0) {
+                        finalChance += 35; // 存活增益
+                    } else {
+                        // 死亡懲罰：基礎機率 - 20 (無底限，可能變極低)
+                        finalChance -= 20;
+                        if (finalChance < 5) finalChance = 5; // 最低保留 5%
+                        isDead = true;
+                    }
+                    if (finalChance > 100) finalChance = 100;
+
+                    return {
+                        type: 'real',
+                        text: c.text,
+                        desc: c.desc,
+                        chanceVal: finalChance,
+                        chanceDisp: finalChance + "%", 
+                        data: c,
+                        isDead: isDead
+                    };
+                }).filter(o => o !== null);
+
+                // 2. 插入假選項 (必出)
+                const fake = FAKE_MSGS[Math.floor(Math.random() * FAKE_MSGS.length)];
+                options.push({
+                    type: 'fake',
+                    text: fake.text,
+                    desc: fake.desc,
+                    chanceDisp: fake.chance,
+                    isDead: false
+                });
+
+                // 3. 隨機打亂順序
+                for (let i = options.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [options[i], options[j]] = [options[j], options[i]];
+                }
+
+                // 4. 渲染按鈕
+                options.forEach(opt => {
+                    const btn = document.createElement('div');
+                    btn.className = 'choice-btn';
+                    
+                    if (opt.isDead) {
+                        btn.classList.add('btn-dead');
+                        opt.desc = "(角色已死亡，成功率極低)";
+                    }
+                    
+                    // 點擊事件：即使死亡也可以點，只是機率低
+                    btn.onclick = () => {
+                        if (opt.type === 'real') this.handleReal(opt.data, opt.chanceVal);
+                        else this.handleFake();
+                    };
+
+                    btn.innerHTML = `
+                        <div>
+                            <div class="choice-title"><i class="fas fa-caret-right"></i> ${opt.text}</div>
+                            <div class="choice-desc">${opt.desc}</div>
+                        </div>
+                        <div class="chance-badge">${opt.chanceDisp}</div>
+                    `;
+                    container.appendChild(btn);
+                });
+            },
+
+            handleReal: async function(choice, chance) {
+                const success = await this.rollDice(chance);
+                
+                if (success) {
+                    // 成功
+                    let msg = typeof choice.ok === 'object' ? choice.ok.msg : choice.ok;
+                    this.log(msg, "log-success");
+                    
+                    if (typeof choice.ok === 'object' && choice.ok.item) {
+                        this.addItem(choice.ok.item);
+                    }
+                    if (choice.req === 'bandage') {
+                        this.healAll();
+                        this.inventory = this.inventory.filter(i => i !== 'bandage');
+                        this.updateUI();
+                    }
+                    if (this.turn === 25) setTimeout(() => this.endGame(true), 1000);
+                } else {
+                    // 失敗
+                    this.log(choice.fail, "log-fail");
+                    this.damageChar(choice.char); // 失敗導致該角色受傷
+                    if (this.turn === 25) setTimeout(() => this.endGame(false), 1000);
+                }
+
+                if (!this.checkGameOver()) {
+                    this.turn++;
+                    setTimeout(() => this.loadTurn(), 1200);
+                }
+            },
+
+            handleFake: function() {
+                this.log("那是幻覺！這是一個陷阱！", "log-fail");
+                document.getElementById('vignette').classList.add('damage-effect');
+                setTimeout(()=>document.getElementById('vignette').classList.remove('damage-effect'), 500);
+                
+                // 幻覺隨機傷害一名倖存者
+                const alive = Object.keys(this.chars).filter(k => this.chars[k] > 0);
+                if (alive.length > 0) {
+                    const victim = alive[Math.floor(Math.random() * alive.length)];
+                    this.damageChar(victim);
+                    this.log(`${CHARS[victim].name} 因為幻覺受傷了。`, "log-fail");
+                } else {
+                     // 如果全死了還點幻覺...再鞭屍一次
+                     const any = Object.keys(this.chars)[0];
+                     this.damageChar(any);
+                }
+
+                if (!this.checkGameOver()) {
+                    this.turn++;
+                    setTimeout(() => this.loadTurn(), 1200);
+                }
+            },
+
+            rollDice: function(chance) {
+                return new Promise(resolve => {
+                    const overlay = document.getElementById('dice-overlay');
+                    const visual = document.getElementById('dice-visual');
+                    const msg = document.getElementById('dice-msg');
+                    
+                    overlay.style.display = 'flex';
+                    visual.className = 'dice-box dice-rolling';
+                    visual.innerText = '?';
+                    msg.innerText = `檢定中... (${chance}%)`;
+                    msg.style.color = "#ddd";
+                    visual.style.borderColor = "#fff";
+                    visual.style.color = "#fff";
+
+                    setTimeout(() => {
+                        const roll = Math.floor(Math.random() * 100) + 1;
+                        const isSuccess = roll <= chance;
+                        visual.className = 'dice-box'; 
+                        visual.innerText = roll;
+                        
+                        if (isSuccess) {
+                            visual.style.borderColor = "var(--status-fine)";
+                            visual.style.color = "var(--status-fine)";
+                            msg.innerText = "成功";
+                            msg.style.color = "var(--status-fine)";
+                        } else {
+                            visual.style.borderColor = "var(--status-hurt)";
+                            visual.style.color = "var(--status-hurt)";
+                            msg.innerText = "失敗";
+                            msg.style.color = "var(--status-hurt)";
+                        }
+
+                        setTimeout(() => {
+                            overlay.style.display = 'none';
+                            resolve(isSuccess);
+                        }, 800);
+                    }, 600);
+                });
+            },
+
+            damageChar: function(id) {
+                if (this.chars[id] > 0) {
+                    this.chars[id]--;
+                    document.getElementById('vignette').classList.add('damage-effect');
+                    setTimeout(()=>document.getElementById('vignette').classList.remove('damage-effect'), 300);
+                }
+                this.updateUI();
+                this.checkGameOver();
+            },
+
+            healAll: function() {
+                for (let k in this.chars) {
+                    if (this.chars[k] > 0 && this.chars[k] < 2) {
+                        this.chars[k]++;
+                    }
+                }
+            },
+
+            checkGameOver: function() {
+                const alive = Object.values(this.chars).filter(hp => hp > 0).length;
+                if (alive === 0) {
+                    // 全滅時，不立即結束，給予最後一點絕望感，延遲一秒顯示結局
+                    setTimeout(() => {
+                        this.showEnd("壞結局：全滅", "所有人都已倒下。黑暗吞噬了最後的希望，你們成為了鬼屋新的怨靈。", "fa-skull-crossbones");
+                    }, 1000);
+                    return true;
+                }
+                return false;
+            },
+
+            addItem: function(id) {
+                if (!this.inventory.includes(id)) {
+                    this.inventory.push(id);
+                    this.updateUI();
+                    this.log(`獲得道具: ${ITEMS[id].name}`, "log-item");
+                }
+            },
+
+            updateUI: function() {
+                // 狀態列 (圖示版)
+                const bar = document.getElementById('char-status-bar');
+                bar.innerHTML = Object.keys(this.chars).map(k => {
+                    const hp = this.chars[k];
+                    const cfg = HP_CONFIG[hp];
+                    const charInfo = CHARS[k];
+                    return `<div class="char-box ${cfg.class}">
+                        <div class="char-icon"><i class="fas ${charInfo.icon}"></i></div>
+                        <div class="char-info">
+                            <div class="char-name">${charInfo.name}</div>
+                            <div class="char-hp-text">${cfg.text}</div>
+                        </div>
+                    </div>`;
+                }).join('');
+
+                // 道具列
+                const inv = document.getElementById('inventory-list');
+                inv.innerHTML = this.inventory.map(id => 
+                    `<div class="inv-item"><i class="fas ${ITEMS[id].icon}"></i> ${ITEMS[id].name}</div>`
+                ).join('');
+            },
+
+            log: function(msg, cls) {
+                const win = document.getElementById('log-window');
+                const div = document.createElement('div');
+                div.className = `log-line ${cls}`;
+                div.innerHTML = `> ${msg}`;
+                win.prepend(div);
+            },
+
+            endGame: function(lastSuccess) {
+                const survivors = Object.values(this.chars).filter(h => h > 0).length;
+                const hasAmulet = this.inventory.includes('amulet');
+                
+                if (survivors === 4 && hasAmulet && lastSuccess) {
+                    this.showEnd("真結局：完美生還", "依靠四人的力量與驅魔護符，惡神被永久封印。經歷過地獄般的夜晚，你們之間的羈絆將永不可摧。", "fa-sun");
+                } else if (survivors > 0 && lastSuccess) {
+                    this.showEnd("好結局：逃出生天", `雖然付出了慘痛代價，但${survivors}名倖存者成功逃離了地獄。那場惡夢將永遠烙印在記憶深處。`, "fa-running");
+                } else {
+                    this.showEnd("壞結局：功虧一簣", "在最後一刻，希望破滅了。惡神吞噬了所有靈魂，沒有人能活著離開。", "fa-cloud-moon");
+                }
+            },
+
+            showEnd: function(title, desc, icon) {
+                document.getElementById('end-screen').style.display = 'flex';
+                document.getElementById('end-title').innerText = title;
+                document.getElementById('end-desc').innerText = desc;
+                document.getElementById('end-icon').innerHTML = `<i class="fas ${icon}"></i>`;
+                
+                let s = [];
+                for(let k in this.chars) if(this.chars[k]>0) s.push(CHARS[k].name);
+                document.getElementById('end-stats').innerText = "生還者: " + (s.length ? s.join(", ") : "無");
+            }
+        };
+    </script>
+</body>
+</html>
